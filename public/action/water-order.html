@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>生成买水订单 - 拼豆系统</title>
+    <link rel="stylesheet" href="/resources/assets/css/app.css?v=0.4.1">
+</head>
+<body class="theme-cyan terminal-page">
+    <section class="form-runtime">
+    <main class="operation-form">
+        <header class="operation-head">
+            <a href="<!--@back-->">返回</a>
+            <div>
+                <span>拼豆系统</span>
+                <h1>生成买水订单</h1>
+                <p>填写后保存到系统，返回页面即可看到最新记录。</p>
+            </div>
+        </header>
+
+                    <section class="panel-card">
+                <form method="post" action="/api/create/water-order" class="visual-form">
+                    <input type="hidden" name="_redirect" value="<!--@back-->">
+                    <div class="form-grid">
+                                                                                <label class="field">
+                                <span>数量</span>
+                                                                                                    <input name="quantity" value="" placeholder="请输入">
+                                                            </label>
+                                            </div>
+                    <div class="form-actions">
+                        <button type="submit">保存</button>
+                        <a href="<!--@back-->">取消</a>
+                    </div>
+                </form>
+            </section>
+            </main>
+</section>
+<script src="/resources/assets/js/app.js?v=0.4.1"></script>
+</body>
+</html>

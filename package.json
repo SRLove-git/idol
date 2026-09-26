@@ -1,0 +1,11 @@
+{
+  "name": "idol-pindou-reservation-clone",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "拼豆系统「预约订座 / 拼豆预约」前端克隆",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs"
+  }
+}

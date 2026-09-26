@@ -1,0 +1,10 @@
+# 域名反向代理 + 自动 HTTPS（Let's Encrypt）
+# DOMAIN / ACME_EMAIL 由 docker compose 的环境变量注入
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy frontend:4173
+}

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>创建预约 - 拼豆系统</title>
+    <link rel="stylesheet" href="/resources/assets/css/app.css?v=0.4.1">
+</head>
+<body class="theme-cyan terminal-page">
+    <section class="form-runtime">
+    <main class="operation-form">
+        <header class="operation-head">
+            <a href="<!--@back-->">返回</a>
+            <div>
+                <span>拼豆系统</span>
+                <h1>创建预约</h1>
+                <p>选择桌位、日期、开始时间、时长和人数，提交后生成预约码。</p>
+            </div>
+        </header>
+
+                    <section class="panel-card">
+                <form method="post" action="/book" class="visual-form">
+                    <input type="hidden" name="back" value="<!--@back-->">
+                    <input type="hidden" name="storeId" value="<!--@storeid-->">
+                    <div class="form-grid">
+                        <label class="field">
+                            <span>桌位</span>
+                            <select name="tableId"><!--@tables--></select>
+                        </label>
+                        <label class="field">
+                            <span>预约日期</span>
+                            <input type="date" name="date" value="<!--@today-->">
+                        </label>
+                        <label class="field">
+                            <span>开始时间</span>
+                            <select name="startTime"><!--@slots--></select>
+                        </label>
+                        <label class="field">
+                            <span>时长（小时）</span>
+                            <input type="number" name="durationHours" min="1" max="24" value="2">
+                        </label>
+                        <label class="field">
+                            <span>人数</span>
+                            <input type="number" name="peopleCount" min="1" value="1">
+                        </label>
+                        <label class="field">
+                            <span>支付方式</span>
+                            <select name="payMethod">
+                                <option value="wechat">微信</option>
+                                <option value="alipay">支付宝</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit">提交预约</button>
+                        <a href="<!--@back-->">取消</a>
+                    </div>
+                </form>
+            </section>
+            </main>
+</section>
+<script src="/resources/assets/js/app.js?v=0.4.1"></script>
+</body>
+</html>

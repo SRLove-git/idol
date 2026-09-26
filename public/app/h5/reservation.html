@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>预约订座 - 拼豆系统</title>
+    <link rel="stylesheet" href="/resources/assets/css/app.css?v=0.4.1">
+</head>
+<body class="theme-cyan terminal-page">
+    
+    <section class="h5-runtime">
+        <main class="h5-app">
+                <header class="h5-top">
+        <div>
+            <span>北京</span>
+            <strong>默认门店</strong>
+        </div>
+        <div class="h5-user"><!--@auth--></div>
+    </header>
+    <!--@notice-->
+    <section class="h5-title">
+        <h1>预约订座</h1>
+        <p>选择门店、日期、时间、人数和座位，支持支付预约和到店确认。</p>
+    </section>
+                                    <section class="booking-card">
+        <div class="booking-row">
+            <button class="is-active" type="button">今天</button>
+            <button type="button">明天</button>
+            <button type="button">周末</button>
+        </div>
+        <div class="booking-row">
+            <button type="button">10:00</button>
+            <button class="is-active" type="button">14:00</button>
+            <button type="button">19:00</button>
+        </div>
+            <div class="h5-actions">
+                    <a class="is-primary" href="/action/reservation?back=/app/h5/reservation">创建预约</a>
+                    <a class="" href="/app/h5/seat">查看座位</a>
+                    <a class="" href="/app/h5/verify">一键核销</a>
+            </div>
+        </section>
+        <section class="h5-panel">
+        <div class="panel-head">
+            <div>
+                <h2>座位状态</h2>
+                <p>空闲、已预约、使用中、已结束、异常一屏查看。</p>
+            </div>
+            <div class="seat-legend">
+                <span class="idle">空闲</span>
+                <span class="reserved">已预约</span>
+                <span class="using">使用中</span>
+                <span class="abnormal">异常</span>
+            </div>
+        </div>
+        <!--@seats:/app/h5/reservation-->
+    </section>
+            <section class="flow-panel">
+        <h2>预约核销流程</h2>
+        <div class="timeline-grid">
+                            <article class="done">
+                    <span></span>
+                    <strong>用户预约座位</strong>
+                </article>
+                            <article class="done">
+                    <span></span>
+                    <strong>支付或抖音核销</strong>
+                </article>
+                            <article class="active">
+                    <span></span>
+                    <strong>门店确认到店</strong>
+                </article>
+                            <article class="active">
+                    <span></span>
+                    <strong>座位开始计时</strong>
+                </article>
+                            <article class="pending">
+                    <span></span>
+                    <strong>一键买水</strong>
+                </article>
+                            <article class="pending">
+                    <span></span>
+                    <strong>结束使用并生成订单</strong>
+                </article>
+                    </div>
+    </section>
+        <section class="h5-panel"><div class="panel-head"><h2>预约记录</h2></div>    <!--@reservations-->
+    </section>
+                                <nav class="h5-bottom">
+                                <a class="is-active" href="/app/h5/home">
+                <span>⌂</span>
+                <b>首页</b>
+            </a>
+                                <a class="" href="/app/h5/social">
+                <span>◎</span>
+                <b>社交服务</b>
+            </a>
+                                <a class="" href="/app/h5/market">
+                <span>￥</span>
+                <b>交易市场</b>
+            </a>
+                                <a class="" href="/app/h5/mine">
+                <span>○</span>
+                <b>我的</b>
+            </a>
+            </nav>
+            </main>
+    </section>
+
+<script src="/resources/assets/js/app.js?v=0.4.1"></script>
+</body>
+</html>

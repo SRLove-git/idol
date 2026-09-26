@@ -1,0 +1,139 @@
+# 拼豆预约 · 全链路容器化（MySQL + Redis + NestJS 后端 + 前端静态服务）
+# 用法：
+#   cp .env.example .env        # 可选，按需改端口/密钥
+#   docker compose up -d --build
+#   docker compose logs -f backend   # 观察后端首次建表/种子是否完成
+# 访问：http://127.0.0.1:${WEB_PORT:-14173}/
+
+name: idol
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: idol-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-diy}
+      TZ: Asia/Shanghai
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      # 默认映射 23306，避免与宿主机 3306 / 13306（本地已有容器）冲突
+      - "${MYSQL_PORT:-23306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7
+    container_name: idol-redis
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      # 默认映射 26379，避免与宿主机 6379 / 16379（本地已有容器）冲突
+      - "${REDIS_PORT:-26379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: idol-server:latest
+    container_name: idol-backend
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      TZ: Asia/Shanghai
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      DB_NAME: ${DB_NAME:-diy}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-me}
+      DB_MIGRATIONS_RUN: "true"
+      TRUST_PROXY: "false"
+      UPLOAD_DIR: /app/uploads
+      UPLOAD_PROVIDER: local
+      # 审核演示种子：自动创建 reviewdemo 账号 + IDOL BEADS 门店（幂等）
+      REVIEW_DEMO_ENABLED: ${REVIEW_DEMO_ENABLED:-true}
+      REVIEW_DEMO_USERNAME: reviewdemo
+      REVIEW_DEMO_PASSWORD: "ThinkOrigin#2026"
+      REVIEW_DEMO_EMAIL: reviewdemo@thinkorigin.example
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads-data:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>r.json()).then(j=>process.exit(j.status==='ok'?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: idol-frontend:latest
+    container_name: idol-frontend
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4173
+      HOST: 0.0.0.0
+      BACKEND_URL: http://backend:3000
+      STORE_ID: ${STORE_ID:-1}
+      TZ: Asia/Shanghai
+    ports:
+      # 默认映射 14173，避免与宿主机 4173（本地正在跑的前端）冲突
+      - "${WEB_PORT:-14173}:4173"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: idol-caddy
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-idol-sg.com}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@idol-sg.com}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - frontend
+
+volumes:
+  mysql-data:
+  redis-data:
+  uploads-data:
+  caddy-data:
+  caddy-config:

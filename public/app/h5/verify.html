@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>一键核销 - 拼豆系统</title>
+    <link rel="stylesheet" href="/resources/assets/css/app.css?v=0.4.1">
+</head>
+<body class="theme-cyan terminal-page">
+    
+    <section class="h5-runtime">
+        <main class="h5-app">
+                <header class="h5-top">
+        <div>
+            <span>北京</span>
+            <strong>默认门店</strong>
+        </div>
+        <div class="h5-user"><!--@auth--></div>
+    </header>
+    <!--@notice-->
+    <section class="h5-title">
+        <h1>一键核销</h1>
+        <p>支持抖音团购码、站内订单码、扫码核销和人工确认。</p>
+    </section>
+                                    <section class="verify-card">
+        <div class="scan-box">扫码核销</div>
+        <form method="post" action="/verify">
+            <input type="hidden" name="back" value="/app/h5/verify">
+            <label><span>预约码（6 位数字或字母）</span><input name="code" placeholder="请输入预约码" required></label>
+            <div class="verify-buttons">
+                <button type="submit">核销</button>
+            </div>
+        </form>
+            <div class="h5-actions">
+                    <a class="is-primary" href="/action/reservation?back=/app/h5/verify">创建预约</a>
+                    <a class="" href="/app/h5/seat">进入座位计时</a>
+            </div>
+        </section>
+        <section class="flow-panel">
+        <h2>预约核销流程</h2>
+        <div class="timeline-grid">
+                            <article class="done">
+                    <span></span>
+                    <strong>用户预约座位</strong>
+                </article>
+                            <article class="done">
+                    <span></span>
+                    <strong>支付或抖音核销</strong>
+                </article>
+                            <article class="active">
+                    <span></span>
+                    <strong>门店确认到店</strong>
+                </article>
+                            <article class="active">
+                    <span></span>
+                    <strong>座位开始计时</strong>
+                </article>
+                            <article class="pending">
+                    <span></span>
+                    <strong>一键买水</strong>
+                </article>
+                            <article class="pending">
+                    <span></span>
+                    <strong>结束使用并生成订单</strong>
+                </article>
+                    </div>
+    </section>
+        <section class="h5-panel"><div class="panel-head"><h2>核销记录</h2></div>    <div class="visual-list">
+                    <article>
+                <div class="item-avatar">记</div>
+                <div>
+                    <strong>记录 #1</strong>
+                    <span>￥128.00</span>
+                </div>
+                <em class="badge tone-green">已支付</em>
+            </article>
+                    </div>
+    </section>
+                                <nav class="h5-bottom">
+                                <a class="is-active" href="/app/h5/home">
+                <span>⌂</span>
+                <b>首页</b>
+            </a>
+                                <a class="" href="/app/h5/social">
+                <span>◎</span>
+                <b>社交服务</b>
+            </a>
+                                <a class="" href="/app/h5/market">
+                <span>￥</span>
+                <b>交易市场</b>
+            </a>
+                                <a class="" href="/app/h5/mine">
+                <span>○</span>
+                <b>我的</b>
+            </a>
+            </nav>
+            </main>
+    </section>
+
+<script src="/resources/assets/js/app.js?v=0.4.1"></script>
+</body>
+</html>
