@@ -336,8 +336,39 @@ async function render(html, { back, token, query } = {}) {
   if (out.includes("<!--@slots-->")) {
     out = out.replace(/<!--@slots-->/g, await renderSlotOptions());
   }
-  if (out.includes("<!--@pricing-->")) {
-    out = out.replace(/<!--@pricing-->/g, renderPricing(await loadStore()));
+  // 门店信息/价格（复刻落地页 + /app/* 价位表共用真实门店数据）
+  const storePlaceholders = [
+    "<!--@pricing-->",
+    "<!--@store-name-->",
+    "<!--@store-address-->",
+    "<!--@store-hours-->",
+    "<!--@store-phone-->",
+    "<!--@price-solo-->",
+    "<!--@price-group-->",
+    "<!--@price-daypass-wd-->",
+    "<!--@price-daypass-we-->",
+  ];
+  if (storePlaceholders.some((p) => out.includes(p))) {
+    const store = await loadStore();
+    const replaceAll = (k, v) => {
+      out = out.split(k).join(v ?? "");
+    };
+    replaceAll("<!--@store-name-->", esc(store?.name ?? ""));
+    replaceAll("<!--@store-address-->", esc(store?.address ?? ""));
+    replaceAll("<!--@store-hours-->", esc(store?.businessHours ?? ""));
+    replaceAll("<!--@store-phone-->", esc(store?.phone ?? ""));
+    replaceAll("<!--@price-solo-->", fmtPrice(store?.price));
+    replaceAll("<!--@price-group-->", fmtPrice(store?.groupPrice ?? store?.price));
+    replaceAll("<!--@price-daypass-wd-->", fmtPrice(store?.allDayPrice));
+    const surcharge = Number(store?.weekendSurchargePercent) || 0;
+    const weekend =
+      store?.allDayPrice != null
+        ? Number(store.allDayPrice) * (1 + surcharge / 100)
+        : null;
+    replaceAll("<!--@price-daypass-we-->", fmtPrice(weekend));
+    if (out.includes("<!--@pricing-->")) {
+      out = out.split("<!--@pricing-->").join(renderPricing(store));
+    }
   }
   out = out.replace(/<!--@back-->/g, back || "/app/h5/home");
   return out;
@@ -367,8 +398,12 @@ function safeBack(pathname, url) {
 }
 
 // ---------- 登录 / 注册页面 ----------
-function authPage(kind) {
+function authPage(kind, next) {
   const isLogin = kind === "login";
+  const safeNext =
+    typeof next === "string" && next.startsWith("/") && !next.startsWith("//")
+      ? next
+      : "/app/h5/reservation";
   const title = isLogin ? "登录" : "注册";
   const action = `/auth/${kind}`;
   const fields = isLogin
@@ -398,7 +433,7 @@ function authPage(kind) {
       </header>
       <section class="panel-card">
         <form method="post" action="${action}" class="visual-form">
-          <input type="hidden" name="next" value="${"/app/h5/reservation"}">
+          <input type="hidden" name="next" value="${safeNext}">
           <div class="form-grid">
 ${fields}
           </div>
@@ -473,12 +508,12 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && pathname === "/login") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(authPage("login"));
+    res.end(authPage("login", url.searchParams.get("next")));
     return;
   }
   if (req.method === "GET" && pathname === "/register") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(authPage("register"));
+    res.end(authPage("register", url.searchParams.get("next")));
     return;
   }
 
@@ -535,7 +570,7 @@ const server = http.createServer(async (req, res) => {
 
   // 通用 /api/* 代理（带登录态）
   if (pathname.startsWith("/api/")) {
-    const apiPath = pathname.slice(4); // 去掉 /api 前缀
+    const apiPath = pathname.slice(4) + url.search; // 去掉 /api 前缀，并保留查询串
     let body;
     if (req.method !== "GET" && req.method !== "HEAD") {
       const raw = await new Promise((resolve) => {

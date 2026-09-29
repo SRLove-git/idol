@@ -3,6 +3,11 @@ node_modules/
 dist/
 coverage/
 
+# Vue 落地页构建产物（源码在 web/，构建输出到 public/）
+public/index.html
+public/assets/
+public/photos/
+
 # 密钥 / 本地环境（绝不提交；模板用 *.env.example）
 .env
 .env.production

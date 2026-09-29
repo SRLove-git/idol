@@ -112,7 +112,7 @@ nav ul li a:hover {
     padding: 120px 0;
     text-align: center;
     background: linear-gradient(rgba(255, 249, 251, 0.85), rgba(255, 238, 242, 0.85)), 
-                url('photos/indoor_1.webp');
+                url('/photos/indoor_1.webp');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
