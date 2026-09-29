@@ -244,6 +244,56 @@ async function renderSlotOptions() {
     .join("");
 }
 
+// 金额格式化：9.9 -> ￥9.9，54.89 -> ￥54.89，45 -> ￥45
+function fmtPrice(n) {
+  if (n == null || n === "" || Number.isNaN(Number(n))) return "—";
+  return "￥" + Number(n).toFixed(2).replace(/\.?0+$/, "");
+}
+
+// 价位表（参考 beads.land #pricing）：按时计费 + 全天通票 两张卡片
+function renderPricing(store) {
+  if (!store) {
+    return `<div class="price-tables"><p class="seat-empty">未找到门店价格数据</p></div>`;
+  }
+
+  const hourly = [
+    ["单人", fmtPrice(store.price)],
+    ["多人同行", fmtPrice(store.groupPrice ?? store.price)],
+  ];
+  if (store.memberPrice != null) hourly.push(["会员", fmtPrice(store.memberPrice)]);
+
+  const surcharge = Number(store.weekendSurchargePercent) || 0;
+  const weekend =
+    store.allDayPrice != null
+      ? Number(store.allDayPrice) * (1 + surcharge / 100)
+      : null;
+  const daypass = [
+    ["周三 - 周四", fmtPrice(store.allDayPrice)],
+    ["周五 - 周日", fmtPrice(weekend)],
+  ];
+  if (store.allDayMemberPrice != null)
+    daypass.push(["会员", fmtPrice(store.allDayMemberPrice)]);
+
+  const card = (icon, title, keyLabel, valLabel, rows) => `
+        <div class="price-card">
+            <div class="card-header">
+                <span class="card-title-icon">${icon}</span>
+                <h3>${title}</h3>
+            </div>
+            <table class="price-table">
+                <thead><tr><th>${keyLabel}</th><th>${valLabel}</th></tr></thead>
+                <tbody>${rows
+                  .map(([k, v]) => `<tr><td>${esc(k)}</td><td class="price-val">${v}</td></tr>`)
+                  .join("")}</tbody>
+            </table>
+        </div>`;
+
+  return `<div class="price-tables">
+        ${card("⏱", "按时计费", "人数", "价格", hourly)}
+        ${card("🎟", "全天通票", "日期", "价格", daypass)}
+    </div>`;
+}
+
 function renderNotice(query) {
   if (query.booked) {
     return `<section class="notice notice-ok">预约成功，预约码：<b>${esc(query.booked)}</b></section>`;
@@ -285,6 +335,9 @@ async function render(html, { back, token, query } = {}) {
   }
   if (out.includes("<!--@slots-->")) {
     out = out.replace(/<!--@slots-->/g, await renderSlotOptions());
+  }
+  if (out.includes("<!--@pricing-->")) {
+    out = out.replace(/<!--@pricing-->/g, renderPricing(await loadStore()));
   }
   out = out.replace(/<!--@back-->/g, back || "/app/h5/home");
   return out;
@@ -368,10 +421,9 @@ const server = http.createServer(async (req, res) => {
   let pathname = decodeURIComponent(url.pathname);
   const token = tokenFrom(req);
 
-  // 根路径与别名
+  // 根路径：beads.land 复刻落地页
   if (pathname === "/") {
-    redirect(res, "/app/pc/home");
-    return;
+    pathname = "/index.html";
   }
   if (pathname === "/app/pc" || pathname === "/app/pc/") {
     redirect(res, "/app/pc/home");

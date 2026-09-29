@@ -2117,6 +2117,56 @@ a { color: inherit; text-decoration: none; }
     font-style: normal;
     font-size: 12px;
 }
+/* 价位表（参考 beads.land #pricing） */
+.price-tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+.price-card {
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+}
+.price-card .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px dashed color-mix(in srgb, var(--accent), white 45%);
+}
+.card-title-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+.price-card h3 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--accent);
+}
+.price-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.price-table th,
+.price-table td {
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+}
+.price-table th {
+    color: var(--muted);
+    font-weight: 600;
+}
+.price-table td.price-val {
+    text-align: right;
+    font-weight: 700;
+    color: #dc2626;
+}
 .card-actions {
     justify-content: space-between;
 }
