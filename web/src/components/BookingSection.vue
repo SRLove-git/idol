@@ -73,7 +73,7 @@ function selectDuration(val) {
 
 async function submit() {
   errorMsg.value = ''
-  if (!form.name || !form.phone || !form.email) {
+  if (!form.name || !form.email) {
     alert(state.lang === 'zh' ? '请填写必填个人信息' : 'Please fill in required info')
     return
   }
@@ -112,7 +112,9 @@ async function submit() {
       peopleCount: selected.people,
       bookingType,
       payMethod: 'wechat',
-      note: [form.notes, `联系人 ${form.name} ${form.phone} ${form.email}`].filter(Boolean).join(' | ')
+      guestName: form.name.trim(),
+      guestEmail: form.email.trim(),
+      note: [form.notes, form.phone ? `电话 ${form.phone}` : ''].filter(Boolean).join(' | ')
     }
     if (bookingType === 'hourly') {
       dto.startTime = selected.startTime
@@ -218,7 +220,7 @@ onMounted(buildDates)
           <div class="personal-info-form">
             <div class="form-row">
               <input v-model="form.name" type="text" :placeholder="t('placeholder_name')" required>
-              <input v-model="form.phone" type="tel" :placeholder="t('placeholder_phone')" required>
+              <input v-model="form.phone" type="tel" :placeholder="t('placeholder_phone')">
             </div>
             <input v-model="form.email" type="email" :placeholder="t('placeholder_email')" required>
             <textarea v-model="form.notes" rows="2" :placeholder="t('placeholder_notes')"></textarea>

@@ -283,8 +283,27 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
    * 防超卖策略：同店同桌同时段仅允许 1 条未取消预约，先经 Redis 锁串行化，
    * 再由数据库唯一组合兜底（@Index 四列 + 事务内再查）。
    */
-  /** 游客占位账号：未登录预约挂在该用户下（无密码无法登录，仅作归属与展示） */
-  private async getOrCreateGuestUser() {
+  /** 游客占位账号：未登录预约挂在该用户下（无密码无法登录，仅作归属与展示）。
+   *  带邮箱时按邮箱建/复用游客账号，同邮箱的预约归并到同一游客；否则退回共享游客账号。 */
+  private async getOrCreateGuestUser(dto: CreateAppointmentDto) {
+    const email = (dto.guestEmail ?? '').trim().toLowerCase();
+    if (email) {
+      const existing = await this.users.findByEmail(email);
+      if (existing) return existing;
+      try {
+        return await this.users.create({
+          email,
+          username: null,
+          nickname: (dto.guestName ?? '').trim() || '游客',
+          avatar: '',
+        });
+      } catch {
+        // 并发下唯一约束兜底：再查一次
+        const again = await this.users.findByEmail(email);
+        if (again) return again;
+        throw new Error('游客账号创建失败');
+      }
+    }
     return this.users.findByUsernameOrCreate({
       username: 'guest',
       email: 'guest@local',
@@ -298,7 +317,8 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     dto: CreateAppointmentDto,
   ): Promise<Appointment> {
     // 未登录按游客身份创建；游客不限制「同一用户仅一张未完成预约」，避免不同顾客互相阻塞
-    const resolvedUserId = userId ?? (await this.getOrCreateGuestUser()).id;
+    const resolvedUserId =
+      userId ?? (await this.getOrCreateGuestUser(dto)).id;
     if (userId != null) {
       await this.assertNoActiveAppointment(resolvedUserId);
     }
