@@ -9,7 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CurrentUser } from '../auth/current-user.decorator';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
+import { CurrentUser, CurrentUserOptional } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
 import { CreateAppointmentDto, CheckInDto } from './appointment.dto';
 import { AppointmentsService } from './appointments.service';
@@ -19,11 +20,14 @@ import { AppointmentsService } from './appointments.service';
 export class AppointmentsController {
   constructor(private readonly appointments: AppointmentsService) {}
 
-  /** 生成预约单 */
+  /** 生成预约单（无需登录：未登录时按游客身份创建） */
   @Post()
-  @UseGuards(JwtAuthGuard)
-  create(@CurrentUser() user: AuthUser, @Body() dto: CreateAppointmentDto) {
-    return this.appointments.create(user.id, dto);
+  @UseGuards(OptionalJwtAuthGuard)
+  create(
+    @CurrentUserOptional() user: AuthUser | undefined,
+    @Body() dto: CreateAppointmentDto,
+  ) {
+    return this.appointments.create(user?.id, dto);
   }
 
   /** 我的预约列表 */

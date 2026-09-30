@@ -283,18 +283,31 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
    * 防超卖策略：同店同桌同时段仅允许 1 条未取消预约，先经 Redis 锁串行化，
    * 再由数据库唯一组合兜底（@Index 四列 + 事务内再查）。
    */
+  /** 游客占位账号：未登录预约挂在该用户下（无密码无法登录，仅作归属与展示） */
+  private async getOrCreateGuestUser() {
+    return this.users.findByUsernameOrCreate({
+      username: 'guest',
+      email: 'guest@local',
+      nickname: '游客',
+      avatar: '',
+    });
+  }
+
   async create(
-    userId: number,
+    userId: number | undefined,
     dto: CreateAppointmentDto,
   ): Promise<Appointment> {
-    // 防恶意预约：存在未完成的预约（待确认/待核销/服务中）时，不允许创建新预约
-    await this.assertNoActiveAppointment(userId);
-    const type = dto.type ?? 'store';
-    const isMember = await this.isMemberActive(userId);
-    if (type === 'activity') {
-      return this.createActivity(userId, dto, isMember);
+    // 未登录按游客身份创建；游客不限制「同一用户仅一张未完成预约」，避免不同顾客互相阻塞
+    const resolvedUserId = userId ?? (await this.getOrCreateGuestUser()).id;
+    if (userId != null) {
+      await this.assertNoActiveAppointment(resolvedUserId);
     }
-    return this.createStore(userId, dto, isMember);
+    const type = dto.type ?? 'store';
+    const isMember = await this.isMemberActive(resolvedUserId);
+    if (type === 'activity') {
+      return this.createActivity(resolvedUserId, dto, isMember);
+    }
+    return this.createStore(resolvedUserId, dto, isMember);
   }
 
   /**
