@@ -15,7 +15,6 @@ public/photos/
 server/.env
 
 # 运行数据（上传、临时文件）
-uploads/
 server/uploads/
 
 # 系统与日志
