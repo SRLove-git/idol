@@ -147,7 +147,7 @@ export function t(key) {
 
 export function fmtPrice(n) {
   if (n == null || n === '' || Number.isNaN(Number(n))) return '—'
-  return '￥' + Number(n).toFixed(2).replace(/\.?0+$/, '')
+  return '$' + Number(n).toFixed(2).replace(/\.?0+$/, '')
 }
 
 export function addMinutes(hhmm, mins) {

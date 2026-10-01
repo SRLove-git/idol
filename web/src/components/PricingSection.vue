@@ -1,19 +1,36 @@
 <script setup>
 import { computed } from 'vue'
-import { state, t, fmtPrice } from '../store.js'
+import { state, fmtPrice } from '../store.js'
 
-const hourly = computed(() => [
-  { label: t('td_solo_label'), value: fmtPrice(state.store?.price) },
-  { label: t('td_duo_label'), value: fmtPrice(state.store?.groupPrice ?? state.store?.price) }
-])
+const sixHour = computed(() =>
+  state.store?.packages?.find((p) => Number(p.hours) === 6) ?? state.store?.packages?.[0]
+)
 
-const daypass = computed(() => {
-  const allDay = state.store?.allDayPrice
-  const surcharge = Number(state.store?.weekendSurchargePercent) || 0
-  const weekend = allDay != null ? Number(allDay) * (1 + surcharge / 100) : null
+const rows = computed(() => {
+  const s = state.store
+  const p = sixHour.value
   return [
-    { label: t('td_wed_thu'), value: fmtPrice(allDay) },
-    { label: t('td_fri_sun'), value: fmtPrice(weekend) }
+    {
+      duration: '1 小时 1HR Session',
+      solo: fmtPrice(s?.price),
+      member: fmtPrice(s?.memberPrice),
+      group: fmtPrice(s?.groupPrice),
+      star: false
+    },
+    {
+      duration: '6 小时 6HR Session',
+      solo: fmtPrice(p?.price),
+      member: fmtPrice(p?.memberPrice),
+      group: fmtPrice(p?.groupPrice),
+      star: false
+    },
+    {
+      duration: '全天不限时 Full-Day Pass',
+      solo: fmtPrice(s?.allDayPrice),
+      member: fmtPrice(s?.allDayMemberPrice),
+      group: fmtPrice(s?.allDayGroupPrice),
+      star: true
+    }
   ]
 })
 </script>
@@ -22,35 +39,31 @@ const daypass = computed(() => {
   <section id="pricing" class="pricing">
     <div class="container">
       <h2 class="section-title">
-        <span>{{ t('pricing_title') }}</span>
+        <span>价位表</span>
         <img src="/photos/price-title.png" alt="Pricing" class="title-icon">
       </h2>
       <div class="price-tables">
-        <div class="price-card">
+        <div class="price-card pricing-full">
           <div class="card-header">
-            <img src="/photos/hourly-icon.png" alt="Hourly" class="card-title-icon">
-            <h3>{{ t('hourly_pricing') }}</h3>
+            <img src="/photos/price-title.png" alt="Pricing" class="card-title-icon">
+            <h3>价位表 · Pricing</h3>
           </div>
           <table>
             <thead>
-              <tr><th>{{ t('th_people') }}</th><th>{{ t('th_price') }}</th></tr>
+              <tr>
+                <th>时长 Duration</th>
+                <th>单人 Single</th>
+                <th>会员 Member (20% OFF)</th>
+                <th>多人同行 2+ PAX (10% OFF)</th>
+              </tr>
             </thead>
             <tbody>
-              <tr v-for="r in hourly" :key="r.label"><td>{{ r.label }}</td><td>{{ r.value }}</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="price-card">
-          <div class="card-header">
-            <img src="/photos/daypass-icon.png" alt="Day Pass" class="card-title-icon">
-            <h3>{{ t('daypass_pricing') }}</h3>
-          </div>
-          <table>
-            <thead>
-              <tr><th>{{ t('th_date') }}</th><th>{{ t('th_price') }}</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="r in daypass" :key="r.label"><td>{{ r.label }}</td><td>{{ r.value }}</td></tr>
+              <tr v-for="r in rows" :key="r.duration">
+                <td>{{ r.duration }}</td>
+                <td>{{ r.solo }}</td>
+                <td>{{ r.member }}<span v-if="r.star" class="price-star"> ⭐</span></td>
+                <td>{{ r.group }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
