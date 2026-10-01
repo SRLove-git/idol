@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { isSurchargeDate } from '../common/singapore-holidays';
 import { Coupon, UserCoupon } from '../members/coupon.entity';
 import { Appointment } from './appointment.entity';
 import { AppointmentTable } from './appointment-table.entity';
@@ -28,6 +29,21 @@ function nextWeekendDate(): string {
   while (d.getDay() !== 6 && d.getDay() !== 0) {
     d.setDate(d.getDate() + 1);
   }
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
+}
+
+/** 下一个不加收服务费的工作日（避免测试在周五/周末运行时漂移） */
+function nextRegularDate(): string {
+  const d = new Date();
+  do {
+    d.setDate(d.getDate() + 1);
+  } while (isSurchargeDate(dateStrFrom(d)));
+  return dateStrFrom(d);
+}
+
+function dateStrFrom(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
     d.getDate(),
   ).padStart(2, '0')}`;
@@ -138,7 +154,7 @@ const baseDto = {
   storeId: 1,
   tableId: 1,
   peopleCount: 2,
-  date: dateStr(1),
+  date: nextRegularDate(),
   startTime: '10:00',
   durationHours: 2,
 };

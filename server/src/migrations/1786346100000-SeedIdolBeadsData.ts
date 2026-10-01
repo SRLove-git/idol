@@ -6,7 +6,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - 1 小时：门市 9.9 / 会员 8 / 多人同行 9
  * - 6 小时套餐：门市 39.9 / 会员 32 / 多人同行 36
  * - 全天不限时：门市 49.9 / 会员 39.9 / 多人同行 45
- * - 周末/节假日所有档位加收 10%（当前按周六日判定）
+ * - 周末/新加坡公共假日所有档位加收 10%
  * - 会员：月卡 19.90 / 年卡 149，全场 8 折
  */
 export class SeedIdolBeadsData1786346100000 implements MigrationInterface {

@@ -206,19 +206,32 @@ export class BootstrapService implements OnApplicationBootstrap {
     if (!store) {
       store = await this.stores.create({
         name: 'IDOL BEADS',
-        address: '18A, Sago Street, Singapore 059017',
+        address: '18A, SAGO STREET, SINGAPORE 059017',
         price: 9.9,
-        memberPrice: 7.92,
-        groupPrice: 8.5,
-        allDayPrice: 39.9,
-        allDayMemberPrice: 31.92,
-        allDayGroupPrice: 34,
+        memberPrice: 8,
+        groupPrice: 9,
+        allDayPrice: 49.9,
+        allDayMemberPrice: 39.9,
+        allDayGroupPrice: 45,
+        weekendSurchargePercent: 10,
         businessHours: '10:00-21:00',
-        phone: '+65 8381 1666',
+        phone: '',
         rating: 5,
         images: [],
       });
       this.logger.log('已创建审核演示门店：IDOL BEADS（18A Sago Street）');
+    } else {
+      store = await this.stores.update(store.id, {
+        address: '18A, SAGO STREET, SINGAPORE 059017',
+        price: 9.9,
+        memberPrice: 8,
+        groupPrice: 9,
+        allDayPrice: 49.9,
+        allDayMemberPrice: 39.9,
+        allDayGroupPrice: 45,
+        weekendSurchargePercent: 10,
+        businessHours: '10:00-21:00',
+      });
     }
 
     const detail = await this.stores.adminDetail(store.id);
@@ -240,21 +253,30 @@ export class BootstrapService implements OnApplicationBootstrap {
       }
       this.logger.log('已为 IDOL BEADS 预置 4 个可约时段');
     }
-    if (!detail.packages.length) {
+    const sixHourPackage = detail.packages.find((item) => item.hours === 6);
+    if (!sixHourPackage) {
       await this.stores.addPackage(store.id, {
-        name: '6 小时畅玩套餐',
+        name: '6-Hour Fun Package',
         hours: 6,
-        price: 49.9,
-        memberPrice: 39.9,
-        groupPrice: 45,
+        price: 39.9,
+        memberPrice: 32,
+        groupPrice: 36,
       });
       this.logger.log('已为 IDOL BEADS 预置 6 小时畅玩套餐');
+    } else {
+      await this.stores.updatePackage(sixHourPackage.id, {
+        name: '6-Hour Fun Package',
+        price: 39.9,
+        memberPrice: 32,
+        groupPrice: 36,
+        enabled: true,
+      });
     }
   }
 
   /**
    * 审核演示会员套餐（幂等）：把会员计划同步为新加坡区营销文案价格
-   * （S$19.90 月卡 / S$49 季卡 / S$149 年卡），避免审核员看到的
+   * （S$19.90 月卡 / S$149 年卡），避免审核员看到的
    * App 内价格与 App Store 描述/Notes 不一致。仅 REVIEW_DEMO_ENABLED=true 时执行。
    */
   private async ensureReviewPlans() {
@@ -263,33 +285,19 @@ export class BootstrapService implements OnApplicationBootstrap {
         name: '月卡',
         durationDays: 30,
         price: 19.9,
-        originalPrice: 29.9,
-        benefits: ['全场 8 折', '每月专属优惠券'],
+        originalPrice: 19.9,
+        benefits: ['全场消费 8 折专属优惠'],
         badge: '',
         recommended: false,
-      },
-      {
-        name: '季卡',
-        durationDays: 90,
-        price: 49,
-        originalPrice: 87,
-        benefits: ['全场 8 折', '每月专属优惠券', '专属活动优先报名'],
-        badge: '推荐',
-        recommended: true,
       },
       {
         name: '年卡',
         durationDays: 365,
         price: 149,
-        originalPrice: 298,
-        benefits: [
-          '全场 8 折',
-          '每月专属优惠券',
-          '专属活动优先报名',
-          '生日当月免费体验一次',
-        ],
+        originalPrice: 149,
+        benefits: ['全场消费 8 折专属优惠'],
         badge: '最划算',
-        recommended: false,
+        recommended: true,
       },
     ];
     const existing = await this.members.listPlans(true);
@@ -297,6 +305,8 @@ export class BootstrapService implements OnApplicationBootstrap {
       const plan = existing.find((p) => p.name === t.name);
       await this.members.savePlan({ ...t, enabled: true }, plan?.id);
     }
+    const quarterlyPlan = existing.find((p) => p.name === '季卡');
+    if (quarterlyPlan) await this.members.togglePlan(quarterlyPlan.id, false);
     this.logger.log(
       '已同步审核演示会员套餐为新加坡区价格（月卡 S$19.9 / 年卡 S$149）',
     );

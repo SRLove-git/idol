@@ -48,24 +48,32 @@ const rows = computed(() => {
             <img src="/photos/price-title.png" alt="Pricing" class="card-title-icon">
             <h3>价位表 · Pricing</h3>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>时长 Duration</th>
-                <th>单人 Single</th>
-                <th>会员 Member (20% OFF)</th>
-                <th>多人同行 2+ PAX (10% OFF)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="r in rows" :key="r.duration">
-                <td>{{ r.duration }}</td>
-                <td>{{ r.solo }}</td>
-                <td>{{ r.member }}<span v-if="r.star" class="price-star"> ⭐</span></td>
-                <td>{{ r.group }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="price-table-scroll">
+            <table class="pricing-table">
+              <thead>
+                <tr>
+                  <th>时长 Duration</th>
+                  <th>单人 Single</th>
+                  <th>会员 Member (20% OFF)</th>
+                  <th>多人同行 2+ PAX (10% OFF)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="r in rows" :key="r.duration">
+                  <td>{{ r.duration }}</td>
+                  <td>{{ r.solo }}</td>
+                  <td>{{ r.member }}<span v-if="r.star" class="price-star"> ⭐</span></td>
+                  <td>{{ r.group }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pricing-notes">
+            <h4>备注 · Note</h4>
+            <p><strong>会员 Membership:</strong> $19.90 SGD/月 (month)，$149 SGD/年 (year)。</p>
+            <p><strong>多人同行 Group rate:</strong> 两人及以上同行，非会员按多人同行价；同行里有会员，该会员按会员价计算。<br><span>2 or more pax. Non-members pay the group rate; members in the group pay the member rate.</span></p>
+            <p><strong>周末及节假日 Weekends &amp; public holidays:</strong> 所有价格加收 10% 服务费 (10% service charge applies)。</p>
+          </div>
         </div>
       </div>
     </div>

@@ -2150,6 +2150,11 @@ a { color: inherit; text-decoration: none; }
 .price-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 680px;
+}
+.price-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 .price-table th,
 .price-table td {
@@ -2166,6 +2171,34 @@ a { color: inherit; text-decoration: none; }
     text-align: right;
     font-weight: 700;
     color: #dc2626;
+}
+.price-table th:not(:first-child),
+.price-table td:not(:first-child) {
+    text-align: center;
+}
+.price-table tbody td:not(:first-child) {
+    color: #a66a16;
+    font-size: 18px;
+    font-weight: 700;
+}
+.pricing-notes {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: #fff9f1;
+    color: #5d4a45;
+}
+.pricing-notes h4 {
+    margin: 0 0 8px;
+    color: var(--accent);
+    font-size: 16px;
+}
+.pricing-notes p {
+    margin: 6px 0;
+    line-height: 1.55;
+}
+.pricing-notes span {
+    color: var(--muted);
 }
 .card-actions {
     justify-content: space-between;

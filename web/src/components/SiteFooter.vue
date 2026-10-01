@@ -28,6 +28,7 @@ import { state, t } from '../store.js'
           <h3 class="footer-title">{{ t('footer_hours_title') }}</h3>
           <div class="footer-hours">
             <p>{{ state.store?.businessHours }}</p>
+            <p>每天 · Daily</p>
           </div>
         </section>
       </div>

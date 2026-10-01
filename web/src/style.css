@@ -413,6 +413,49 @@ nav ul li a:hover {
     font-size: 24px;
 }
 
+.price-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.pricing-table {
+    min-width: 690px;
+}
+
+.pricing-table th:not(:first-child),
+.pricing-table td:not(:first-child) {
+    text-align: center;
+}
+
+.pricing-table tbody td:not(:first-child) {
+    color: #a66a16;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.pricing-notes {
+    margin-top: 22px;
+    padding: 20px 22px;
+    border-radius: 14px;
+    background: #fff9f1;
+    color: #5d4a45;
+}
+
+.pricing-notes h4 {
+    margin: 0 0 10px;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.pricing-notes p {
+    margin: 7px 0;
+    line-height: 1.65;
+}
+
+.pricing-notes span {
+    color: #7b6b66;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
