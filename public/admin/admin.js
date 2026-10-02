@@ -7,7 +7,8 @@ const pageMeta = {
   appointments: ['RESERVATIONS', '预约管理'],
   pricing: ['STORE & PRICING', '门店与价格'],
   members: ['MEMBERSHIP', '会员管理'],
-  users: ['CUSTOMERS', '用户管理']
+  users: ['CUSTOMERS', '用户管理'],
+  security: ['SECURITY', '账号安全']
 }
 
 function esc(value) {
@@ -107,6 +108,7 @@ async function navigate(page) {
     if (page === 'pricing') await renderPricing()
     if (page === 'members') await renderMembers()
     if (page === 'users') await renderUsers()
+    if (page === 'security') renderSecurity()
   } catch (error) { showError(error) }
 }
 
@@ -305,6 +307,31 @@ async function banUser(button) {
 async function forceOffline(button) {
   if (!await confirmDialog('强制该用户下线？')) return
   try { await api(`/admin/users/${button.dataset.id}/offline`, { method: 'PATCH' }); toast('已强制用户下线') } catch (error) { toast(error.message, true) }
+}
+
+function renderSecurity() {
+  $('#page-content').innerHTML = `
+    <section class="panel" style="max-width:680px">
+      <div class="panel-head"><div><h2>修改管理员密码</h2><p>首次登录后请立即更换初始密码</p></div></div>
+      <form id="password-form" class="form-grid">
+        <label class="field field-wide"><span>当前密码</span><input name="oldPassword" type="password" autocomplete="current-password" required minlength="6" maxlength="32"></label>
+        <label class="field"><span>新密码</span><input name="newPassword" type="password" autocomplete="new-password" required minlength="6" maxlength="32"></label>
+        <label class="field"><span>确认新密码</span><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="6" maxlength="32"></label>
+        <div class="form-actions field-wide"><button class="button" type="submit">更换密码</button></div>
+      </form>
+    </section>`
+  $('#password-form').addEventListener('submit', changePassword)
+}
+
+async function changePassword(event) {
+  event.preventDefault()
+  const data = Object.fromEntries(new FormData(event.currentTarget))
+  if (data.newPassword !== data.confirmPassword) return toast('两次输入的新密码不一致', true)
+  try {
+    await api('/auth/change-password', { method: 'POST', body: { oldPassword: data.oldPassword, newPassword: data.newPassword } })
+    event.currentTarget.reset()
+    toast('密码已更新')
+  } catch (error) { toast(error.message, true) }
 }
 
 function statusText(status) {
