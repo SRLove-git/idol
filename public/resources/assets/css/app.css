@@ -2200,6 +2200,66 @@ a { color: inherit; text-decoration: none; }
 .pricing-notes span {
     color: var(--muted);
 }
+@media (max-width: 760px) {
+    .price-card {
+        padding: 14px;
+    }
+    .price-table-scroll {
+        overflow: visible;
+    }
+    .price-table {
+        display: block;
+        min-width: 0;
+    }
+    .price-table thead {
+        display: none;
+    }
+    .price-table tbody {
+        display: grid;
+        gap: 10px;
+    }
+    .price-table tr {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+    }
+    .price-table td {
+        min-width: 0;
+        padding: 9px 3px;
+        border: 0;
+        text-align: center;
+    }
+    .price-table td:first-child {
+        grid-column: 1 / -1;
+        padding: 8px 6px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel-soft);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .price-table tbody td:not(:first-child) {
+        font-size: 16px;
+    }
+    .price-table td:not(:first-child)::before {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--muted);
+        content: attr(data-label);
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .pricing-notes {
+        margin-top: 12px;
+        padding: 12px;
+        font-size: 12px;
+    }
+}
 .card-actions {
     justify-content: space-between;
 }

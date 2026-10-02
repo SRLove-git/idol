@@ -1400,7 +1400,84 @@ footer {
     }
 
     .price-card {
-        padding: 22px;
+        padding: 18px;
+    }
+
+    .pricing {
+        padding: 56px 0;
+    }
+
+    .pricing .container {
+        padding-inline: 12px;
+    }
+
+    .price-table-scroll {
+        overflow: visible;
+    }
+
+    .pricing-table {
+        display: block;
+        min-width: 0;
+    }
+
+    .pricing-table thead {
+        display: none;
+    }
+
+    .pricing-table tbody {
+        display: grid;
+        gap: 12px;
+    }
+
+    .pricing-table tr {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: hidden;
+        border: 1px solid #f1dde3;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .pricing-table td {
+        min-width: 0;
+        padding: 10px 4px;
+        border: 0;
+        text-align: center;
+    }
+
+    .pricing-table td:first-child {
+        grid-column: 1 / -1;
+        padding: 9px 8px;
+        border-bottom: 1px solid #f1dde3;
+        background: #fff6f8;
+        color: var(--text-color);
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .pricing-table tbody td:not(:first-child) {
+        font-size: 17px;
+    }
+
+    .pricing-table td:not(:first-child)::before {
+        display: block;
+        margin-bottom: 3px;
+        color: #8b7b76;
+        content: attr(data-label);
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .pricing-notes {
+        margin-top: 14px;
+        padding: 13px 14px;
+        font-size: 13px;
+    }
+
+    .pricing-notes p {
+        line-height: 1.55;
     }
 
     /* Booking */
@@ -1544,7 +1621,7 @@ footer {
     }
 
     .price-card {
-        padding: 18px;
+        padding: 14px;
     }
 
     th,

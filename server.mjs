@@ -287,9 +287,9 @@ function renderPricing(store) {
   const body = rows
     .map(
       ([d, solo, member, group, star]) =>
-        `<tr><td>${esc(d)}</td><td>${solo}</td><td>${member}${
+        `<tr><td>${esc(d)}</td><td data-label="单人 Single">${solo}</td><td data-label="会员 Member">${member}${
           star ? ' <span class="price-star">⭐</span>' : ""
-        }</td><td>${group}</td></tr>`
+        }</td><td data-label="多人 2+ PAX">${group}</td></tr>`
     )
     .join("");
 

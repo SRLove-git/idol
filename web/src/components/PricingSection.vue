@@ -61,9 +61,9 @@ const rows = computed(() => {
               <tbody>
                 <tr v-for="r in rows" :key="r.duration">
                   <td>{{ r.duration }}</td>
-                  <td>{{ r.solo }}</td>
-                  <td>{{ r.member }}<span v-if="r.star" class="price-star"> ⭐</span></td>
-                  <td>{{ r.group }}</td>
+                  <td data-label="单人 Single">{{ r.solo }}</td>
+                  <td data-label="会员 Member">{{ r.member }}<span v-if="r.star" class="price-star"> ⭐</span></td>
+                  <td data-label="多人 2+ PAX">{{ r.group }}</td>
                 </tr>
               </tbody>
             </table>
