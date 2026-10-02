@@ -502,7 +502,10 @@ const server = http.createServer(async (req, res) => {
       redirect(res, b.next || "/app/h5/reservation");
       return;
     }
-    redirect(res, `/login?error=${encodeURIComponent(r.data?.message || "登录失败")}`);
+    const errorTarget = String(b.next || "").startsWith("/admin")
+      ? "/admin"
+      : "/login";
+    redirect(res, `${errorTarget}?error=${encodeURIComponent(r.data?.message || "登录失败")}`);
     return;
   }
   if (req.method === "POST" && pathname === "/auth/register") {
@@ -524,7 +527,8 @@ const server = http.createServer(async (req, res) => {
   }
   if (pathname === "/auth/logout") {
     clearToken(res);
-    redirect(res, "/app/h5/home");
+    const next = url.searchParams.get("next");
+    redirect(res, next && /^\/[A-Za-z0-9_\-/]*$/.test(next) ? next : "/app/h5/home");
     return;
   }
   if (req.method === "GET" && pathname === "/login") {
@@ -612,6 +616,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (pathname !== "/" && pathname.endsWith("/")) pathname = pathname.slice(0, -1);
+
+  if (pathname === "/admin") pathname = "/admin/index.html";
 
   const filePath = resolveFile(pathname);
   if (!filePath) {

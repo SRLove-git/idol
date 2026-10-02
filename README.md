@@ -19,6 +19,10 @@ npm run dev
 
 打开 <http://127.0.0.1:4173/>（`/` 跳 PC 首页，H5 在 `/app/h5/home`）。
 
+管理后台在 <http://127.0.0.1:4173/admin>，生产环境需在 `.env` 配置
+`ADMIN_INITIAL_PASSWORD`，首次启动会创建 `ADMIN_USERNAME`（默认 `admin`）超级管理员。
+后台已接入数据看板、预约处理、门店价格、会员套餐/开通申请与用户管理。
+
 可用账号：`reviewdemo` / `ThinkOrigin#2026`（审核演示账号，已预置 IDOL BEADS 门店）。
 
 ## 端点映射

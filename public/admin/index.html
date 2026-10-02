@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>IDOL BEADS · 管理后台</title>
+  <link rel="stylesheet" href="/admin/admin.css?v=1.0.0">
+</head>
+<body>
+  <div id="login-view" class="login-shell" hidden>
+    <section class="login-card">
+      <a class="brand brand-login" href="/">
+        <img src="/photos/logo.png" alt="IDOL BEADS">
+        <span><strong>IDOL BEADS</strong><small>Management Console</small></span>
+      </a>
+      <div class="login-copy">
+        <span class="eyebrow">安全登录</span>
+        <h1>管理后台</h1>
+        <p>使用管理员账号登录，管理门店、预约、会员和用户。</p>
+      </div>
+      <div id="login-error" class="alert alert-error" hidden></div>
+      <form class="login-form" method="post" action="/auth/login">
+        <input type="hidden" name="next" value="/admin">
+        <label><span>管理员账号</span><input name="account" autocomplete="username" required placeholder="admin"></label>
+        <label><span>密码</span><input name="password" type="password" autocomplete="current-password" required placeholder="请输入密码"></label>
+        <button type="submit">登录后台</button>
+      </form>
+      <a class="back-site" href="/">← 返回官网</a>
+    </section>
+  </div>
+
+  <div id="admin-app" class="admin-shell" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="/admin">
+        <img src="/photos/logo.png" alt="IDOL BEADS">
+        <span><strong>IDOL BEADS</strong><small>管理后台</small></span>
+      </a>
+      <nav id="admin-nav" class="sidebar-nav">
+        <button data-page="dashboard" class="is-active"><span>▦</span>数据看板</button>
+        <button data-page="appointments" data-role="operator"><span>◷</span>预约管理<i id="pending-appt"></i></button>
+        <button data-page="pricing" data-role="operator"><span>◈</span>门店与价格</button>
+        <button data-page="members" data-role="operator"><span>☆</span>会员管理<i id="pending-member"></i></button>
+        <button data-page="users" data-role="operator"><span>◎</span>用户管理</button>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="/" target="_blank">查看官网 ↗</a>
+        <a href="/auth/logout?next=/admin">退出登录</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="menu-toggle" class="menu-toggle" aria-label="打开菜单">☰</button>
+        <div><p id="page-kicker">OVERVIEW</p><h1 id="page-title">数据看板</h1></div>
+        <div class="admin-profile"><span id="admin-avatar">A</span><div><strong id="admin-name">管理员</strong><small id="admin-role">super_admin</small></div></div>
+      </header>
+      <div id="toast" class="toast" hidden></div>
+      <section id="page-content" class="content"><div class="loading"><i></i><span>正在读取数据…</span></div></section>
+    </main>
+  </div>
+
+  <div id="confirm-modal" class="modal" hidden>
+    <div class="modal-card"><h3 id="confirm-title">确认操作</h3><p id="confirm-message"></p><div><button data-confirm="cancel" class="button button-ghost">取消</button><button data-confirm="ok" class="button button-danger">确认</button></div></div>
+  </div>
+  <script src="/admin/admin.js?v=1.0.0" defer></script>
+</body>
+</html>

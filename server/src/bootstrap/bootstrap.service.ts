@@ -328,9 +328,7 @@ export class BootstrapService implements OnApplicationBootstrap {
         await this.users.updateProfile(admin.id, {
           username: this.ADMIN_USERNAME,
         });
-        this.logger.log(
-          `已将旧管理员迁移为 ${this.ADMIN_USERNAME}（密码 ${this.ADMIN_PASSWORD}）`,
-        );
+        this.logger.log(`已将旧管理员迁移为 ${this.ADMIN_USERNAME}`);
       }
     }
     if (!admin) {
@@ -342,9 +340,7 @@ export class BootstrapService implements OnApplicationBootstrap {
         adminRole: 'super_admin',
         nickname: '管理员',
       });
-      this.logger.log(
-        `已创建开发管理员账号：${this.ADMIN_USERNAME} / ${this.ADMIN_PASSWORD}（admin）`,
-      );
+      this.logger.log(`已创建管理员账号：${this.ADMIN_USERNAME}`);
     } else if (admin.role !== 'admin') {
       await this.users.setRole(admin.id, 'admin');
       this.logger.log(`已将 ${this.ADMIN_USERNAME} 角色更新为 admin`);
