@@ -1,4 +1,4 @@
-# 拼豆预约前端：Vue3 落地页（构建）+ 静态服务 server.mjs（/api/* 反向代理到后端）
+# IDOL BEADS 统一响应式官网 + 静态服务 server.mjs（/api/* 反向代理到后端）
 
 # ---- Vue 构建阶段 ----
 # 用 node:22-slim（Debian）规避 Apple Silicon 上 alpine 的 npm “Exit handler never called” 问题
@@ -7,7 +7,7 @@ WORKDIR /app
 COPY web/package*.json ./web/
 RUN cd web && npm install --no-audit --no-fund
 COPY web ./web
-# 旧的应用页面（/app、/action、/resources）需保留，随构建一起进入 public/
+# 复制管理后台等静态资源，官网由 Vue 构建输出覆盖到 public/
 COPY public ./public
 RUN cd web && npm run build
 

@@ -1,23 +1,30 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { state, t, addMinutes, loadStore, fetchAvailability, createAppointment } from '../store.js'
+
+defineProps({
+  standalone: { type: Boolean, default: false }
+})
 
 const dates = ref([])
 const timeSlots = ref([])
-const selected = reactive({ date: '', startTime: '', duration: 1, people: 1, isAllDay: false })
+const selected = reactive({ date: '', startTime: '', duration: 1, people: 1, bookingType: 'hourly' })
 const form = reactive({ name: '', phone: '', email: '', notes: '' })
 const submitting = ref(false)
 const success = ref(false)
+const bookingResult = ref(null)
 const errorMsg = ref('')
 
-const durationOptions = [
-  { value: 1, minutes: 60 },
-  { value: 2, minutes: 120 },
-  { value: 3, minutes: 180 }
-]
+const fourHourPackage = computed(() =>
+  state.store?.packages?.find((item) => Number(item.hours) === 4 && item.enabled !== false)
+)
+const durationOptions = computed(() => [
+  { key: 'hourly-1', bookingType: 'hourly', hours: 1, label: t('opt_one_hour') },
+  { key: 'package-4', bookingType: 'package', hours: 4, label: t('opt_four_hours') },
+  { key: 'all-day', bookingType: 'all_day', hours: null, label: t('opt_daypass') }
+])
 const peopleOptions = [1, 2, 3, 4]
 const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-const validDays = [3, 4, 5, 6, 0]
 
 function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -30,45 +37,50 @@ function buildDates() {
   const tmrStr = toDateStr(tomorrow)
   const list = []
   let i = 0
-  while (list.length < 7 && i <= 30) {
+  while (list.length < 7 && i <= 7) {
     const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i)
-    if (validDays.includes(d.getDay())) {
-      const dateStr = toDateStr(d)
-      let label = t(dayKeys[d.getDay()])
-      if (dateStr === todayStr) label = t('today')
-      else if (dateStr === tmrStr) label = t('tomorrow')
-      list.push({ date: dateStr, num: d.getDate(), label })
-    }
+    const dateStr = toDateStr(d)
+    let label = t(dayKeys[d.getDay()])
+    if (dateStr === todayStr) label = t('today')
+    else if (dateStr === tmrStr) label = t('tomorrow')
+    list.push({ date: dateStr, num: d.getDate(), label })
     i++
   }
   dates.value = list
   if (list.length && !selected.date) selectDate(list[0].date)
 }
 
-function buildTimeSlots(dateStr) {
-  const [y, m, day] = dateStr.split('-').map(Number)
-  const dow = new Date(y, m - 1, day).getDay()
-  const endHour = dow === 5 || dow === 6 || dow === 0 ? 20 : 18
+function buildTimeSlots() {
+  if (selected.bookingType === 'all_day') {
+    timeSlots.value = []
+    selected.startTime = ''
+    return
+  }
+  const [open = '10:00', close = '21:00'] = (state.store?.businessHours || '10:00-21:00').split('-')
+  const toMinutes = (value) => {
+    const [h, m] = value.split(':').map(Number)
+    return h * 60 + m
+  }
+  const startMin = toMinutes(open)
+  const lastStartMin = toMinutes(close) - selected.duration * 60
   const slots = []
-  for (let h = 12; h < endHour; h++) {
-    for (const mm of ['00', '30']) slots.push(`${h}:${mm}`)
+  for (let minutes = startMin; minutes <= lastStartMin; minutes += 30) {
+    slots.push(`${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`)
   }
   timeSlots.value = slots
+  if (!slots.includes(selected.startTime)) selected.startTime = ''
 }
 
 function selectDate(dateStr) {
   selected.date = dateStr
   selected.startTime = ''
-  buildTimeSlots(dateStr)
+  buildTimeSlots()
 }
 
-function selectDuration(val) {
-  if (val === 'all-day') {
-    selected.isAllDay = true
-  } else {
-    selected.isAllDay = false
-    selected.duration = Number(val)
-  }
+function selectDuration(option) {
+  selected.bookingType = option.bookingType
+  selected.duration = option.hours || 1
+  buildTimeSlots()
 }
 
 async function submit() {
@@ -77,7 +89,7 @@ async function submit() {
     alert(state.lang === 'zh' ? '请填写必填个人信息' : 'Please fill in required info')
     return
   }
-  if (!selected.isAllDay && !selected.startTime) {
+  if (selected.bookingType !== 'all_day' && !selected.startTime) {
     alert(state.lang === 'zh' ? '请选择到店时间' : 'Please select arrival time')
     return
   }
@@ -86,14 +98,18 @@ async function submit() {
   try {
     if (!state.store) await loadStore()
     const store = state.store
-    const bookingType = selected.isAllDay ? 'all_day' : 'hourly'
-    const durationHours = selected.isAllDay ? null : selected.duration
+    const bookingType = selected.bookingType
+    const durationHours = bookingType === 'all_day' ? null : selected.duration
+    const selectedPackage = bookingType === 'package' ? fourHourPackage.value : null
+    if (bookingType === 'package' && !selectedPackage) {
+      throw new Error(state.lang === 'zh' ? '4 小时套餐暂不可用，请稍后再试' : 'The 4-hour package is temporarily unavailable.')
+    }
 
     const avail = await fetchAvailability(selected.date)
     const tables = store?.tables || []
     const hours = (store?.businessHours || '10:00-21:00').split('-')
-    const startTime = selected.isAllDay ? hours[0] : selected.startTime
-    const endTime = selected.isAllDay ? hours[1] : addMinutes(selected.startTime, durationHours * 60)
+    const startTime = bookingType === 'all_day' ? hours[0] : selected.startTime
+    const endTime = bookingType === 'all_day' ? hours[1] : addMinutes(selected.startTime, durationHours * 60)
 
     const table = tables.find((tb) => {
       if ((tb.capacity || 0) < selected.people) return false
@@ -119,15 +135,15 @@ async function submit() {
     if (bookingType === 'hourly') {
       dto.startTime = selected.startTime
       dto.durationHours = durationHours
+    } else if (bookingType === 'package') {
+      dto.startTime = selected.startTime
+      dto.packageId = selectedPackage.id
     }
 
     const res = await createAppointment(dto)
-    if (res.status === 401) {
-      window.location.href = '/login?next=' + encodeURIComponent('/#booking')
-      return
-    }
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || t('error_desc'))
+    bookingResult.value = data
     success.value = true
   } catch (err) {
     errorMsg.value = err.message || t('error_desc')
@@ -136,11 +152,14 @@ async function submit() {
   }
 }
 
-onMounted(buildDates)
+onMounted(async () => {
+  if (!state.store) await loadStore()
+  buildDates()
+})
 </script>
 
 <template>
-  <section id="booking" class="booking">
+  <section id="booking" class="booking" :class="{ 'booking-standalone': standalone }">
     <div class="container">
       <h2 class="section-title">
         <span>{{ t('booking_title') }}</span>
@@ -149,7 +168,7 @@ onMounted(buildDates)
       <div v-if="!success" class="booking-app">
         <div class="booking-header">
           <div class="studio-mini-card">
-            <img src="/photos/logo.jpg" alt="Studio" class="studio-thumb">
+            <img src="/photos/idol-logo.png" alt="Studio" class="studio-thumb">
             <div class="studio-info">
               <h3>{{ state.store?.name || 'IDOL BEADS' }}</h3>
               <p>{{ t('studio_location') }}</p>
@@ -174,34 +193,30 @@ onMounted(buildDates)
             </div>
           </div>
 
-          <div class="section-label"><span class="icon">⏰</span> <span>{{ t('label_time_select') }}</span></div>
-          <div class="grid-selector time-grid">
-            <button
-              v-for="s in timeSlots"
-              :key="s"
-              type="button"
-              class="grid-btn"
-              :class="{ active: selected.startTime === s }"
-              @click="selected.startTime = s"
-            >{{ s }}</button>
-          </div>
+          <template v-if="selected.bookingType !== 'all_day'">
+            <div class="section-label"><span class="icon">⏰</span> <span>{{ t('label_time_select') }}</span></div>
+            <div class="grid-selector time-grid">
+              <button
+                v-for="s in timeSlots"
+                :key="s"
+                type="button"
+                class="grid-btn"
+                :class="{ active: selected.startTime === s }"
+                @click="selected.startTime = s"
+              >{{ s }}</button>
+            </div>
+          </template>
 
           <div class="section-label"><span class="icon">⌛</span> <span>{{ t('label_duration_select') }}</span></div>
           <div class="grid-selector duration-grid">
             <button
               v-for="d in durationOptions"
-              :key="d.value"
+              :key="d.key"
               type="button"
               class="grid-btn"
-              :class="{ active: !selected.isAllDay && selected.duration === d.value }"
-              @click="selectDuration(d.value)"
-            >{{ d.minutes }} <span>{{ t('unit_min') }}</span></button>
-            <button
-              type="button"
-              class="grid-btn"
-              :class="{ active: selected.isAllDay }"
-              @click="selectDuration('all-day')"
-            >{{ t('opt_daypass') }}</button>
+              :class="{ active: selected.bookingType === d.bookingType }"
+              @click="selectDuration(d)"
+            >{{ d.label }}</button>
           </div>
 
           <div class="section-label"><span class="icon">👥</span> <span>{{ t('label_people_select') }}</span></div>
@@ -237,6 +252,14 @@ onMounted(buildDates)
       <div v-if="success" class="success-message">
         <h3>{{ t('success_title') }}</h3>
         <p>{{ t('success_desc') }}</p>
+        <div v-if="bookingResult?.code" class="booking-code">
+          <span>预约码 · Booking Code</span>
+          <strong>{{ bookingResult.code }}</strong>
+        </div>
+        <div class="success-actions">
+          <a class="btn btn-primary" href="/account">查看我的预约</a>
+          <a class="btn btn-secondary" href="/">返回首页</a>
+        </div>
       </div>
       <div v-if="errorMsg" class="error-message">
         <h3>{{ t('error_title') }}</h3>

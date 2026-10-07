@@ -19,7 +19,7 @@ import { state, t } from '../store.js'
         <span>{{ t('hero_slogan') }}</span>
       </div>
       <div class="cta-buttons">
-        <a href="#booking" class="btn btn-primary">
+        <a href="/booking" class="btn btn-primary">
           <span>{{ t('cta_booking') }}</span>
           <img src="/photos/btn-booking.png" alt="icon" class="btn-icon">
         </a>

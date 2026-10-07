@@ -34,7 +34,9 @@ export class SmtpEmailService extends EmailService {
   constructor(private readonly config: ConfigService) {
     super();
     const host = config.get<string>('SMTP_HOST', '');
-    const port = config.get<number>('SMTP_PORT', 465);
+    // 环境变量始终以字符串进入进程，必须显式转成数字，否则 "465" === 465
+    // 为 false，会错误地关闭 SSL 并导致服务端直接断开连接。
+    const port = Number(config.get<string | number>('SMTP_PORT', 465));
     const user = config.get<string>('SMTP_USER', '');
     const pass = config.get<string>('SMTP_PASS', '');
     this.from = config.get<string>(
@@ -46,6 +48,9 @@ export class SmtpEmailService extends EmailService {
       port,
       secure: port === 465,
       auth: user ? { user, pass } : undefined,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 30000,
     });
   }
 

@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Store } from './store.entity';
 
-/** 门店时长套餐（如 5 小时 / 6 小时）：按人计费，预约时选择 */
+/** 门店时长套餐（如 4 小时）：按人计费，预约时选择 */
 @Entity('store_packages')
 export class StorePackage {
   @PrimaryGeneratedColumn()

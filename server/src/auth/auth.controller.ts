@@ -12,6 +12,7 @@ import {
   LoginDto,
   RefreshDto,
   RegisterDto,
+  SendRegistrationCodeDto,
 } from './auth.dto';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthUser } from './current-user.decorator';
@@ -25,7 +26,17 @@ export class AuthController {
     private readonly users: UsersService,
   ) {}
 
-  /** 注册：用户名 + 密码 + 邮箱绑定 */
+  /** 发送注册邮箱验证码 */
+  @Post('register-code')
+  @Throttle({ auth: { limit: 3, ttl: 60000, blockDuration: 300000 } })
+  sendRegistrationCode(
+    @Req() req: Request,
+    @Body() dto: SendRegistrationCodeDto,
+  ) {
+    return this.auth.sendRegistrationCode(dto, req.ip);
+  }
+
+  /** 注册：用户名 + 密码 + 邮箱验证码；游客邮箱账号会原地升级并保留预约 */
   @Post('register')
   @Throttle({ auth: { limit: 5, ttl: 60000, blockDuration: 300000 } })
   async register(@Req() req: Request, @Body() dto: RegisterDto) {

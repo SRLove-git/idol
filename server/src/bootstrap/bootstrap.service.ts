@@ -253,19 +253,22 @@ export class BootstrapService implements OnApplicationBootstrap {
       }
       this.logger.log('已为 IDOL BEADS 预置 4 个可约时段');
     }
-    const sixHourPackage = detail.packages.find((item) => item.hours === 6);
-    if (!sixHourPackage) {
+    const fourHourPackage =
+      detail.packages.find((item) => item.hours === 4) ??
+      detail.packages.find((item) => item.hours === 6);
+    if (!fourHourPackage) {
       await this.stores.addPackage(store.id, {
-        name: '6-Hour Fun Package',
-        hours: 6,
+        name: '4-Hour Fun Package',
+        hours: 4,
         price: 39.9,
         memberPrice: 32,
         groupPrice: 36,
       });
-      this.logger.log('已为 IDOL BEADS 预置 6 小时畅玩套餐');
+      this.logger.log('已为 IDOL BEADS 预置 4 小时畅玩套餐');
     } else {
-      await this.stores.updatePackage(sixHourPackage.id, {
-        name: '6-Hour Fun Package',
+      await this.stores.updatePackage(fourHourPackage.id, {
+        name: '4-Hour Fun Package',
+        hours: 4,
         price: 39.9,
         memberPrice: 32,
         groupPrice: 36,
@@ -286,7 +289,10 @@ export class BootstrapService implements OnApplicationBootstrap {
         durationDays: 30,
         price: 19.9,
         originalPrice: 19.9,
-        benefits: ['全场消费 8 折专属优惠'],
+        benefits: [
+          '每件作品赠送 1 份 DIY 饰品，不限作品数量',
+          '每日到店可免费领取饮品 1 杯',
+        ],
         badge: '',
         recommended: false,
       },
@@ -295,7 +301,10 @@ export class BootstrapService implements OnApplicationBootstrap {
         durationDays: 365,
         price: 149,
         originalPrice: 149,
-        benefits: ['全场消费 8 折专属优惠'],
+        benefits: [
+          '每件作品赠送 1 份 DIY 饰品，不限作品数量',
+          '每日到店可免费领取饮品 1 杯',
+        ],
         badge: '最划算',
         recommended: true,
       },

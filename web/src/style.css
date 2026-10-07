@@ -911,6 +911,10 @@ footer {
     box-shadow: 0 10px 25px rgba(255,133,161,0.12);
 }
 
+.membership-item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
 .membership-icon {
     width: 72px;
     height: 72px;
@@ -949,6 +953,10 @@ footer {
 
     .membership-items {
         grid-template-columns: 1fr;
+    }
+
+    .membership-item:last-child:nth-child(odd) {
+        grid-column: auto;
     }
 
     .membership-title {
@@ -2135,5 +2143,840 @@ footer.site-footer {
 @media (max-width: 900px) {
     .hero {
         background-attachment: scroll;
+    }
+}
+
+/* ========================================
+   Unified customer website shell
+======================================== */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 133, 161, .14);
+    background: rgba(255, 255, 255, .94);
+    box-shadow: 0 8px 30px rgba(80, 48, 57, .06);
+    backdrop-filter: blur(16px);
+}
+
+.site-header .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    max-width: 1180px;
+}
+
+.brand {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 11px;
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.brand .header-logo {
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    border: 1px solid #ffe3eb;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.brand span {
+    display: grid;
+    line-height: 1.15;
+}
+
+.brand strong {
+    color: var(--primary-color);
+    font-family: 'ZCOOL KuaiLe', cursive;
+    font-size: 21px;
+    white-space: nowrap;
+}
+
+.brand small {
+    margin-top: 4px;
+    color: #a58790;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.site-nav a {
+    padding: 9px 11px;
+    border-radius: 999px;
+    color: #5d5155;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background .2s ease, color .2s ease;
+}
+
+.site-nav a:hover {
+    background: #fff0f4;
+    color: var(--primary-color);
+}
+
+.site-nav .nav-account {
+    padding-inline: 16px;
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.site-nav .nav-account:hover {
+    background: #ff6b8e;
+    color: #fff;
+}
+
+.site-nav select {
+    width: auto;
+    min-width: 64px;
+    margin-left: 6px;
+    padding: 8px 10px;
+    border: 1px solid #ffc6d4;
+    border-radius: 999px;
+    background: #fff;
+    color: #66585d;
+}
+
+.mobile-menu-button {
+    display: none;
+    width: 42px;
+    height: 42px;
+    padding: 10px;
+    border: 0;
+    border-radius: 50%;
+    background: #fff0f4;
+}
+
+.mobile-menu-button i {
+    display: block;
+    width: 100%;
+    height: 2px;
+    margin: 4px 0;
+    border-radius: 2px;
+    background: var(--primary-color);
+}
+
+.page-main {
+    min-height: 65vh;
+}
+
+.page-hero {
+    padding: 72px 0 68px;
+    overflow: hidden;
+    text-align: center;
+    background:
+        radial-gradient(circle at 18% 20%, rgba(255, 204, 51, .2), transparent 22%),
+        radial-gradient(circle at 82% 65%, rgba(255, 133, 161, .2), transparent 25%),
+        linear-gradient(135deg, #fff7fa 0%, #fffdf6 100%);
+}
+
+.page-kicker,
+.auth-heading > span,
+.account-section-head span {
+    color: var(--primary-color);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .16em;
+}
+
+.page-hero h1 {
+    margin: 12px 0 10px;
+    color: #ff6f91;
+    font-size: clamp(38px, 6vw, 62px);
+    line-height: 1.1;
+}
+
+.page-hero p {
+    max-width: 650px;
+    margin: 0 auto;
+    color: #806f75;
+    font-size: 17px;
+}
+
+.booking-standalone {
+    padding-top: 60px;
+}
+
+.booking-standalone > .container > .section-title {
+    display: none;
+}
+
+.booking-code {
+    display: grid;
+    gap: 8px;
+    width: min(100%, 300px);
+    margin: 26px auto 8px;
+    padding: 18px;
+    border: 2px dashed #ffadc0;
+    border-radius: 18px;
+    background: #fff7fa;
+}
+
+.booking-code span {
+    color: #9e7883;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .08em;
+}
+
+.booking-code strong {
+    color: var(--primary-color);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 34px;
+    letter-spacing: .15em;
+}
+
+.success-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Auth */
+.auth-page {
+    display: grid;
+    grid-template-columns: minmax(340px, .9fr) minmax(480px, 1.1fr);
+    min-height: calc(100vh - 73px);
+    background: #fff;
+}
+
+.auth-visual {
+    position: relative;
+    display: flex;
+    min-height: 720px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background:
+        linear-gradient(145deg, rgba(255, 120, 154, .72), rgba(255, 197, 74, .5)),
+        url('/photos/indoor_1.webp') center / cover;
+}
+
+.auth-visual::after {
+    position: absolute;
+    inset: 28px;
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 34px;
+    content: '';
+}
+
+.auth-visual-content {
+    position: relative;
+    z-index: 1;
+    width: min(80%, 520px);
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 2px 16px rgba(100, 43, 58, .2);
+}
+
+.auth-visual-content img {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 22px;
+    border: 6px solid rgba(255, 255, 255, .82);
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.auth-visual-content > span {
+    display: block;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: .28em;
+}
+
+.auth-visual-content h1 {
+    margin: 22px 0;
+    font-size: clamp(42px, 5vw, 70px);
+    line-height: 1.18;
+}
+
+.auth-visual-content p {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .18em;
+}
+
+.auth-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 28px;
+    background:
+        radial-gradient(circle at 90% 10%, rgba(255, 204, 51, .12), transparent 25%),
+        #fff;
+}
+
+.auth-card {
+    width: min(100%, 460px);
+}
+
+.auth-back {
+    color: #8b777d;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.auth-heading {
+    margin: 34px 0 30px;
+}
+
+.auth-heading h1 {
+    margin: 8px 0;
+    color: #514448;
+    font-size: 42px;
+}
+
+.auth-heading p {
+    color: #95858a;
+}
+
+.auth-form {
+    display: grid;
+    gap: 17px;
+}
+
+.auth-form label {
+    display: grid;
+    gap: 8px;
+}
+
+.auth-form label > span {
+    color: #65575c;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.auth-form input {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1px solid #eadfe2;
+    border-radius: 14px;
+    background: #fffafb;
+    color: #463b3f;
+    font: inherit;
+    outline: none;
+    transition: border .2s ease, box-shadow .2s ease;
+}
+
+.auth-form input:focus {
+    border-color: #ff9bb2;
+    box-shadow: 0 0 0 4px rgba(255, 133, 161, .12);
+}
+
+.auth-form small {
+    color: #a08d93;
+}
+
+.auth-code-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 122px;
+    gap: 8px;
+}
+
+.auth-code-row button,
+.auth-submit {
+    border: 0;
+    border-radius: 14px;
+    background: var(--primary-color);
+    color: #fff;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.auth-code-row button:disabled,
+.auth-submit:disabled {
+    cursor: wait;
+    opacity: .55;
+}
+
+.auth-submit {
+    min-height: 54px;
+    margin-top: 5px;
+    font-size: 16px;
+    box-shadow: 0 10px 24px rgba(255, 133, 161, .24);
+}
+
+.form-error {
+    padding: 11px 13px;
+    border-radius: 12px;
+    background: #fff0f0;
+    color: #c63f4f;
+    font-size: 13px;
+}
+
+.auth-switch,
+.auth-booking-note {
+    margin-top: 24px;
+    color: #8a797f;
+    text-align: center;
+}
+
+.auth-switch a,
+.auth-booking-note a {
+    color: var(--primary-color);
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.auth-booking-note {
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+/* Account */
+.account-content {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+    max-width: 1120px;
+    padding-top: 55px;
+    padding-bottom: 80px;
+}
+
+.profile-card,
+.appointments-card,
+.account-loading {
+    border: 1px solid #f1e4e8;
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 14px 40px rgba(94, 59, 69, .07);
+}
+
+.profile-card {
+    position: sticky;
+    top: 100px;
+    padding: 30px 24px;
+    text-align: center;
+}
+
+.profile-avatar {
+    display: grid;
+    width: 82px;
+    height: 82px;
+    margin: 0 auto 18px;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff85a1, #ffcc66);
+    color: #fff;
+    font-size: 32px;
+    font-weight: 900;
+}
+
+.profile-card h2 {
+    color: #53464a;
+    font-size: 24px;
+}
+
+.profile-card > p,
+.profile-card > a {
+    display: block;
+    margin-top: 4px;
+    color: #948288;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.profile-actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 26px;
+}
+
+.profile-actions .btn {
+    width: 100%;
+    margin: 0;
+    padding: 12px;
+    font-size: 14px;
+}
+
+.profile-actions button {
+    min-height: 44px;
+    border: 0;
+    border-radius: 999px;
+    background: #f7f1f3;
+    color: #826d74;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.appointments-card {
+    padding: 28px;
+}
+
+.account-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #f1e7ea;
+}
+
+.account-section-head h2 {
+    margin-top: 4px;
+    color: #55494d;
+    font-size: 28px;
+}
+
+.account-section-head > strong {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff0f4;
+    color: var(--primary-color);
+}
+
+.appointment-list {
+    display: grid;
+}
+
+.appointment-item {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 18px;
+    padding: 22px 0;
+    border-bottom: 1px solid #f3eaed;
+}
+
+.appointment-item:last-child {
+    border-bottom: 0;
+}
+
+.appointment-date {
+    display: grid;
+    align-content: center;
+    min-height: 72px;
+    border-radius: 17px;
+    background: #fff4f7;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.appointment-date strong {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.appointment-date span {
+    margin-top: 5px;
+    font-size: 10px;
+}
+
+.appointment-main > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.appointment-main h3 {
+    color: #574b4f;
+    font-size: 19px;
+}
+
+.appointment-main p {
+    margin: 8px 0 4px;
+    color: #786a6f;
+}
+
+.appointment-main small {
+    color: #a18f95;
+}
+
+.appointment-status {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #fff2d8;
+    color: #9e6d00;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.appointment-status.status-booked,
+.appointment-status.status-checked_in {
+    background: #e9f5ff;
+    color: #2877a8;
+}
+
+.appointment-status.status-completed {
+    background: #eaf8ef;
+    color: #328354;
+}
+
+.appointment-status.status-cancelled {
+    background: #f3f0f1;
+    color: #897b80;
+}
+
+.empty-appointments {
+    padding: 70px 20px;
+    color: #88767c;
+    text-align: center;
+}
+
+.empty-appointments > span {
+    color: var(--primary-color);
+    font-size: 36px;
+}
+
+.empty-appointments h3 {
+    margin: 8px 0;
+    color: #594b50;
+    font-size: 24px;
+}
+
+.account-loading {
+    grid-column: 1 / -1;
+    padding: 80px;
+    color: #8c7a80;
+    text-align: center;
+}
+
+.account-loading.is-error {
+    color: #c63f4f;
+}
+
+.empty-page {
+    padding-top: 120px;
+    padding-bottom: 120px;
+    text-align: center;
+}
+
+.empty-page > span {
+    color: #ffc1cf;
+    font-size: 70px;
+    font-weight: 900;
+}
+
+.empty-page h1 {
+    color: var(--primary-color);
+    font-size: 44px;
+}
+
+.empty-page p {
+    color: #88787d;
+}
+
+@media (max-width: 880px) {
+    .mobile-menu-button {
+        display: block;
+    }
+
+    .site-nav {
+        position: absolute;
+        top: calc(100% + 1px);
+        right: 14px;
+        left: 14px;
+        display: none;
+        align-items: stretch;
+        padding: 14px;
+        border: 1px solid #f3dfe5;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 18px 40px rgba(76, 48, 56, .14);
+    }
+
+    .site-nav.is-open {
+        display: grid;
+    }
+
+    .site-nav a {
+        padding: 11px 13px;
+        text-align: center;
+    }
+
+    .site-nav select {
+        width: 100%;
+        margin: 4px 0 0;
+    }
+
+    .auth-page {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-visual {
+        min-height: 300px;
+    }
+
+    .auth-visual::after {
+        inset: 18px;
+    }
+
+    .auth-visual-content img {
+        width: 72px;
+        height: 72px;
+        margin-bottom: 10px;
+    }
+
+    .auth-visual-content h1 {
+        margin: 10px 0;
+        font-size: 38px;
+    }
+
+    .account-content {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-card {
+        position: static;
+    }
+}
+
+@media (max-width: 600px) {
+    .site-header {
+        padding: 7px 0;
+    }
+
+    .brand .header-logo {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+    }
+
+    .brand strong {
+        font-size: 18px;
+    }
+
+    .brand small {
+        font-size: 8px;
+    }
+
+    .hero {
+        padding: 76px 0 68px;
+    }
+
+    .hero h1 {
+        gap: 8px;
+        font-size: clamp(36px, 12vw, 50px);
+    }
+
+    .hero-deco-img {
+        height: 44px;
+    }
+
+    .hero p {
+        gap: 7px;
+        font-size: 22px;
+    }
+
+    .desc-deco-img {
+        height: 28px;
+    }
+
+    .hero-slogan-line {
+        font-size: 16px;
+    }
+
+    .page-hero {
+        padding: 54px 0 48px;
+    }
+
+    .page-hero p {
+        font-size: 15px;
+    }
+
+    .booking-standalone {
+        padding-top: 36px;
+    }
+
+    .booking-app {
+        border: 1px solid #ffe7ed;
+        border-radius: 22px;
+    }
+
+    .auth-visual {
+        min-height: 230px;
+    }
+
+    .auth-visual-content > span,
+    .auth-visual-content p {
+        display: none;
+    }
+
+    .auth-visual-content h1 {
+        font-size: 31px;
+    }
+
+    .auth-panel {
+        padding: 38px 20px 55px;
+    }
+
+    .auth-heading {
+        margin: 26px 0 24px;
+    }
+
+    .auth-heading h1 {
+        font-size: 34px;
+    }
+
+    .auth-code-row {
+        grid-template-columns: minmax(0, 1fr) 105px;
+    }
+
+    .auth-code-row button {
+        font-size: 12px;
+    }
+
+    .account-content {
+        padding-top: 32px;
+        padding-bottom: 55px;
+    }
+
+    .appointments-card {
+        padding: 20px 16px;
+    }
+
+    .appointment-item {
+        grid-template-columns: 58px minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .appointment-date {
+        min-height: 62px;
+    }
+
+    .appointment-date strong {
+        font-size: 23px;
+    }
+
+    .appointment-main > div {
+        align-items: flex-start;
+    }
+
+    .appointment-main h3 {
+        font-size: 17px;
+    }
+
+    .appointment-main p {
+        font-size: 13px;
+    }
+
+    .success-actions {
+        display: grid;
+    }
+
+    .success-actions .btn {
+        margin: 5px 0;
     }
 }

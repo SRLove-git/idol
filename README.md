@@ -1,4 +1,4 @@
-# 拼豆系统 · 预约订座（拼豆预约）前端 + DIY 后端对接
+# IDOL BEADS 官网、预约与会员系统
 
 前端复刻自 `http://47.94.97.161:1333/` 的「拼豆预约 / 预约订座」界面，现已对接真实的 DIY NestJS 后端（`/Users/srlove/Documents/Code/diy/server`）。
 
@@ -17,7 +17,7 @@ CAPTCHA_PROVIDER= REVIEW_DEMO_ENABLED=true npm run start:dev
 npm run dev
 ```
 
-打开 <http://127.0.0.1:4173/>（`/` 跳 PC 首页，H5 在 `/app/h5/home`）。
+打开 <http://127.0.0.1:4173/>。桌面端和移动端共用同一套响应式官网，不再维护单独的 H5 页面。
 
 管理后台在 <http://127.0.0.1:4173/admin>，生产环境需在 `.env` 配置
 `ADMIN_INITIAL_PASSWORD`，首次启动会创建 `ADMIN_USERNAME`（默认 `admin`）超级管理员。
@@ -35,7 +35,7 @@ npm run dev
 | 核销（预约码） | `POST /api/appointments/checkin` |
 | 登录 / 注册 | `POST /api/auth/login` / `POST /api/auth/register` |
 
-`server.mjs` 负责：静态页面服务、登录态 Cookie、`/api/*` 反向代理到后端、以及把后端门店/桌位/预约数据渲染进页面的 `<!--@seats-->` / `<!--@reservations-->` / `<!--@tables-->` / `<!--@slots-->` 占位。
+`server.mjs` 负责：静态页面与 SPA 路由、登录态 Cookie、`/api/*` 反向代理，以及旧 H5/PC 地址到新页面的永久跳转。
 
 ## 说明 / 缺口
 
@@ -45,14 +45,11 @@ npm run dev
 
 ## 包含页面
 
-- `/app/pc/home` PC 首页（预约订座入口 + 座位状态）
-- `/app/pc/reservation` PC 预约订座（新建预约、座位平面图、预约记录、预约核销流程）
-- `/action/reservation` 创建预约表单
-- `/action/seat` 修改座位表单
-- `/action/water-order` 生成买水订单表单
+- `/` 统一官网首页
+- `/booking` 免登录预约（直接填写邮箱，已有账号自动绑定）
+- `/login` 登录
+- `/register` 邮箱验证码注册
+- `/account` 会员资料与我的预约
+- `/admin` 管理后台
 
-## 说明
-
-- 页面结构与样式来自原站 `app.css` / `app.js`，未做改动，保证视觉一致。
-- 原站后端为 PHP，本克隆用内存态模拟了 `POST /api/create/reservation`、`/api/patch/seat`、`/api/create/water-order`，创建预约/修改座位后返回列表即可看到最新记录（刷新后重置）。
-- 未在本次范围内的模块（智能拼豆、社交作品、交易市场、拍卖专区、我的）会显示占位页；H5 端已移除。
+旧的 `/app/h5/*`、`/app/pc/*` 和 `/action/*` 地址不再包含独立页面，会永久跳转到对应的新页面。

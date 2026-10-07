@@ -5,13 +5,15 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
-import { randomUUID } from 'crypto';
+import { createHash, createHmac, randomInt, randomUUID } from 'crypto';
 import type Redis from 'ioredis';
 import { CaptchaService } from '../common/captcha.service';
+import { EmailService } from '../email/email.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
@@ -33,6 +35,9 @@ const PASSWORD_LOCK_TTL = 600; // 连续失败后锁定 10 分钟
 const REGISTER_IP_MAX_DEFAULT = 5;
 /** IP 注册计数窗口（小时，REGISTER_IP_WINDOW_H 可覆盖） */
 const REGISTER_IP_WINDOW_H_DEFAULT = 24;
+const EMAIL_CODE_TTL_DEFAULT = 10 * 60;
+const EMAIL_CODE_COOLDOWN_DEFAULT = 60;
+const EMAIL_CODE_MAX_ATTEMPTS = 5;
 
 @Injectable()
 export class AuthService {
@@ -42,12 +47,107 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly captcha: CaptchaService,
+    private readonly email: EmailService,
   ) {}
 
-  /** 注册：用户名 + 密码 + 邮箱绑定（建号并自动登录） */
+  /** 发送 6 位注册验证码；同一邮箱默认 60 秒内不可重复发送。 */
+  async sendRegistrationCode(
+    dto: {
+      email: string;
+      captchaToken?: string;
+      captchaId?: string;
+      captchaText?: string;
+    },
+    ip?: string,
+  ) {
+    const email = dto.email.trim().toLowerCase();
+    if (
+      !(await this.captcha.verify(
+        dto.captchaToken,
+        ip,
+        dto.captchaId,
+        dto.captchaText,
+      ))
+    ) {
+      throw new BadRequestException('请完成人机验证');
+    }
+
+    const existing = await this.users.findByEmail(email);
+    // 游客预约创建的无密码账号允许继续注册；正式账号则拒绝重复注册。
+    if (existing && (existing.passwordHash || existing.username)) {
+      throw new ConflictException('该邮箱已注册');
+    }
+
+    const ttl = Math.max(
+      300,
+      Math.min(
+        1800,
+        this.config.get<number>('EMAIL_CODE_TTL', EMAIL_CODE_TTL_DEFAULT),
+      ),
+    );
+    const cooldown = Math.max(
+      30,
+      Math.min(
+        300,
+        this.config.get<number>(
+          'EMAIL_CODE_COOLDOWN',
+          EMAIL_CODE_COOLDOWN_DEFAULT,
+        ),
+      ),
+    );
+    const key = this.registrationCodeKey(email);
+    const cooldownKey = `${key}:cooldown`;
+
+    try {
+      const acquired = await this.redis.set(
+        cooldownKey,
+        '1',
+        'EX',
+        cooldown,
+        'NX',
+      );
+      if (!acquired) {
+        throw new BadRequestException(`验证码发送过于频繁，请 ${cooldown} 秒后再试`);
+      }
+
+      const code = String(randomInt(100000, 1000000));
+      await this.redis.set(
+        key,
+        JSON.stringify({
+          digest: this.registrationCodeDigest(email, code),
+          left: EMAIL_CODE_MAX_ATTEMPTS,
+        }),
+        'EX',
+        ttl,
+      );
+      try {
+        await this.email.send(
+          email,
+          'IDOL BEADS 注册验证码',
+          `您的注册验证码是：${code}\n\n验证码 ${Math.ceil(ttl / 60)} 分钟内有效，请勿转发给他人。若非本人操作，请忽略本邮件。`,
+        );
+      } catch {
+        await this.redis.del(key, cooldownKey).catch(() => undefined);
+        throw new ServiceUnavailableException('验证码发送失败，请稍后再试');
+      }
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ServiceUnavailableException
+      ) {
+        throw error;
+      }
+      throw new ServiceUnavailableException('验证码服务暂不可用，请稍后再试');
+    }
+
+    return { sent: true, expiresIn: ttl, retryAfter: cooldown };
+  }
+
+  /** 注册：邮箱验证码通过后建号并自动登录。 */
   async register(dto: {
     username: string;
     email: string;
+    emailCode: string;
     password: string;
     deviceId?: string;
     captchaToken?: string;
@@ -57,28 +157,21 @@ export class AuthService {
     const username = dto.username.trim();
     const email = dto.email.trim().toLowerCase();
 
-    if (
-      !(await this.captcha.verify(
-        dto.captchaToken,
-        undefined,
-        dto.captchaId,
-        dto.captchaText,
-      ))
-    ) {
-      throw new BadRequestException('请完成人机验证');
-    }
     if (await this.users.findByUsername(username)) {
       throw new ConflictException('用户名已被占用');
     }
-    if (await this.users.findByEmail(email)) {
+    const existing = await this.users.findByEmail(email);
+    if (existing && (existing.passwordHash || existing.username)) {
       throw new ConflictException('该邮箱已注册');
     }
+    await this.verifyRegistrationCode(email, dto.emailCode);
 
     const user = await this.createUser(
       username,
       email,
       dto.password,
       dto.deviceId?.trim() || null,
+      existing,
     );
     const tokens = await this.signTokens(user.id);
     return { userId: user.id, isNewUser: true, ...tokens };
@@ -93,16 +186,29 @@ export class AuthService {
     email: string,
     password: string,
     deviceId: string | null,
+    existingGuest: User | null,
   ): Promise<User> {
     const passwordHash = await hashPassword(password);
+    const persist = () =>
+      existingGuest
+        ? this.users.activateGuestAccount(existingGuest.id, {
+            username,
+            passwordHash,
+            deviceId,
+            nickname:
+              existingGuest.nickname && existingGuest.nickname !== '游客'
+                ? existingGuest.nickname
+                : username,
+          })
+        : this.users.create({
+            username,
+            email,
+            passwordHash,
+            nickname: username,
+            deviceId,
+          });
     if (!deviceId) {
-      return this.users.create({
-        username,
-        email,
-        passwordHash,
-        nickname: username,
-        deviceId: null,
-      });
+      return persist();
     }
 
     const lockKey = `device:register:lock:${deviceId}`;
@@ -115,15 +221,66 @@ export class AuthService {
       if (used >= 3) {
         throw new BadRequestException('同一设备最多注册 3 个账号');
       }
-      return await this.users.create({
-        username,
-        email,
-        passwordHash,
-        nickname: username,
-        deviceId,
-      });
+      return await persist();
     } finally {
       await this.redis.del(lockKey).catch(() => undefined);
+    }
+  }
+
+  private registrationCodeKey(email: string): string {
+    const emailHash = createHash('sha256').update(email).digest('hex');
+    return `register:email-code:${emailHash}`;
+  }
+
+  private registrationCodeDigest(email: string, code: string): string {
+    const secret = this.config.get<string>(
+      'EMAIL_CODE_SECRET',
+      this.config.get<string>('JWT_SECRET', 'dev-email-code-secret'),
+    );
+    return createHmac('sha256', secret)
+      .update(`${email}:${code}`)
+      .digest('hex');
+  }
+
+  /** 原子校验并消费验证码；错误最多尝试 5 次，成功后立即失效。 */
+  private async verifyRegistrationCode(
+    email: string,
+    code: string,
+  ): Promise<void> {
+    const key = this.registrationCodeKey(email);
+    const digest = this.registrationCodeDigest(email, code.trim());
+    try {
+      const result = Number(
+        await this.redis.eval(
+          `
+          local payload = redis.call('GET', KEYS[1])
+          if not payload then return -1 end
+          local data = cjson.decode(payload)
+          if data.digest == ARGV[1] then
+            redis.call('DEL', KEYS[1])
+            return 1
+          end
+          data.left = tonumber(data.left or 1) - 1
+          if data.left <= 0 then
+            redis.call('DEL', KEYS[1])
+          else
+            redis.call('SET', KEYS[1], cjson.encode(data), 'KEEPTTL')
+          end
+          return 0
+          `,
+          1,
+          key,
+          digest,
+        ),
+      );
+      if (result === 1) return;
+      if (result === -1) {
+        throw new BadRequestException('邮箱验证码已过期，请重新获取');
+      }
+      throw new BadRequestException('邮箱验证码不正确');
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new ServiceUnavailableException('验证码服务暂不可用，请稍后再试');
     }
   }
 

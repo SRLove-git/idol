@@ -1,7 +1,7 @@
 <script setup>
 import { t } from '../store.js'
 
-const rules = ['member_rule_1', 'member_rule_2', 'member_rule_3', 'member_rule_4', 'member_rule_5']
+const rules = ['member_rule_1', 'member_rule_2', 'member_rule_3']
 </script>
 
 <template>

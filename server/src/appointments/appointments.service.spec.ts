@@ -66,7 +66,11 @@ function buildService() {
   const activities = { findOneBy: jest.fn() };
   const activitySessionsRepo = { findOneBy: jest.fn(), find: jest.fn() };
   const memberships = { findOneBy: jest.fn() };
-  const users = { findByUsernameOrCreate: jest.fn() };
+  const users = {
+    findByUsernameOrCreate: jest.fn(),
+    findByEmail: jest.fn(),
+    create: jest.fn(),
+  };
   const gateway = { sendAppointment: jest.fn() };
   const redis = {
     set: jest.fn(),
@@ -161,6 +165,45 @@ const baseDto = {
 
 describe('AppointmentsService', () => {
   describe('createStore', () => {
+    it('未登录预约必须填写邮箱', async () => {
+      const m = buildService();
+
+      await expect(m.svc.create(undefined, baseDto)).rejects.toThrow(
+        '未登录预约请填写邮箱',
+      );
+      expect(m.stores.findOneBy).not.toHaveBeenCalled();
+    });
+
+    it('未登录预约使用已有邮箱账号的用户 ID', async () => {
+      const m = buildService();
+      m.users.findByEmail.mockResolvedValue({ id: 42 });
+      m.stores.findOneBy.mockResolvedValue({
+        id: 1,
+        name: '门店A',
+        businessHours: '09:00-21:00',
+        price: 39.9,
+        memberPrice: null,
+        allDayPrice: null,
+      });
+      m.tables.find.mockResolvedValue([{ id: 1, name: 'A1', capacity: 4 }]);
+      m.memberships.findOneBy.mockResolvedValue(null);
+      m.em.findOne.mockResolvedValue(null);
+      m.em.create.mockImplementation(
+        (_cls: unknown, data: Record<string, unknown>) => ({ ...data }),
+      );
+      m.em.save.mockImplementation((x: unknown) => Promise.resolve(x));
+
+      const result = await m.svc.create(undefined, {
+        ...baseDto,
+        guestEmail: ' MEMBER@EXAMPLE.COM ',
+        guestName: '访客',
+      });
+
+      expect(m.users.findByEmail).toHaveBeenCalledWith('member@example.com');
+      expect(result.userId).toBe(42);
+      expect(m.users.create).not.toHaveBeenCalled();
+    });
+
     it('存在未完成的预约时拒绝再次预约（上一单完成/取消前不能再下单）', async () => {
       const m = buildService();
       m.appointments.findOne.mockResolvedValue({ id: 9 });

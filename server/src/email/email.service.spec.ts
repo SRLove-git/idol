@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { createTransport } from 'nodemailer';
 import { SmtpEmailService } from './email.service';
 
 const sendMail = jest.fn();
@@ -10,7 +11,7 @@ jest.mock('nodemailer', () => ({
 describe('SmtpEmailService', () => {
   const config = new ConfigService({
     SMTP_HOST: 'smtp.example.com',
-    SMTP_PORT: 465,
+    SMTP_PORT: '465',
     SMTP_USER: 'user',
     SMTP_PASS: 'pass',
     SMTP_FROM: 'DIY <no-reply@example.com>',
@@ -23,6 +24,10 @@ describe('SmtpEmailService', () => {
   it('调用 transporter.sendMail 并带上发件人与收件人', async () => {
     sendMail.mockResolvedValue({ messageId: 'm1' });
     const svc = new SmtpEmailService(config);
+
+    expect(createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({ port: 465, secure: true }),
+    );
 
     await svc.send('a@example.com', '主题', '正文');
 

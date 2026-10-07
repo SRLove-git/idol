@@ -195,7 +195,7 @@ async function renderPricing() {
   state.stores = stores
   const store = stores[0]
   if (!store) { $('#page-content').innerHTML = '<div class="panel empty">暂无门店</div>'; return }
-  const pkg = (store.packages || []).find((item) => Number(item.hours) === 6)
+  const pkg = (store.packages || []).find((item) => Number(item.hours) === 4)
   $('#page-content').innerHTML = `
     <div class="section-grid">
       <section class="panel"><div class="panel-head"><div><h2>门店信息与基础价格</h2><p>修改后同步影响官网展示与预约结算</p></div></div>
@@ -207,8 +207,8 @@ async function renderPricing() {
           <div class="form-actions field-wide"><button class="button" type="submit">保存门店信息</button></div>
         </form>
       </section>
-      <section class="panel"><div class="panel-head"><div><h2>6 小时套餐</h2><p>时长套餐独立计价</p></div></div>
-        ${pkg ? `<form id="package-form" class="form-grid" data-id="${pkg.id}">${field('套餐名称', 'name', pkg.name)}${field('时长（小时）', 'hours', pkg.hours, 'number', '1')}${field('排序', 'sortOrder', pkg.sortOrder, 'number', '1')}${field('单人价', 'price', pkg.price, 'number', '0.01')}${field('会员价', 'memberPrice', pkg.memberPrice, 'number', '0.01')}${field('多人价', 'groupPrice', pkg.groupPrice, 'number', '0.01')}<div class="form-actions field-wide"><button class="button" type="submit">保存套餐</button></div></form>` : '<div class="empty">未找到 6 小时套餐</div>'}
+      <section class="panel"><div class="panel-head"><div><h2>4 小时套餐</h2><p>时长套餐独立计价</p></div></div>
+        ${pkg ? `<form id="package-form" class="form-grid" data-id="${pkg.id}">${field('套餐名称', 'name', pkg.name)}${field('时长（小时）', 'hours', pkg.hours, 'number', '1')}${field('排序', 'sortOrder', pkg.sortOrder, 'number', '1')}${field('单人价', 'price', pkg.price, 'number', '0.01')}${field('会员价', 'memberPrice', pkg.memberPrice, 'number', '0.01')}${field('多人价', 'groupPrice', pkg.groupPrice, 'number', '0.01')}<div class="form-actions field-wide"><button class="button" type="submit">保存套餐</button></div></form>` : '<div class="empty">未找到 4 小时套餐</div>'}
       </section>
     </div>`
   $('#store-form').addEventListener('submit', saveStore)

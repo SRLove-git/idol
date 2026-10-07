@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 拼豆预约 · 一键部署到远程服务器（服务器上 git clone + docker compose 构建启动）
 # 用法（在你自己的电脑上运行，需能 SSH 到目标服务器）：
-#   ./deploy.sh root@47.84.25.19 diy0812?
+#   ./deploy.sh root@服务器IP 'SSH密码'
 #   DOMAIN=idol-sg.com ACME_EMAIL=a@b.com ./deploy.sh root@host pass
 # 可选：REMOTE_DIR=/data/idol GIT_URL=git@github.com:SRLove-git/idol.git
 set -euo pipefail

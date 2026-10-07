@@ -22,6 +22,11 @@ export class RegisterDto {
   @IsEmail({}, { message: '邮箱格式不正确' })
   email: string;
 
+  /** 发送到注册邮箱的 6 位验证码 */
+  @Transform(trim)
+  @Matches(/^\d{6}$/, { message: '邮箱验证码为 6 位数字' })
+  emailCode: string;
+
   /** 人机验证 token（开启 CAPTCHA_PROVIDER 后必填） */
   @IsOptional()
   @IsString()
@@ -60,6 +65,31 @@ export class RegisterDto {
   @MinLength(6, { message: '密码至少 6 位' })
   @MaxLength(32, { message: '密码最多 32 位' })
   password: string;
+}
+
+/** 获取注册邮箱验证码 */
+export class SendRegistrationCodeDto {
+  @Transform(lowerTrim)
+  @IsEmail({}, { message: '邮箱格式不正确' })
+  email: string;
+
+  /** 人机验证 token（开启 CAPTCHA_PROVIDER 后必填） */
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024, { message: '验证参数过长' })
+  captchaToken?: string;
+
+  /** 图形验证码 ID（CAPTCHA_PROVIDER=image 时与 captchaText 一起必填） */
+  @IsOptional()
+  @IsString()
+  @MaxLength(64, { message: '验证参数过长' })
+  captchaId?: string;
+
+  /** 图形验证码输入（CAPTCHA_PROVIDER=image 时必填） */
+  @IsOptional()
+  @IsString()
+  @MaxLength(8, { message: '验证码格式不正确' })
+  captchaText?: string;
 }
 
 /** 用户名 / 邮箱 + 密码登录 */

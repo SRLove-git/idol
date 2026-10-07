@@ -16,14 +16,16 @@ function buildService() {
   const jwt = {};
   const config = {};
   const captcha = { verify: jest.fn().mockResolvedValue(true) };
+  const email = { send: jest.fn().mockResolvedValue(undefined) };
   const svc = new AuthService(
     redis as never,
     users as never,
     jwt as never,
     config as never,
     captcha as never,
+    email as never,
   );
-  return { svc, users, captcha };
+  return { svc, users, captcha, email };
 }
 
 describe('AuthService.changePassword', () => {
@@ -80,11 +82,13 @@ function buildRegisterService() {
   const redis = {
     set: jest.fn().mockResolvedValue('OK'),
     del: jest.fn().mockResolvedValue(1),
+    eval: jest.fn().mockResolvedValue(1),
   };
   const users = {
     findByUsername: jest.fn().mockResolvedValue(null),
     findByEmail: jest.fn().mockResolvedValue(null),
     countByDeviceId: jest.fn().mockResolvedValue(0),
+    activateGuestAccount: jest.fn(),
     create: jest
       .fn()
       .mockImplementation((data: Record<string, unknown>) =>
@@ -96,22 +100,46 @@ function buildRegisterService() {
     get: jest.fn((_key: string, fallback?: unknown) => fallback),
   };
   const captcha = { verify: jest.fn().mockResolvedValue(true) };
+  const email = { send: jest.fn().mockResolvedValue(undefined) };
   const svc = new AuthService(
     redis as never,
     users as never,
     jwt as never,
     config as never,
     captcha as never,
+    email as never,
   );
-  return { svc, users, redis, captcha };
+  return { svc, users, redis, captcha, email };
 }
 
 describe('AuthService.register（设备账号数限制）', () => {
+  it('发送 6 位邮箱验证码并写入有时效的 Redis 记录', async () => {
+    const m = buildRegisterService();
+
+    const result = await m.svc.sendRegistrationCode({
+      email: 'USER@example.com',
+    });
+
+    expect(result).toEqual({ sent: true, expiresIn: 600, retryAfter: 60 });
+    expect(m.email.send).toHaveBeenCalledWith(
+      'user@example.com',
+      'IDOL BEADS 注册验证码',
+      expect.stringMatching(/\d{6}/),
+    );
+    expect(m.redis.set).toHaveBeenCalledWith(
+      expect.stringMatching(/^register:email-code:[a-f0-9]{64}$/),
+      expect.stringContaining('"digest"'),
+      'EX',
+      600,
+    );
+  });
+
   it('未上报设备标识时正常注册', async () => {
     const m = buildRegisterService();
     const r = await m.svc.register({
       username: 'alice',
       email: 'a@example.com',
+      emailCode: '123456',
       password: 'pass123',
     });
 
@@ -126,6 +154,42 @@ describe('AuthService.register（设备账号数限制）', () => {
       10,
       'NX',
     );
+    expect(m.redis.eval).toHaveBeenCalled();
+  });
+
+  it('游客邮箱账号注册时原地升级，保留原用户 ID', async () => {
+    const m = buildRegisterService();
+    const guest = {
+      id: 88,
+      email: 'guest@example.com',
+      username: null,
+      passwordHash: null,
+      nickname: '预约客人',
+    };
+    m.users.findByEmail.mockResolvedValue(guest);
+    m.users.activateGuestAccount.mockResolvedValue({
+      ...guest,
+      username: 'guest88',
+      passwordHash: 'hash',
+    });
+
+    const result = await m.svc.register({
+      username: 'guest88',
+      email: 'guest@example.com',
+      emailCode: '123456',
+      password: 'pass123',
+    });
+
+    expect(result.userId).toBe(88);
+    expect(m.users.activateGuestAccount).toHaveBeenCalledWith(
+      88,
+      expect.objectContaining({
+        username: 'guest88',
+        nickname: '预约客人',
+        deviceId: null,
+      }),
+    );
+    expect(m.users.create).not.toHaveBeenCalled();
   });
 
   it('同一设备第 3 个账号仍可注册', async () => {
@@ -135,6 +199,7 @@ describe('AuthService.register（设备账号数限制）', () => {
     const r = await m.svc.register({
       username: 'bob',
       email: 'b@example.com',
+      emailCode: '123456',
       password: 'pass123',
       deviceId: 'dev-1',
     });
@@ -153,6 +218,7 @@ describe('AuthService.register（设备账号数限制）', () => {
       m.svc.register({
         username: 'carol',
         email: 'c@example.com',
+        emailCode: '123456',
         password: 'pass123',
         deviceId: 'dev-1',
       }),
@@ -168,6 +234,7 @@ describe('AuthService.register（设备账号数限制）', () => {
       m.svc.register({
         username: 'dave',
         email: 'd@example.com',
+        emailCode: '123456',
         password: 'pass123',
         deviceId: 'dev-1',
       }),

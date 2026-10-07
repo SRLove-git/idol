@@ -2,13 +2,13 @@
 import { computed } from 'vue'
 import { state, fmtPrice } from '../store.js'
 
-const sixHour = computed(() =>
-  state.store?.packages?.find((p) => Number(p.hours) === 6) ?? state.store?.packages?.[0]
+const fourHour = computed(() =>
+  state.store?.packages?.find((p) => Number(p.hours) === 4) ?? state.store?.packages?.[0]
 )
 
 const rows = computed(() => {
   const s = state.store
-  const p = sixHour.value
+  const p = fourHour.value
   return [
     {
       duration: '1 小时 1HR Session',
@@ -18,7 +18,7 @@ const rows = computed(() => {
       star: false
     },
     {
-      duration: '6 小时 6HR Session',
+      duration: '4 小时 4HR Session',
       solo: fmtPrice(p?.price),
       member: fmtPrice(p?.memberPrice),
       group: fmtPrice(p?.groupPrice),
@@ -71,6 +71,7 @@ const rows = computed(() => {
           <div class="pricing-notes">
             <h4>备注 · Note</h4>
             <p><strong>会员 Membership:</strong> $19.90 SGD/月 (month)，$149 SGD/年 (year)。</p>
+            <p><strong>会员福利 Member benefits:</strong> 每件作品可获赠 1 份 DIY 饰品，不限作品数量；每日到店可免费领取饮品 1 杯。</p>
             <p><strong>多人同行 Group rate:</strong> 两人及以上同行，非会员按多人同行价；同行里有会员，该会员按会员价计算。<br><span>2 or more pax. Non-members pay the group rate; members in the group pay the member rate.</span></p>
             <p><strong>周末及节假日 Weekends &amp; public holidays:</strong> 所有价格加收 10% 服务费 (10% service charge applies)。</p>
           </div>

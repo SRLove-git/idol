@@ -247,6 +247,31 @@ export class UsersService {
     return this.users.save(this.users.create(data));
   }
 
+  /**
+   * 将游客邮箱占位账号升级为正式账号。
+   * 原记录 ID 不变，因此游客预约会自动保留在注册后的账号下。
+   */
+  async activateGuestAccount(
+    id: number,
+    data: {
+      username: string;
+      passwordHash: string;
+      nickname: string;
+      deviceId: string | null;
+    },
+  ): Promise<User> {
+    const user = await this.users.findOneBy({ id });
+    if (!user) throw new ConflictException('该邮箱账号状态已变化，请重新注册');
+    if (user.username || user.passwordHash) {
+      throw new ConflictException('该邮箱已注册');
+    }
+    user.username = data.username;
+    user.passwordHash = data.passwordHash;
+    user.nickname = data.nickname;
+    user.deviceId = data.deviceId;
+    return this.users.save(user);
+  }
+
   /** 更新个人资料：昵称 / 用户名 / 头像 / 简介 / 性别 / 生日 / 所在地。
    *  用户名去空格并做唯一校验，空串视为未设置；其他文本字段统一 trim。 */
   async updateProfile(

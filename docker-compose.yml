@@ -71,6 +71,11 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@idol-sg.com}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
+      SMTP_HOST: ${SMTP_HOST:-smtpdm.aliyun.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-IDOL BEADS <no-reply@mail.idol-sg.com>}
       DB_MIGRATIONS_RUN: "true"
       TRUST_PROXY: "false"
       UPLOAD_DIR: /app/uploads

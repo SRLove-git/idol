@@ -283,33 +283,28 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
    * 防超卖策略：同店同桌同时段仅允许 1 条未取消预约，先经 Redis 锁串行化，
    * 再由数据库唯一组合兜底（@Index 四列 + 事务内再查）。
    */
-  /** 游客占位账号：未登录预约挂在该用户下（无密码无法登录，仅作归属与展示）。
-   *  带邮箱时按邮箱建/复用游客账号，同邮箱的预约归并到同一游客；否则退回共享游客账号。 */
+  /** 游客占位账号：未登录预约必须填写邮箱。
+   *  已有账号时直接绑定；否则创建无密码游客账号，后续同邮箱注册会原地升级并保留预约。 */
   private async getOrCreateGuestUser(dto: CreateAppointmentDto) {
     const email = (dto.guestEmail ?? '').trim().toLowerCase();
-    if (email) {
-      const existing = await this.users.findByEmail(email);
-      if (existing) return existing;
-      try {
-        return await this.users.create({
-          email,
-          username: null,
-          nickname: (dto.guestName ?? '').trim() || '游客',
-          avatar: '',
-        });
-      } catch {
-        // 并发下唯一约束兜底：再查一次
-        const again = await this.users.findByEmail(email);
-        if (again) return again;
-        throw new Error('游客账号创建失败');
-      }
+    if (!email) {
+      throw new BadRequestException('未登录预约请填写邮箱');
     }
-    return this.users.findByUsernameOrCreate({
-      username: 'guest',
-      email: 'guest@local',
-      nickname: '游客',
-      avatar: '',
-    });
+    const existing = await this.users.findByEmail(email);
+    if (existing) return existing;
+    try {
+      return await this.users.create({
+        email,
+        username: null,
+        nickname: (dto.guestName ?? '').trim() || '游客',
+        avatar: '',
+      });
+    } catch {
+      // 并发下唯一约束兜底：再查一次
+      const again = await this.users.findByEmail(email);
+      if (again) return again;
+      throw new Error('游客账号创建失败');
+    }
   }
 
   async create(
