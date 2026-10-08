@@ -1,6 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { state } from '../store.js'
+import { state, t } from '../store.js'
 
 const props = defineProps({
   mode: { type: String, required: true }
@@ -11,7 +11,7 @@ const form = reactive({ account: '', username: '', email: '', emailCode: '', pas
 const sending = ref(false)
 const submitting = ref(false)
 const cooldown = ref(0)
-const codeMessage = ref('验证码 10 分钟内有效')
+const codeMessageKey = ref('auth_code_valid')
 const errorMessage = ref('')
 
 function errorText(data, fallback) {
@@ -27,7 +27,7 @@ function nextPath() {
 async function sendCode() {
   errorMessage.value = ''
   if (!form.email || !/^\S+@\S+\.\S+$/.test(form.email)) {
-    errorMessage.value = '请先填写正确的邮箱地址'
+    errorMessage.value = t('auth_invalid_email')
     return
   }
   sending.value = true
@@ -38,15 +38,15 @@ async function sendCode() {
       body: JSON.stringify({ email: form.email.trim() })
     })
     const data = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(errorText(data, '验证码发送失败'))
+    if (!response.ok) throw new Error(state.lang === 'zh' ? errorText(data, t('auth_code_failed')) : t('auth_code_failed'))
     cooldown.value = Number(data.retryAfter) || 60
-    codeMessage.value = '验证码已发送，请检查收件箱和垃圾邮件'
+    codeMessageKey.value = 'auth_code_sent'
     const timer = window.setInterval(() => {
       cooldown.value -= 1
       if (cooldown.value <= 0) window.clearInterval(timer)
     }, 1000)
   } catch (error) {
-    errorMessage.value = error.message || '验证码发送失败'
+    errorMessage.value = error.message || t('auth_code_failed')
   } finally {
     sending.value = false
   }
@@ -71,10 +71,13 @@ async function submit() {
       body: JSON.stringify(payload)
     })
     const data = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(errorText(data, isLogin.value ? '登录失败' : '注册失败'))
+    if (!response.ok) {
+      const fallback = t(isLogin.value ? 'auth_login_failed' : 'auth_register_failed')
+      throw new Error(state.lang === 'zh' ? errorText(data, fallback) : fallback)
+    }
     window.location.href = nextPath()
   } catch (error) {
-    errorMessage.value = error.message || (isLogin.value ? '登录失败' : '注册失败')
+    errorMessage.value = error.message || t(isLogin.value ? 'auth_login_failed' : 'auth_register_failed')
   } finally {
     submitting.value = false
   }
@@ -87,63 +90,63 @@ async function submit() {
       <div class="auth-visual-content">
         <img src="/photos/idol-logo.png" alt="">
         <span>IDOL BEADS</span>
-        <h1>把灵感<br>拼成喜欢的样子</h1>
+        <h1>{{ t('auth_visual_title') }}</h1>
         <p>DIY BEAD WORKSHOP · SINGAPORE</p>
       </div>
     </section>
 
     <section class="auth-panel">
       <div class="auth-card">
-        <a class="auth-back" href="/">← 返回首页</a>
+        <a class="auth-back" href="/">← {{ t('auth_back_home') }}</a>
         <div class="auth-heading">
           <span>{{ isLogin ? 'WELCOME BACK' : 'JOIN IDOL BEADS' }}</span>
-          <h1>{{ isLogin ? '登录账号' : '创建账号' }}</h1>
-          <p>{{ isLogin ? '登录后查看你的预约与会员信息。' : '验证邮箱后即可完成注册。' }}</p>
+          <h1>{{ t(isLogin ? 'auth_login_title' : 'auth_register_title') }}</h1>
+          <p>{{ t(isLogin ? 'auth_login_desc' : 'auth_register_desc') }}</p>
         </div>
 
         <form class="auth-form" @submit.prevent="submit">
           <label v-if="isLogin">
-            <span>用户名或邮箱</span>
-            <input v-model="form.account" autocomplete="username" maxlength="255" placeholder="请输入用户名或邮箱" required>
+            <span>{{ t('auth_account_label') }}</span>
+            <input v-model="form.account" autocomplete="username" maxlength="255" :placeholder="t('auth_account_placeholder')" required>
           </label>
 
           <template v-else>
             <label>
-              <span>用户名</span>
-              <input v-model="form.username" autocomplete="username" minlength="2" maxlength="30" pattern="[A-Za-z0-9_]+" placeholder="2–30 位字母、数字或下划线" required>
+              <span>{{ t('auth_username_label') }}</span>
+              <input v-model="form.username" autocomplete="username" minlength="2" maxlength="30" pattern="[A-Za-z0-9_]+" :placeholder="t('auth_username_placeholder')" required>
             </label>
             <label>
-              <span>邮箱</span>
+              <span>{{ t('auth_email_label') }}</span>
               <input v-model="form.email" type="email" autocomplete="email" maxlength="255" placeholder="you@example.com" required>
             </label>
             <label>
-              <span>邮箱验证码</span>
+              <span>{{ t('auth_code_label') }}</span>
               <div class="auth-code-row">
-                <input v-model="form.emailCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="6 位验证码" required>
+                <input v-model="form.emailCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" :placeholder="t('auth_code_placeholder')" required>
                 <button type="button" :disabled="sending || cooldown > 0" @click="sendCode">
-                  {{ sending ? '发送中…' : cooldown > 0 ? `${cooldown}s` : '获取验证码' }}
+                  {{ sending ? t('auth_sending') : cooldown > 0 ? `${cooldown}s` : t('auth_get_code') }}
                 </button>
               </div>
-              <small>{{ codeMessage }}</small>
+              <small>{{ t(codeMessageKey) }}</small>
             </label>
           </template>
 
           <label>
-            <span>密码</span>
-            <input v-model="form.password" type="password" :autocomplete="isLogin ? 'current-password' : 'new-password'" minlength="6" maxlength="32" placeholder="至少 6 位" required>
+            <span>{{ t('auth_password_label') }}</span>
+            <input v-model="form.password" type="password" :autocomplete="isLogin ? 'current-password' : 'new-password'" minlength="6" maxlength="32" :placeholder="t('auth_password_placeholder')" required>
           </label>
 
           <p v-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
           <button class="auth-submit" type="submit" :disabled="submitting">
-            {{ submitting ? '请稍候…' : isLogin ? '登录' : '注册并登录' }}
+            {{ submitting ? t('auth_wait') : t(isLogin ? 'auth_login_button' : 'auth_register_button') }}
           </button>
         </form>
 
         <p class="auth-switch">
-          {{ isLogin ? '还没有账号？' : '已经有账号？' }}
-          <a :href="isLogin ? '/register' : '/login'">{{ isLogin ? '立即注册' : '去登录' }}</a>
+          {{ t(isLogin ? 'auth_no_account' : 'auth_has_account') }}
+          <a :href="isLogin ? '/register' : '/login'">{{ t(isLogin ? 'auth_register_now' : 'auth_go_login') }}</a>
         </p>
-        <p v-if="state.bookingEnabled" class="auth-booking-note">只想预约？<a href="/booking">无需登录，直接预约</a></p>
+        <p v-if="state.bookingEnabled" class="auth-booking-note">{{ t('auth_booking_question') }} <a href="/booking">{{ t('auth_booking_direct') }}</a></p>
       </div>
     </section>
   </main>

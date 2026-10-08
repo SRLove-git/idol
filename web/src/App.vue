@@ -45,8 +45,8 @@ onMounted(() => loadStore())
     <section class="page-hero page-hero-booking">
       <div class="container">
         <span class="page-kicker">{{ state.bookingEnabled ? 'BOOK YOUR SESSION' : 'OPENING SOON' }}</span>
-        <h1>{{ state.bookingEnabled ? '预约 IDOL BEADS' : t('booking_closed_title') }}</h1>
-        <p>{{ state.bookingEnabled ? '无需登录，填写邮箱即可预约；已有账号会自动关联到你的预约记录。' : t('booking_closed_desc') }}</p>
+        <h1>{{ state.bookingEnabled ? t('booking_page_title') : t('booking_closed_title') }}</h1>
+        <p>{{ state.bookingEnabled ? t('booking_page_desc') : t('booking_closed_desc') }}</p>
       </div>
     </section>
     <BookingSection :standalone="true" />
@@ -60,9 +60,9 @@ onMounted(() => loadStore())
   <main v-else class="page-main">
     <section class="empty-page container">
       <span>404</span>
-      <h1>页面走丢了</h1>
-      <p>这个链接已经不存在，返回首页继续浏览吧。</p>
-      <a class="btn btn-primary" href="/">返回首页</a>
+      <h1>{{ t('not_found_title') }}</h1>
+      <p>{{ t('not_found_desc') }}</p>
+      <a class="btn btn-primary" href="/">{{ t('back_home') }}</a>
     </section>
   </main>
 

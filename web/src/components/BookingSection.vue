@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { defaultSiteMedia, siteMedia, state, t, addMinutes, loadStore, fetchAvailability, createAppointment } from '../store.js'
 
 defineProps({
@@ -11,22 +11,31 @@ const timeSlots = ref([])
 const availability = ref([])
 const availabilityLoading = ref(false)
 const availabilityError = ref('')
-const selectedTableIds = ref([])
 const selected = reactive({ date: '', startTime: '', duration: 1, people: 1, bookingType: 'hourly' })
+const customDurationActive = ref(false)
+const customDuration = ref(2)
+const customPeopleActive = ref(false)
+const customPeople = ref(5)
 const form = reactive({ name: '', phone: '', email: '', notes: '' })
 const submitting = ref(false)
+const confirming = ref(false)
+const validationMsg = ref('')
+const successNotice = ref(false)
+const accountUser = ref(null)
+const membership = ref(null)
 const success = ref(false)
 const bookingResult = ref(null)
 const errorMsg = ref('')
 let availabilityRequestId = 0
 const logo = computed(() => siteMedia('logo', defaultSiteMedia.logo))
+const BOOKING_WINDOW_DAYS = 14
 
-const fourHourPackage = computed(() =>
-  state.store?.packages?.find((item) => Number(item.hours) === 4 && item.enabled !== false)
+const sixHourPackage = computed(() =>
+  state.store?.packages?.find((item) => Number(item.hours) === 6 && item.enabled !== false)
 )
 const durationOptions = computed(() => [
   { key: 'hourly-1', bookingType: 'hourly', hours: 1, label: t('opt_one_hour') },
-  { key: 'package-4', bookingType: 'package', hours: 4, label: t('opt_four_hours') },
+  { key: 'package-6', bookingType: 'package', hours: 6, label: t('opt_six_hours') },
   { key: 'all-day', bookingType: 'all_day', hours: null, label: t('opt_daypass') }
 ])
 const peopleOptions = [1, 2, 3, 4]
@@ -49,38 +58,82 @@ const bookingWindow = computed(() => {
   }
 })
 
-const tableOptions = computed(() => {
-  const window = bookingWindow.value
-  return storeTables.value.map((table) => {
-    const snapshot = availability.value.find((item) => Number(item.id) === Number(table.id))
-    const occupied = !!window && (snapshot?.bookedWindows || []).some(
-      (item) => item.startTime < window.endTime && item.endTime > window.startTime
-    )
-    return {
-      ...table,
-      occupied,
-      selected: selectedTableIds.value.includes(table.id)
-    }
-  })
+const totalTableCapacity = computed(() =>
+  storeTables.value.reduce((total, table) => total + Number(table.capacity || 0), 0)
+)
+const maxDurationHours = computed(() => {
+  const [open = '10:00', close = '21:00'] = (state.store?.businessHours || '10:00-21:00').split('-')
+  const toMinutes = (value) => {
+    const [h, m] = value.split(':').map(Number)
+    return h * 60 + m
+  }
+  return Math.max(1, Math.floor((toMinutes(close) - toMinutes(open)) / 60))
 })
 
-const selectedTables = computed(() =>
-  storeTables.value.filter((table) => selectedTableIds.value.includes(table.id))
-)
-const selectedCapacity = computed(() =>
-  selectedTables.value.reduce((total, table) => total + Number(table.capacity || 0), 0)
-)
-const tableSelectionReady = computed(() =>
-  selectedTableIds.value.length > 0 && selectedCapacity.value >= selected.people
-)
-const tableSelectionSummary = computed(() => {
-  if (!selectedTables.value.length) return ''
-  const names = selectedTables.value.map((table) => table.name).join('、')
-  if (state.lang === 'zh') {
-    return `已选 ${names} · 共 ${selectedCapacity.value} 个座位${tableSelectionReady.value ? '，容量充足' : `，还差 ${selected.people - selectedCapacity.value} 个座位`}`
-  }
-  return `Selected ${names} · ${selectedCapacity.value} seats${tableSelectionReady.value ? ' · enough capacity' : ` · ${selected.people - selectedCapacity.value} more needed`}`
+function tableAvailableForWindow(table, startTime, endTime) {
+  const snapshot = availability.value.find((item) => Number(item.id) === Number(table.id))
+  return !(snapshot?.bookedWindows || []).some(
+    (item) => item.startTime < endTime && item.endTime > startTime
+  )
+}
+
+function timeSlotCapacity(startTime) {
+  if (!startTime || availabilityLoading.value || availabilityError.value) return null
+  const endTime = addMinutes(startTime, selected.duration * 60)
+  return storeTables.value.filter((table) => tableAvailableForWindow(table, startTime, endTime)).length
+}
+
+function timeSlotCanFit(startTime) {
+  if (!startTime || availabilityLoading.value || availabilityError.value) return false
+  const endTime = addMinutes(startTime, selected.duration * 60)
+  const capacity = storeTables.value
+    .filter((table) => tableAvailableForWindow(table, startTime, endTime))
+    .reduce((total, table) => total + Number(table.capacity || 0), 0)
+  return capacity >= selected.people
+}
+
+function timeCapacityLabel(time) {
+  const capacity = timeSlotCapacity(time)
+  if (capacity == null) return '…'
+  if (capacity === 0) return t('time_full')
+  if (capacity === 1) return t('time_capacity_one')
+  return t('time_capacity').replace('{count}', String(capacity))
+}
+const selectedDurationLabel = computed(() => {
+  if (selected.bookingType === 'all_day') return t('opt_daypass')
+  if (selected.bookingType === 'package') return t('opt_six_hours')
+  return t('custom_duration_value').replace('{count}', String(selected.duration))
 })
+const selectedTimeLabel = computed(() => {
+  const window = bookingWindow.value
+  return window ? `${window.startTime} – ${window.endTime}` : ''
+})
+const memberActive = computed(() => membership.value?.status === 'active')
+const membershipLabel = computed(() => {
+  if (!accountUser.value) return ''
+  if (memberActive.value) return state.lang === 'zh' ? `有效会员 · ${membership.value.levelName}` : `Active member · ${membership.value.levelName}`
+  return state.lang === 'zh' ? '已登录 · 普通用户' : 'Signed in · Standard account'
+})
+const normalizedPhone = computed(() => form.phone.trim().replace(/[\s-]/g, ''))
+const formattedPhone = computed(() => {
+  const value = normalizedPhone.value
+  return /^\+65\d{8}$/.test(value) ? `${value.slice(0, 3)} ${value.slice(3, 7)} ${value.slice(7)}` : form.phone.trim()
+})
+
+async function loadAccountMembership() {
+  try {
+    const response = await fetch('/api/auth/me')
+    if (!response.ok) return
+    accountUser.value = await response.json()
+    form.name = accountUser.value.nickname || accountUser.value.username || ''
+    form.email = accountUser.value.email || ''
+    const memberResponse = await fetch('/api/members/me')
+    if (memberResponse.ok) membership.value = await memberResponse.json()
+  } catch {
+    accountUser.value = null
+    membership.value = null
+  }
+}
 
 function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -93,7 +146,7 @@ function buildDates() {
   const tmrStr = toDateStr(tomorrow)
   const list = []
   let i = 0
-  while (list.length < 7 && i <= 7) {
+  while (list.length < BOOKING_WINDOW_DAYS) {
     const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i)
     const dateStr = toDateStr(d)
     let label = t(dayKeys[d.getDay()])
@@ -132,13 +185,13 @@ function buildTimeSlots() {
   if (!slots.includes(selected.startTime)) selected.startTime = ''
 }
 
-function resetTableSelection() {
-  selectedTableIds.value = []
+function resetTimeSelection() {
+  selected.startTime = ''
 }
 
 async function refreshAvailability() {
   const requestId = ++availabilityRequestId
-  resetTableSelection()
+  resetTimeSelection()
   availabilityError.value = ''
   if (!selected.date || !state.bookingEnabled) {
     availability.value = []
@@ -158,11 +211,17 @@ async function refreshAvailability() {
         : 'Could not load seat availability. Please try again.'
     }
   } finally {
-    if (requestId === availabilityRequestId) availabilityLoading.value = false
+    if (requestId === availabilityRequestId) {
+      availabilityLoading.value = false
+      if (selected.startTime && timeSlotCapacity(selected.startTime) === 0) {
+        selected.startTime = ''
+      }
+    }
   }
 }
 
 function selectDate(dateStr) {
+  validationMsg.value = ''
   selected.date = dateStr
   selected.startTime = ''
   buildTimeSlots()
@@ -170,43 +229,111 @@ function selectDate(dateStr) {
 }
 
 function selectTime(time) {
+  if (timeSlotCapacity(time) === 0) return
+  validationMsg.value = ''
   selected.startTime = time
-  resetTableSelection()
 }
 
 function selectDuration(option) {
+  validationMsg.value = ''
+  customDurationActive.value = false
   selected.bookingType = option.bookingType
   selected.duration = option.hours || 1
   buildTimeSlots()
-  resetTableSelection()
+  resetTimeSelection()
+}
+
+function applyCustomDuration(clamp = false) {
+  let hours = Number(customDuration.value)
+  if (clamp) {
+    hours = Math.min(maxDurationHours.value, Math.max(1, Math.round(hours || 1)))
+    customDuration.value = hours
+  }
+  if (!Number.isInteger(hours) || hours < 1 || hours > maxDurationHours.value) return
+  validationMsg.value = ''
+  selected.bookingType = 'hourly'
+  selected.duration = hours
+  buildTimeSlots()
+  resetTimeSelection()
+}
+
+function selectCustomDuration() {
+  customDurationActive.value = true
+  applyCustomDuration(true)
 }
 
 function selectPeople(people) {
+  validationMsg.value = ''
+  customPeopleActive.value = false
   selected.people = people
-  resetTableSelection()
+  resetTimeSelection()
 }
 
-function toggleTable(table) {
-  if (!bookingWindow.value || table.occupied || availabilityLoading.value || availabilityError.value) return
-  if (selectedTableIds.value.includes(table.id)) {
-    selectedTableIds.value = selectedTableIds.value.filter((id) => id !== table.id)
-  } else {
-    selectedTableIds.value = [...selectedTableIds.value, table.id]
+function applyCustomPeople(clamp = false) {
+  let people = Number(customPeople.value)
+  const maximum = Math.max(1, totalTableCapacity.value || 20)
+  if (clamp) {
+    people = Math.min(maximum, Math.max(1, Math.round(people || 1)))
+    customPeople.value = people
   }
+  if (!Number.isInteger(people) || people < 1 || people > maximum) return
+  validationMsg.value = ''
+  selected.people = people
+  resetTimeSelection()
+}
+
+function selectCustomPeople() {
+  customPeopleActive.value = true
+  applyCustomPeople(true)
+}
+
+function windowHasCapacity(window) {
+  if (!window) return false
+  return storeTables.value
+    .filter((table) => tableAvailableForWindow(table, window.startTime, window.endTime))
+    .reduce((total, table) => total + Number(table.capacity || 0), 0) >= selected.people
+}
+
+function validateBooking() {
+  validationMsg.value = ''
+  if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
+    validationMsg.value = t('booking_validation_personal')
+    return false
+  }
+  if (!/^\+65[89]\d{7}$/.test(normalizedPhone.value)) {
+    validationMsg.value = t('booking_validation_phone')
+    return false
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) {
+    validationMsg.value = t('booking_validation_email')
+    return false
+  }
+  if (selected.bookingType !== 'all_day' && !selected.startTime) {
+    validationMsg.value = t('booking_validation_time')
+    return false
+  }
+  const window = bookingWindow.value
+  if (window && !windowHasCapacity(window)) {
+    validationMsg.value = t('booking_validation_availability')
+    return false
+  }
+  return true
+}
+
+function reviewBooking() {
+  errorMsg.value = ''
+  if (!validateBooking()) return
+  confirming.value = true
+}
+
+function closeConfirmation() {
+  if (!submitting.value) confirming.value = false
 }
 
 async function submit() {
   errorMsg.value = ''
-  if (!form.name || !form.phone || !form.email) {
-    alert(state.lang === 'zh' ? '请填写必填个人信息' : 'Please fill in required info')
-    return
-  }
-  if (selected.bookingType !== 'all_day' && !selected.startTime) {
-    alert(state.lang === 'zh' ? '请选择到店时间' : 'Please select arrival time')
-    return
-  }
-  if (!tableSelectionReady.value) {
-    alert(state.lang === 'zh' ? '请选择足够容纳当前人数的桌位' : 'Please select enough seats for your party')
+  if (!validateBooking()) {
+    confirming.value = false
     return
   }
 
@@ -216,9 +343,9 @@ async function submit() {
     const store = state.store
     const bookingType = selected.bookingType
     const durationHours = bookingType === 'all_day' ? null : selected.duration
-    const selectedPackage = bookingType === 'package' ? fourHourPackage.value : null
+    const selectedPackage = bookingType === 'package' ? sixHourPackage.value : null
     if (bookingType === 'package' && !selectedPackage) {
-      throw new Error(state.lang === 'zh' ? '4 小时套餐暂不可用，请稍后再试' : 'The 4-hour package is temporarily unavailable.')
+      throw new Error(state.lang === 'zh' ? '6 小时套餐暂不可用，请稍后再试' : 'The 6-hour package is temporarily unavailable.')
     }
 
     const avail = await fetchAvailability(selected.date)
@@ -227,30 +354,20 @@ async function submit() {
     const startTime = bookingType === 'all_day' ? hours[0] : selected.startTime
     const endTime = bookingType === 'all_day' ? hours[1] : addMinutes(selected.startTime, durationHours * 60)
 
-    const chosenTables = storeTables.value.filter((table) => selectedTableIds.value.includes(table.id))
-    const latestItems = Array.isArray(avail) ? avail : (avail.items || [])
-    const hasConflict = chosenTables.some((table) => {
-      const tableAvailability = latestItems.find((item) => Number(item.id) === Number(table.id))
-      return (tableAvailability?.bookedWindows || []).some(
-        (item) => item.startTime < endTime && item.endTime > startTime
-      )
-    })
-    if (hasConflict) {
-      resetTableSelection()
-      throw new Error(state.lang === 'zh' ? '所选桌位刚刚被预约，请重新选择' : 'A selected seat was just booked. Please choose again.')
+    if (!windowHasCapacity({ startTime, endTime })) {
+      selected.startTime = ''
+      throw new Error(state.lang === 'zh' ? '该时段刚刚约满，请重新选择时间' : 'This time has just filled up. Please choose another time.')
     }
 
     const dto = {
       storeId: 1,
-      tableId: selectedTableIds.value[0],
-      tableIds: [...selectedTableIds.value],
       date: selected.date,
       peopleCount: selected.people,
       bookingType,
       payMethod: 'wechat',
       guestName: form.name.trim(),
-      guestEmail: form.email.trim(),
-      note: [form.notes, `电话 ${form.phone.trim()}`].filter(Boolean).join(' | ')
+      guestEmail: form.email.trim().toLowerCase(),
+      note: [form.notes, `电话 ${formattedPhone.value}`].filter(Boolean).join(' | ')
     }
     if (bookingType === 'hourly') {
       dto.startTime = selected.startTime
@@ -264,8 +381,12 @@ async function submit() {
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || t('error_desc'))
     bookingResult.value = data
+    confirming.value = false
     success.value = true
+    successNotice.value = true
+    window.setTimeout(() => { successNotice.value = false }, 4500)
   } catch (err) {
+    confirming.value = false
     errorMsg.value = err.message || t('error_desc')
   } finally {
     submitting.value = false
@@ -273,9 +394,14 @@ async function submit() {
 }
 
 onMounted(async () => {
-  if (!state.store) await loadStore()
+  await Promise.all([
+    state.store ? Promise.resolve() : loadStore(),
+    loadAccountMembership()
+  ])
   buildDates()
 })
+
+watch(() => state.lang, buildDates)
 </script>
 
 <template>
@@ -319,20 +445,6 @@ onMounted(async () => {
             </div>
           </div>
 
-          <template v-if="selected.bookingType !== 'all_day'">
-            <div class="section-label"><span class="icon">⏰</span> <span>{{ t('label_time_select') }}</span></div>
-            <div class="grid-selector time-grid">
-              <button
-                v-for="s in timeSlots"
-                :key="s"
-                type="button"
-                class="grid-btn"
-                :class="{ active: selected.startTime === s }"
-                @click="selectTime(s)"
-              >{{ s }}</button>
-            </div>
-          </template>
-
           <div class="section-label"><span class="icon">⌛</span> <span>{{ t('label_duration_select') }}</span></div>
           <div class="grid-selector duration-grid">
             <button
@@ -340,9 +452,33 @@ onMounted(async () => {
               :key="d.key"
               type="button"
               class="grid-btn"
-              :class="{ active: selected.bookingType === d.bookingType }"
+              :class="{ active: selected.bookingType === d.bookingType && !(d.bookingType === 'hourly' && customDurationActive) }"
               @click="selectDuration(d)"
             >{{ d.label }}</button>
+            <button
+              type="button"
+              class="grid-btn"
+              :class="{ active: customDurationActive }"
+              @click="selectCustomDuration"
+            >{{ t('opt_custom_duration') }}</button>
+          </div>
+          <div v-if="customDurationActive" class="custom-option-panel">
+            <label for="custom-duration">{{ t('custom_duration_label') }}</label>
+            <div class="custom-option-input">
+              <input
+                id="custom-duration"
+                v-model.number="customDuration"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                :max="maxDurationHours"
+                step="1"
+                @input="applyCustomDuration()"
+                @change="applyCustomDuration(true)"
+              >
+              <span>{{ t('unit_hour') }}</span>
+            </div>
+            <small>{{ t('custom_duration_hint').replace('{max}', String(maxDurationHours)) }}</small>
           </div>
 
           <div class="section-label"><span class="icon">👥</span> <span>{{ t('label_people_select') }}</span></div>
@@ -352,62 +488,121 @@ onMounted(async () => {
               :key="p"
               type="button"
               class="grid-btn"
-              :class="{ active: selected.people === p }"
+              :class="{ active: selected.people === p && !customPeopleActive }"
               @click="selectPeople(p)"
-            >{{ p }} <span>{{ t('unit_person') }}</span></button>
+            >{{ p }} <span>{{ t(p === 1 ? 'unit_person_one' : 'unit_person') }}</span></button>
+            <button
+              type="button"
+              class="grid-btn"
+              :class="{ active: customPeopleActive }"
+              @click="selectCustomPeople"
+            >{{ t('opt_custom_people') }}</button>
+          </div>
+          <div v-if="customPeopleActive" class="custom-option-panel">
+            <label for="custom-people">{{ t('custom_people_label') }}</label>
+            <div class="custom-option-input">
+              <input
+                id="custom-people"
+                v-model.number="customPeople"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                :max="Math.max(1, totalTableCapacity || 20)"
+                step="1"
+                @input="applyCustomPeople()"
+                @change="applyCustomPeople(true)"
+              >
+              <span>{{ t('unit_person') }}</span>
+            </div>
+            <small>{{ t('custom_people_hint').replace('{max}', String(Math.max(1, totalTableCapacity || 20))) }}</small>
           </div>
           <p class="section-note">{{ t('people_note') }}</p>
 
-          <div class="section-label table-select-label"><span class="icon">▦</span> <span>{{ t('label_table_select') }}</span></div>
-          <p class="section-note table-select-hint">{{ t('table_select_hint') }}</p>
-          <div class="seat-legend" aria-hidden="true">
-            <span><i class="is-available"></i>{{ t('table_available') }}</span>
-            <span><i class="is-selected"></i>{{ t('table_selected') }}</span>
-            <span><i class="is-occupied"></i>{{ t('table_occupied') }}</span>
+          <template v-if="selected.bookingType !== 'all_day'">
+            <div class="section-label"><span class="icon">⏰</span> <span>{{ t('label_time_select') }}</span></div>
+            <div v-if="availabilityLoading" class="seat-picker-message">{{ t('table_loading') }}</div>
+            <div v-else-if="availabilityError" class="seat-picker-message is-error">{{ availabilityError }}</div>
+            <div v-else class="grid-selector time-grid">
+              <button
+                v-for="s in timeSlots"
+                :key="s"
+                type="button"
+                class="grid-btn"
+                :class="{ active: selected.startTime === s }"
+                :disabled="!timeSlotCanFit(s)"
+                @click="selectTime(s)"
+              ><strong>{{ s }}</strong><small>{{ timeCapacityLabel(s) }}</small></button>
+            </div>
+          </template>
+          <div v-else class="auto-table-note">
+            <strong>{{ t('booking_table_auto') }}</strong>
+            <small>{{ t('booking_pending_email_tip') }}</small>
           </div>
-          <div v-if="!bookingWindow" class="seat-picker-message">{{ t('table_select_time_first') }}</div>
-          <div v-else-if="availabilityLoading" class="seat-picker-message">{{ t('table_loading') }}</div>
-          <div v-else-if="availabilityError" class="seat-picker-message is-error">{{ availabilityError }}</div>
-          <div v-else-if="!tableOptions.length" class="seat-picker-message">{{ t('table_empty') }}</div>
-          <div v-else class="seat-grid" role="group" :aria-label="t('label_table_select')">
-            <button
-              v-for="table in tableOptions"
-              :key="table.id"
-              type="button"
-              class="seat-tile"
-              :class="{ 'is-selected': table.selected, 'is-occupied': table.occupied }"
-              :disabled="table.occupied"
-              :aria-pressed="table.selected"
-              @click="toggleTable(table)"
-            >
-              <span class="seat-tile-status">{{ table.occupied ? t('table_occupied') : table.selected ? t('table_selected') : t('table_available') }}</span>
-              <strong>{{ table.name }}</strong>
-              <small>{{ table.capacity }} {{ t('unit_person') }}</small>
-            </button>
-          </div>
-          <p
-            v-if="tableSelectionSummary"
-            class="seat-selection-summary"
-            :class="{ 'is-ready': tableSelectionReady }"
-          >{{ tableSelectionSummary }}</p>
         </div>
 
         <div class="booking-body booking-details">
+          <div v-if="accountUser" class="booking-member-notice" :class="{ 'is-active': memberActive }">
+            <span class="booking-member-icon">{{ memberActive ? '★' : '✓' }}</span>
+            <div>
+              <strong>{{ membershipLabel }}</strong>
+              <small>{{ memberActive ? (state.lang === 'zh' ? '本次预约将自动使用会员价，后台会显示会员标记。' : 'Member pricing will be applied and staff will see your member badge.') : (state.lang === 'zh' ? '开通会员后可享会员价。' : 'Activate membership to receive member pricing.') }}</small>
+            </div>
+          </div>
           <div class="section-label personal-info-label"><span class="icon">👤</span> <span>{{ t('label_personal_info') }}</span></div>
           <div class="personal-info-form">
             <div class="form-row">
-              <input v-model="form.name" type="text" :placeholder="t('placeholder_name')" required>
-              <input v-model="form.phone" type="tel" autocomplete="tel" maxlength="30" :placeholder="t('placeholder_phone')" required>
+              <input v-model="form.name" type="text" :placeholder="t('placeholder_name')" required @input="validationMsg = ''">
+              <input v-model="form.phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" :placeholder="t('placeholder_phone')" required @input="validationMsg = ''">
             </div>
-            <input v-model="form.email" type="email" :placeholder="t('placeholder_email')" required>
+            <input v-model="form.email" type="email" :placeholder="t('placeholder_email')" required @input="validationMsg = ''">
             <textarea v-model="form.notes" rows="2" :placeholder="t('placeholder_notes')"></textarea>
           </div>
         </div>
 
         <div class="booking-footer">
-          <button type="button" class="btn btn-submit" :disabled="submitting" @click="submit">
-            {{ submitting ? t('btn_submitting') : t('btn_confirm') }}
+          <p v-if="validationMsg" class="booking-validation-error" role="alert">{{ validationMsg }}</p>
+          <button type="button" class="btn btn-submit" :disabled="submitting" @click="reviewBooking">
+            {{ t('btn_review_booking') }}
           </button>
+        </div>
+      </div>
+
+      <div
+        v-if="confirming"
+        class="booking-confirm-overlay"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="t('booking_review_title')"
+        @click.self="closeConfirmation"
+      >
+        <div class="booking-confirm-card">
+          <button
+            type="button"
+            class="booking-confirm-close"
+            :aria-label="t('booking_review_cancel')"
+            :disabled="submitting"
+            @click="closeConfirmation"
+          >&times;</button>
+          <span class="booking-confirm-kicker">BOOKING REVIEW</span>
+          <h3>{{ t('booking_review_title') }}</h3>
+          <p class="booking-confirm-tip">{{ t('booking_review_tip') }}</p>
+          <dl class="booking-confirm-list">
+            <div><dt>{{ t('booking_review_date') }}</dt><dd>{{ selected.date }}</dd></div>
+            <div><dt>{{ t('booking_review_time') }}</dt><dd>{{ selectedTimeLabel }}</dd></div>
+            <div><dt>{{ t('booking_review_duration') }}</dt><dd>{{ selectedDurationLabel }}</dd></div>
+            <div><dt>{{ t('booking_review_people') }}</dt><dd>{{ selected.people }} {{ t(selected.people === 1 ? 'unit_person_one' : 'unit_person') }}</dd></div>
+            <div class="is-important"><dt>{{ t('booking_review_tables') }}</dt><dd>{{ t('booking_table_auto') }}</dd></div>
+            <div v-if="accountUser"><dt>{{ state.lang === 'zh' ? '会员身份' : 'Membership' }}</dt><dd>{{ membershipLabel }}</dd></div>
+            <div><dt>{{ t('booking_review_contact') }}</dt><dd>{{ form.name.trim() }} · {{ formattedPhone }}<br>{{ form.email.trim().toLowerCase() }}</dd></div>
+          </dl>
+          <div class="booking-confirm-actions">
+            <button type="button" class="btn btn-secondary" :disabled="submitting" @click="closeConfirmation">
+              {{ t('booking_review_cancel') }}
+            </button>
+            <button type="button" class="btn btn-primary" :disabled="submitting" @click="submit">
+              {{ submitting ? t('btn_submitting') : t('booking_review_submit') }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -415,13 +610,17 @@ onMounted(async () => {
         <h3>{{ t('success_title') }}</h3>
         <p>{{ t('success_desc') }}</p>
         <div v-if="bookingResult?.code" class="booking-code">
-          <span>预约码 · Booking Code</span>
+          <span>{{ t('booking_code_label') }}</span>
           <strong>{{ bookingResult.code }}</strong>
         </div>
         <div class="success-actions">
-          <a class="btn btn-primary" href="/account">查看我的预约</a>
-          <a class="btn btn-secondary" href="/">返回首页</a>
+          <a class="btn btn-primary" href="/account">{{ t('booking_view_account') }}</a>
+          <a class="btn btn-secondary" href="/">{{ t('back_home') }}</a>
         </div>
+      </div>
+      <div v-if="successNotice" class="booking-success-toast" role="status" aria-live="polite">
+        <span>✓</span>
+        <div><strong>{{ t('success_title') }}</strong><small>{{ t('success_desc') }}</small></div>
       </div>
       <div v-if="state.bookingEnabled && errorMsg" class="error-message">
         <h3>{{ t('error_title') }}</h3>

@@ -113,6 +113,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shad
 .status-booked, .status-checked_in { background: #eaf2ff; color: var(--blue); }
 .status-in_service, .status-confirmed, .status-active { background: #e8f7f2; color: var(--green); }
 .status-cancelled, .status-banned, .status-expired { background: #fff0f0; color: var(--red); }
+.appointment-member-row td { background: #fffdf3; }
+.appointment-member-tag { display: flex; width: max-content; margin-top: 6px; padding: 3px 7px; border-radius: 999px; background: #fff0b8; color: #8c6811; font-size: 10px; font-weight: 800; }
+.member-saving { color: #9a751c; }
 .empty { padding: 50px 20px; color: var(--muted); text-align: center; }
 .form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
 .field-wide { grid-column: 1 / -1; }

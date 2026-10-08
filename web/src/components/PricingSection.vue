@@ -2,30 +2,30 @@
 import { computed } from 'vue'
 import { state, fmtPrice, t } from '../store.js'
 
-const fourHour = computed(() =>
-  state.store?.packages?.find((p) => Number(p.hours) === 4) ?? state.store?.packages?.[0]
+const sixHour = computed(() =>
+  state.store?.packages?.find((p) => Number(p.hours) === 6) ?? state.store?.packages?.[0]
 )
 
 const rows = computed(() => {
   const s = state.store
-  const p = fourHour.value
+  const p = sixHour.value
   return [
     {
-      duration: '1 小时 1HR Session',
+      duration: t('pricing_duration_one'),
       solo: fmtPrice(s?.price),
       member: fmtPrice(s?.memberPrice),
       group: fmtPrice(s?.groupPrice),
       star: false
     },
     {
-      duration: '4 小时 4HR Session',
+      duration: t('pricing_duration_six'),
       solo: fmtPrice(p?.price),
       member: fmtPrice(p?.memberPrice),
       group: fmtPrice(p?.groupPrice),
       star: false
     },
     {
-      duration: '全天不限时 Full-Day Pass',
+      duration: t('pricing_duration_day'),
       solo: fmtPrice(s?.allDayPrice),
       member: fmtPrice(s?.allDayMemberPrice),
       group: fmtPrice(s?.allDayGroupPrice),
@@ -52,18 +52,18 @@ const rows = computed(() => {
             <table class="pricing-table">
               <thead>
                 <tr>
-                  <th>时长 Duration</th>
-                  <th>单人 Single</th>
-                  <th>会员 Member (20% OFF)</th>
-                  <th>多人同行 2+ PAX (10% OFF)</th>
+                  <th>{{ t('pricing_th_duration') }}</th>
+                  <th>{{ t('pricing_th_single') }}</th>
+                  <th>{{ t('pricing_th_member') }}</th>
+                  <th>{{ t('pricing_th_group') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="r in rows" :key="r.duration">
                   <td>{{ r.duration }}</td>
-                  <td data-label="单人 Single">{{ r.solo }}</td>
-                  <td data-label="会员 Member">{{ r.member }}<span v-if="r.star" class="price-star"> ⭐</span></td>
-                  <td data-label="多人 2+ PAX">{{ r.group }}</td>
+                  <td :data-label="t('pricing_th_single')">{{ r.solo }}</td>
+                  <td :data-label="t('pricing_th_member')">{{ r.member }}<span v-if="r.star" class="price-star"> ⭐</span></td>
+                  <td :data-label="t('pricing_th_group')">{{ r.group }}</td>
                 </tr>
               </tbody>
             </table>

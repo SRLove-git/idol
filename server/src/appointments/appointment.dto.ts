@@ -33,6 +33,7 @@ export class CreateAppointmentDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Max(24)
   durationHours?: number;
 
   /** 套餐 ID（bookingType=package 时必填） */
@@ -73,6 +74,7 @@ export class CreateAppointmentDto {
 
   @IsInt()
   @Min(1, { message: '人数至少 1 人' })
+  @Max(50, { message: '单次预约最多 50 人' })
   peopleCount: number;
 
   @IsOptional()

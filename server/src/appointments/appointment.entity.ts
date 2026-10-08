@@ -192,6 +192,10 @@ export class Appointment {
   })
   originalAmount: number;
 
+  /** 创建预约时是否为有效会员（保留历史快照，会员到期后后台仍可识别） */
+  @Column({ default: false })
+  isMember: boolean;
+
   /** 支付状态 */
   @Column({
     type: 'enum',

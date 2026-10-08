@@ -253,22 +253,22 @@ export class BootstrapService implements OnApplicationBootstrap {
       }
       this.logger.log('已为 IDOL BEADS 预置 4 个可约时段');
     }
-    const fourHourPackage =
+    const sixHourPackage =
       detail.packages.find((item) => item.hours === 4) ??
       detail.packages.find((item) => item.hours === 6);
-    if (!fourHourPackage) {
+    if (!sixHourPackage) {
       await this.stores.addPackage(store.id, {
-        name: '4-Hour Fun Package',
-        hours: 4,
+        name: '6-Hour Fun Package',
+        hours: 6,
         price: 39.9,
         memberPrice: 32,
         groupPrice: 36,
       });
-      this.logger.log('已为 IDOL BEADS 预置 4 小时畅玩套餐');
+      this.logger.log('已为 IDOL BEADS 预置 6 小时畅玩套餐');
     } else {
-      await this.stores.updatePackage(fourHourPackage.id, {
-        name: '4-Hour Fun Package',
-        hours: 4,
+      await this.stores.updatePackage(sixHourPackage.id, {
+        name: '6-Hour Fun Package',
+        hours: 6,
         price: 39.9,
         memberPrice: 32,
         groupPrice: 36,

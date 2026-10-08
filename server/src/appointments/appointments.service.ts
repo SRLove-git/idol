@@ -33,6 +33,7 @@ import { REDIS_CLIENT } from '../redis/redis.module';
 import { Activity } from '../activities/activity.entity';
 import { ActivitySession } from '../activities/activity-session.entity';
 import { ChatGateway } from '../chat/chat.gateway';
+import { EmailService } from '../email/email.service';
 import { Coupon, UserCoupon } from '../members/coupon.entity';
 import { Membership } from '../members/membership.entity';
 import { Store } from '../stores/store.entity';
@@ -83,6 +84,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     private readonly userCoupons: Repository<UserCoupon>,
     private readonly users: UsersService,
     private readonly gateway: ChatGateway,
+    private readonly email: EmailService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
@@ -406,6 +408,36 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * 从空闲桌位中挑选能容纳当前人数的最小组合。
+   * 优先使用更少的桌子；桌数相同时选择空余座位最少的组合。
+   */
+  private selectTablesForPeople(
+    tables: StoreTable[],
+    peopleCount: number,
+  ): StoreTable[] {
+    const combinations = new Map<number, StoreTable[]>();
+    combinations.set(0, []);
+
+    for (const table of tables) {
+      const snapshot = [...combinations.entries()];
+      for (const [capacity, selected] of snapshot) {
+        const nextCapacity = capacity + table.capacity;
+        const next = [...selected, table];
+        const existing = combinations.get(nextCapacity);
+        if (!existing || next.length < existing.length) {
+          combinations.set(nextCapacity, next);
+        }
+      }
+    }
+
+    return [...combinations.entries()]
+      .filter(([capacity]) => capacity >= peopleCount)
+      .sort(([capacityA, tablesA], [capacityB, tablesB]) =>
+        tablesA.length - tablesB.length || capacityA - capacityB,
+      )[0]?.[1] ?? [];
+  }
+
+  /**
    * 创建门店预约：门店/时段/人数校验 → Redis 分布式锁 → 事务内冲突校验 + 落库。
    * 防超卖策略：同店同桌同时段仅允许 1 条未取消预约，先经 Redis 锁串行化，
    * 再由数据库唯一组合兜底（@Index 四列 + 事务内再查）。
@@ -416,7 +448,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     isMember: boolean,
   ): Promise<Appointment> {
     if (dto.storeId == null) {
-      throw new BadRequestException('门店预约需要选择门店、桌位和预约方式');
+      throw new BadRequestException('门店预约需要选择门店和预约方式');
     }
     const store = await this.stores.findOneBy({
       id: dto.storeId,
@@ -424,41 +456,20 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     });
     if (!store) throw new NotFoundException('门店不存在');
 
-    // 桌位解析：支持一单多桌（tableIds），单桌兼容 tableId
-    const requestedIds =
-      dto.tableIds && dto.tableIds.length
-        ? [...new Set(dto.tableIds)]
-        : dto.tableId != null
-          ? [dto.tableId]
-          : [];
-    if (!requestedIds.length) {
-      throw new BadRequestException('门店预约需要选择桌位');
-    }
+    // 顾客不再选择具体桌位：提交时由后台自动分配一张或多张空闲桌。
     const tableRows = await this.tables.find({
-      where: { id: In(requestedIds), storeId: dto.storeId, enabled: true },
+      where: { storeId: dto.storeId, enabled: true },
+      order: { capacity: 'ASC', id: 'ASC' },
     });
-    if (tableRows.length !== requestedIds.length) {
-      throw new NotFoundException('部分桌位不存在或已停用');
-    }
-    // 按用户选择顺序排序
-    tableRows.sort(
-      (a, b) => requestedIds.indexOf(a.id) - requestedIds.indexOf(b.id),
+    const totalCapacity = tableRows.reduce(
+      (total, table) => total + table.capacity,
+      0,
     );
-
-    // 人数校验：所选桌位总容量需 ≥ 人数
-    const totalCapacity = tableRows.reduce((s, t) => s + t.capacity, 0);
-    if (dto.peopleCount > totalCapacity) {
+    if (!tableRows.length || totalCapacity < dto.peopleCount) {
       throw new BadRequestException(
-        `所选桌位最多容纳 ${totalCapacity} 人，当前 ${dto.peopleCount} 人，请增加桌位`,
+        `当前桌位总容量不足以容纳 ${dto.peopleCount} 人`,
       );
     }
-    // 自动分配人数：按用户选择顺序依次坐满
-    let remainingPeople = dto.peopleCount;
-    const seats = tableRows.map((t) => {
-      const people = Math.min(t.capacity, remainingPeople);
-      remainingPeople -= people;
-      return { id: t.id, name: t.name, capacity: t.capacity, people };
-    });
 
     // 不能预约过去的日期
     const todayStr = this.todayStr();
@@ -467,6 +478,9 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     }
     if (dto.date < todayStr) {
       throw new BadRequestException('不能预约过去的日期');
+    }
+    if (dto.date > this.dateStrWithOffset(13)) {
+      throw new BadRequestException('仅可预约未来 14 天内的日期');
     }
 
     // 预约方式：按小时（1 小时起）/ 套餐 / 全天不限时
@@ -589,39 +603,52 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     const amount = centsToYuan(amountCents);
     const originalAmount = centsToYuan(originalAmountCents);
 
-    // 1) Redis 分布式锁：串行化同一组桌位同日的创建请求
-    const lockKey = `booking:lock:${dto.storeId}:${[...requestedIds]
-      .sort((a, b) => a - b)
-      .join(',')}:${dto.date}`;
+    // 自动派桌按门店 + 日期串行化，避免两个重叠时段并发选中同一张桌。
+    const lockKey = `booking:auto:${dto.storeId}:${dto.date}`;
     const acquired = await this.redis.set(lockKey, '1', 'EX', 10, 'NX');
     if (!acquired) {
       throw new BadRequestException(
-        '该桌位刚被其他用户预约，请选择其他时段或桌位',
+        '该时段正在被其他用户预约，请稍后重试',
       );
     }
 
     try {
       // 2) 事务：冲突校验（含 DB 组合索引兜底）+ 预约码生成 + 落库
       const saved = await this.dataSource.transaction(async (em) => {
-        // 冲突校验：SQL 端按桌位（含一单多桌 JSON 展开）+ 时间段重叠判断，避免整表拉取
-        const conflict = await this.findOverlapConflict(
-          em,
-          dto.storeId!,
-          dto.date!,
-          requestedIds,
-          startTime,
-          endTime,
-        );
-        if (conflict) {
-          const conflictTables = (
-            conflict.tables?.length
-              ? conflict.tables.map((t) => t.name)
-              : [conflict.tableName]
-          ).join('、');
-          throw new BadRequestException(
-            `桌位 ${conflictTables} ${conflict.startTime}-${conflict.endTime} 已被预约，请选择其他时段或桌位`,
+        const availableTables: StoreTable[] = [];
+        for (const table of tableRows) {
+          const conflict = await this.findOverlapConflict(
+            em,
+            dto.storeId!,
+            dto.date!,
+            [table.id],
+            startTime,
+            endTime,
           );
+          if (!conflict) {
+            availableTables.push(table);
+          }
         }
+        const assignedTables = this.selectTablesForPeople(
+          availableTables,
+          dto.peopleCount,
+        );
+        if (!assignedTables.length) {
+          throw new BadRequestException('该时段已无合适桌位，请选择其他时间');
+        }
+        let remainingPeople = dto.peopleCount;
+        const seats = [...assignedTables]
+          .sort((a, b) => b.capacity - a.capacity || a.id - b.id)
+          .map((table) => {
+            const people = Math.min(table.capacity, remainingPeople);
+            remainingPeople -= people;
+            return {
+              id: table.id,
+              name: table.name,
+              capacity: table.capacity,
+              people,
+            };
+          });
 
         // 使用优惠券：同一事务内校验并抵扣，失败则整单不落库
         let finalAmount = amount;
@@ -656,12 +683,13 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
           startTime,
           endTime,
           peopleCount: dto.peopleCount,
-          // 门店预约直接进入待核销，到店核销即可，无需管理端确认
-          status: 'booked',
+          // 线上预约需由门店后台确认；确认后用户才会收到确认邮件。
+          status: 'pending',
           code: await this.generateCode(em),
           note: dto.note ?? '',
           amount: finalAmount,
           originalAmount,
+          isMember,
           userCouponId: dto.userCouponId ?? null,
           couponTitle,
           couponDiscount,
@@ -685,7 +713,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
           id: s.id,
           name: s.name,
           capacity: s.capacity,
-          people: 0,
+          people: s.people,
         }));
         return saved;
       });
@@ -804,6 +832,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
           note: dto.note ?? '',
           amount: finalAmount,
           originalAmount,
+          isMember,
           userCouponId: dto.userCouponId ?? null,
           couponTitle,
           couponDiscount,
@@ -1290,6 +1319,18 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     const saved = await this.appointments.save(appt);
     this.broadcastAppointment(saved);
     await this.invalidateAvailability(saved.storeId, saved.date);
+    const user = await this.users.findById(saved.userId);
+    if (user?.email) {
+      await this.email
+        .send(
+          user.email,
+          `IDOL BEADS 预约确认 · ${saved.date}`,
+          `您的预约已确认。\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n请妥善保存预约码，到店时出示。`,
+        )
+        .catch((error: Error) => {
+          this.logger.warn(`预约确认邮件发送失败：${error.message}`);
+        });
+    }
     return saved;
   }
 
@@ -1550,6 +1591,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
           note: dto.note ?? '',
           amount: centsToYuan(amountCents),
           originalAmount: centsToYuan(originalAmountCents),
+          isMember: false,
           payStatus: 'unpaid' as const,
           checkInTime: now,
           serviceStartTime: now,
@@ -1717,11 +1759,16 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     throw new Error('预约码生成失败，请重试');
   }
 
-  private todayStr(): string {
+  private dateStrWithOffset(offsetDays: number): string {
     const now = new Date();
+    now.setDate(now.getDate() + offsetDays);
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  }
+
+  private todayStr(): string {
+    return this.dateStrWithOffset(0);
   }
 }

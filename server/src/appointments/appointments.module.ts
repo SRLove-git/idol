@@ -10,6 +10,7 @@ import { TimeSlot } from '../stores/time-slot.entity';
 import { StorePackage } from '../stores/store-package.entity';
 import { UsersModule } from '../users/users.module';
 import { ChatModule } from '../chat/chat.module';
+import { EmailModule } from '../email/email.module';
 import { AdminAppointmentsController } from './admin-appointments.controller';
 import { Appointment } from './appointment.entity';
 import { AppointmentsController } from './appointments.controller';
@@ -33,6 +34,7 @@ import { AppointmentTable } from './appointment-table.entity';
     ]),
     UsersModule,
     ChatModule,
+    EmailModule,
   ],
   controllers: [AppointmentsController, AdminAppointmentsController],
   providers: [AppointmentsService],

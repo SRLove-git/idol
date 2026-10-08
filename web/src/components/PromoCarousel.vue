@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { defaultSiteMedia, siteMedia } from '../store.js'
+import { defaultSiteMedia, siteMedia, t } from '../store.js'
 
 const banners = computed(() => {
   const configured = siteMedia('banners', defaultSiteMedia.banners)
@@ -27,16 +27,16 @@ onBeforeUnmount(stop)
 </script>
 
 <template>
-  <section class="promo-carousel" aria-label="活动图片轮播">
+  <section class="promo-carousel" :aria-label="t('promo_carousel_label')">
     <div class="promo-carousel-wrapper">
       <div class="promo-carousel-track">
         <div v-for="(b, i) in banners" :key="b" class="promo-slide" :class="{ active: i === current }" :aria-hidden="i !== current">
           <img :src="b" :alt="`promotion ${i + 1}`" draggable="false" loading="lazy" decoding="async">
         </div>
       </div>
-      <button type="button" class="promo-carousel-btn promo-carousel-prev" aria-label="上一张图片" @click="go(current - 1)">&#10094;</button>
-      <button type="button" class="promo-carousel-btn promo-carousel-next" aria-label="下一张图片" @click="go(current + 1)">&#10095;</button>
-      <div class="promo-carousel-dots" aria-label="轮播图导航">
+      <button type="button" class="promo-carousel-btn promo-carousel-prev" :aria-label="t('promo_previous')" @click="go(current - 1)">&#10094;</button>
+      <button type="button" class="promo-carousel-btn promo-carousel-next" :aria-label="t('promo_next')" @click="go(current + 1)">&#10095;</button>
+      <div class="promo-carousel-dots" :aria-label="t('promo_navigation')">
         <button
           v-for="(b, i) in banners"
           :key="'d' + i"
@@ -44,7 +44,7 @@ onBeforeUnmount(stop)
           class="promo-dot"
           :class="{ active: i === current }"
           :aria-current="i === current"
-          :aria-label="`显示第 ${i + 1} 张图片`"
+          :aria-label="t('promo_show_slide').replace('{count}', String(i + 1))"
           @click="go(i)"
         ></button>
       </div>

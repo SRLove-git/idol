@@ -72,9 +72,11 @@ function buildService() {
   const users = {
     findByUsernameOrCreate: jest.fn(),
     findByEmail: jest.fn(),
+    findById: jest.fn().mockResolvedValue(null),
     create: jest.fn(),
   };
   const gateway = { sendAppointment: jest.fn() };
+  const email = { send: jest.fn().mockResolvedValue(undefined) };
   const redis = {
     set: jest.fn(),
     get: jest.fn(),
@@ -134,6 +136,7 @@ function buildService() {
     userCouponRepo as never,
     users as never,
     gateway as never,
+    email as never,
     redis as never,
     dataSource as never,
   );
@@ -148,6 +151,7 @@ function buildService() {
     activitySessionsRepo,
     memberships,
     users,
+    email,
     redis,
     userCouponRepo,
     couponRepo,
@@ -258,11 +262,12 @@ describe('AppointmentsService', () => {
 
       const result = await m.svc.create(7, baseDto);
 
-      expect(result.status).toBe('booked');
+      expect(result.status).toBe('pending');
       expect(result.code).toMatch(/^[A-Z0-9]{6}$/);
       // 39.9 元/人/小时 × 2 人 × 2 小时 = 159.6
       expect(result.amount).toBe(159.6);
       expect(result.originalAmount).toBe(159.6);
+      expect(result.isMember).toBe(false);
       expect(m.em.save).toHaveBeenCalled();
       // 一单多桌关系写入 appointment_tables 关联表（availability/冲突校验用）
       expect(m.em.insert).toHaveBeenCalledWith(
@@ -276,6 +281,46 @@ describe('AppointmentsService', () => {
         ]),
       );
       expect(m.redis.del).toHaveBeenCalled(); // 无论成败释放分布式锁
+    });
+
+    it('自定义人数超过单桌容量时自动组合多张空闲桌', async () => {
+      const m = buildService();
+      m.stores.findOneBy.mockResolvedValue({
+        id: 1,
+        name: '门店A',
+        businessHours: '09:00-21:00',
+        price: 39.9,
+        memberPrice: null,
+        allDayPrice: null,
+      });
+      m.tables.find.mockResolvedValue([
+        { id: 1, name: 'B1', capacity: 2 },
+        { id: 2, name: 'C1', capacity: 4 },
+        { id: 3, name: 'C2', capacity: 4 },
+      ]);
+      m.memberships.findOneBy.mockResolvedValue(null);
+      m.redis.set.mockResolvedValue('OK');
+      m.em.find.mockResolvedValue([]);
+      m.em.findOne.mockResolvedValue(null);
+      m.em.create.mockImplementation(
+        (_cls: unknown, data: Record<string, unknown>) => ({ ...data }),
+      );
+      m.em.save.mockImplementation((x: unknown) => Promise.resolve(x));
+
+      const result = await m.svc.create(7, {
+        ...baseDto,
+        peopleCount: 5,
+      });
+
+      expect(result.tables).toHaveLength(2);
+      expect(result.tables?.reduce((sum, table) => sum + table.capacity, 0)).toBe(6);
+      expect(m.em.insert).toHaveBeenCalledWith(
+        AppointmentTable,
+        expect.arrayContaining([
+          expect.objectContaining({ tableId: 1 }),
+          expect.objectContaining({ tableId: 2 }),
+        ]),
+      );
     });
 
     it('同店同桌同时段重叠时拒绝创建（防超卖）', async () => {
@@ -338,6 +383,27 @@ describe('AppointmentsService', () => {
           durationHours: 1,
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('拒绝预约 14 天窗口之外的日期', async () => {
+      const m = buildService();
+      m.stores.findOneBy.mockResolvedValue({
+        id: 1,
+        name: '门店A',
+        businessHours: '09:00-21:00',
+        price: 39.9,
+        memberPrice: null,
+        allDayPrice: null,
+      });
+      m.tables.find.mockResolvedValue([{ id: 1, name: 'A1', capacity: 4 }]);
+      m.memberships.findOneBy.mockResolvedValue(null);
+
+      await expect(
+        m.svc.create(7, {
+          ...baseDto,
+          date: dateStr(14),
+        }),
+      ).rejects.toThrow('仅可预约未来 14 天内的日期');
     });
 
     it('使用优惠券：抵扣后金额与券状态正确', async () => {
@@ -403,7 +469,7 @@ describe('AppointmentsService', () => {
   describe('checkIn', () => {
     it('booked → in_service：记录上钟/下钟时间', async () => {
       const m = buildService();
-      const endTime = timeStr(2 * 3600_000);
+      const endTime = '23:59';
       m.appointmentEmRepo.findOne.mockResolvedValue({
         id: 1,
         code: '123456',
@@ -428,7 +494,7 @@ describe('AppointmentsService', () => {
 
     it('预约带优惠券：核销预约时一并核销优惠券', async () => {
       const m = buildService();
-      const endTime = timeStr(2 * 3600_000);
+      const endTime = '23:59';
       m.appointmentEmRepo.findOne.mockResolvedValue({
         id: 1,
         code: '123456',
@@ -766,9 +832,16 @@ describe('AppointmentsService', () => {
       const m = buildService();
       m.appointments.findOneBy.mockResolvedValue({
         id: 1,
+        userId: 7,
         status: 'pending',
         date: dateStr(1),
+        startTime: '10:00',
+        endTime: '11:00',
+        peopleCount: 2,
+        storeName: 'IDOL BEADS',
+        code: 'ABC123',
       });
+      m.users.findById.mockResolvedValue({ email: 'guest@example.com' });
       m.appointments.save.mockImplementation((x: unknown) =>
         Promise.resolve(x),
       );
@@ -776,6 +849,11 @@ describe('AppointmentsService', () => {
       const result = await m.svc.adminConfirm(1);
 
       expect(result.status).toBe('booked');
+      expect(m.email.send).toHaveBeenCalledWith(
+        'guest@example.com',
+        expect.stringContaining('预约确认'),
+        expect.stringContaining('ABC123'),
+      );
     });
 
     it('已确认（booked）的预约不可重复确认', async () => {
@@ -938,7 +1016,7 @@ describe('AppointmentsService', () => {
   });
 
   describe('createActivity', () => {
-    it('活动场次预约保持待确认（pending），门店预约才直接待核销', async () => {
+    it('活动与门店线上预约都先进入待确认（pending）', async () => {
       const m = buildService();
       m.activities.findOneBy.mockResolvedValue({
         id: 1,
@@ -1121,6 +1199,7 @@ describe('AppointmentsService', () => {
         startTime: '11:00',
       } as never)) as { amount: number };
       expect(member.amount).toBe(32);
+      expect(member.isMember).toBe(true);
     });
 
     it('全天不限时：多人按全天多人价，会员按全天会员价', async () => {

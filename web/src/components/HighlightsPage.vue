@@ -106,13 +106,13 @@ onBeforeUnmount(() => {
       :aria-label="activeImage.alt"
       @click.self="closeLightbox"
     >
-      <button class="works-lightbox-close" type="button" aria-label="关闭" @click="closeLightbox">×</button>
-      <button class="works-lightbox-nav is-prev" type="button" aria-label="上一张" @click="showPrevious">‹</button>
+      <button class="works-lightbox-close" type="button" :aria-label="t('gallery_close')" @click="closeLightbox">×</button>
+      <button class="works-lightbox-nav is-prev" type="button" :aria-label="t('gallery_previous')" @click="showPrevious">‹</button>
       <figure>
         <img :src="activeImage.src" :alt="activeImage.alt">
         <figcaption>{{ activeIndex + 1 }} / {{ images.length }}</figcaption>
       </figure>
-      <button class="works-lightbox-nav is-next" type="button" aria-label="下一张" @click="showNext">›</button>
+      <button class="works-lightbox-nav is-next" type="button" :aria-label="t('gallery_next')" @click="showNext">›</button>
     </div>
   </main>
 </template>

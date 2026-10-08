@@ -20,7 +20,7 @@ import {
 } from './appointment.dto';
 import { AppointmentsService } from './appointments.service';
 
-/** 客户端：预约流程（选店 → 日期 → 时段 → 人数 → 桌位 → 确认 → 生成预约单） */
+/** 客户端：预约流程（选店 → 日期 → 时段 → 人数 → 提交；桌位由后台自动分配） */
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointments: AppointmentsService) {}

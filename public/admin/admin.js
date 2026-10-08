@@ -49,7 +49,7 @@ const REVIEW_DEFAULTS = [
 
 const MEDIA_DEFAULTS = {
   logo: '/photos/idol-logo.png', heroBackground: '/photos/indoor_1.webp',
-  banners: [1, 2, 3, 4, 5, 6].map((n) => `/photos/banner-${n}.webp`),
+  banners: ['/photos/banner-floor-2.png', '/photos/banner-floor-1.png'],
   featureIcons: [1, 2, 3, 4].map((n) => `/photos/feat-icon-${n}.png`),
   featuredHighlights: ['/photos/xhs-studio.jpg', '/photos/xhs-character-wall.jpg', '/photos/xhs-display-wall.jpg']
 }
@@ -246,7 +246,8 @@ function appointmentRow(item) {
   if (item.status === 'checked_in') actions.push(actionButton(item.id, 'clockin', '上钟', 'button-green'))
   if (item.status === 'in_service') actions.push(actionButton(item.id, 'clockout', '下钟', 'button-green'))
   if (['pending','booked','checked_in'].includes(item.status)) actions.push(actionButton(item.id, 'cancel', '取消', 'button-ghost'))
-  return `<tr><td><strong>${esc(item.code)}</strong></td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small></td><td>${esc(item.date)}<br><small>${esc(item.startTime)} - ${esc(item.endTime)}</small></td><td>${item.peopleCount}</td><td>$${Number(item.amount || 0).toFixed(2)}</td><td><span class="status status-${item.status}">${statusText(item.status)}</span></td><td class="actions">${actions.join('') || '—'}</td></tr>`
+  const memberTag = item.isMember ? '<span class="appointment-member-tag">★ 会员预约</span>' : ''
+  return `<tr class="${item.isMember ? 'appointment-member-row' : ''}"><td><strong>${esc(item.code)}</strong>${memberTag}</td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small></td><td>${esc(item.date)}<br><small>${esc(item.startTime)} - ${esc(item.endTime)}</small></td><td>${item.peopleCount}</td><td>$${Number(item.amount || 0).toFixed(2)}${item.isMember && Number(item.originalAmount || 0) > Number(item.amount || 0) ? `<br><small class="member-saving">原价 $${Number(item.originalAmount).toFixed(2)}</small>` : ''}</td><td><span class="status status-${item.status}">${statusText(item.status)}</span></td><td class="actions">${actions.join('') || '—'}</td></tr>`
 }
 function actionButton(id, action, label, cls) { return `<button class="button button-small ${cls}" data-appt-action="${action}" data-id="${id}">${label}</button>` }
 
