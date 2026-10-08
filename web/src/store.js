@@ -3,12 +3,14 @@ import { reactive } from 'vue'
 export const state = reactive({
   lang: 'zh',
   store: null,
-  wechat: false
+  wechat: false,
+  bookingEnabled: false
 })
 
 export const translations = {
   zh: {
     nav_home: '首页',
+    nav_highlights: '拼豆精选',
     nav_pricing: '价位表',
     nav_booking: '预约体验',
     nav_social: '社交媒体',
@@ -16,11 +18,11 @@ export const translations = {
     hero_slogan: '一粒粒豆子，组成属于自己的王国',
     cta_booking: '预约体验',
     cta_pricing: '查看价位',
-    reviews_title: '豆豆王国顾客评价',
+    reviews_title: 'IDOL BEADS 顾客评价',
     member_title: '会员专享福利',
     member_rule_1: '会员月卡 $19.90 SGD，年卡 $149 SGD',
     member_rule_2: '每件作品赠送 1 份 DIY 饰品，不限作品数量',
-    member_rule_3: '每日到店可免费领取饮品 1 杯',
+    member_rule_3: '会员到店消费享 8 折优惠',
     feat1_title: '专业烫印',
     feat1_desc: '店内使用全自动烫画机，默认单面无孔，也提供特殊烫。工作人员会帮你完成最后的烫印步骤，确保作品完美。',
     feat2_title: '免费工具',
@@ -31,8 +33,23 @@ export const translations = {
     feat4_desc: '在任何社交媒体上分享，即可免费获取 30 积分。',
     highlights_title: '拼豆精选',
     btn_view_details: '查看详情',
+    highlights_page_kicker: 'BEAD CREATIONS',
+    highlights_page_title: '拼豆作品集',
+    highlights_page_desc: '从萌趣小物到人气角色，在这里找到你的下一个拼豆灵感。',
+    highlights_gallery_label: '全部作品',
+    highlights_gallery_count: '件创意作品',
+    highlights_book_title: '找到想做的款式了吗？',
+    highlights_book_desc: '到店挑选图纸和颜色，亲手完成你的专属作品。',
+    highlights_book_button: '预约拼豆体验',
+    highlights_back_home: '返回首页',
     studio_location: '手工拼豆制作体验 · 创意像素艺术',
     pricing_title: '价位表',
+    pricing_card_title: '价位表 · Pricing',
+    pricing_note_title: '备注 · Note',
+    pricing_note_membership: '会员 Membership: $19.90 SGD/月 (month)，$149 SGD/年 (year)。',
+    pricing_note_benefits: '会员福利 Member benefits: 每件作品可获赠 1 份 DIY 饰品，不限作品数量；到店消费享 8 折优惠。',
+    pricing_note_group: '多人同行 Group rate: 两人及以上同行，非会员按多人同行价；同行里有会员，该会员按会员价计算。',
+    pricing_note_weekend: '周末及节假日 Weekends & public holidays: 所有价格加收 10% 服务费。',
     hourly_pricing: '按时计费',
     daypass_pricing: '全天通票',
     th_people: '人数',
@@ -43,10 +60,21 @@ export const translations = {
     td_wed_thu: '周三 - 周四',
     td_fri_sun: '周五 - 周日',
     booking_title: '预约体验',
+    booking_closed_title: '预约暂未开放',
+    booking_closed_desc: '门店正在筹备中，线上预约开放后我们会第一时间更新。感谢你的理解与耐心等待。',
     label_date_select: '选择日期',
     label_time_select: '到店时间',
     label_duration_select: '预期消费时长',
     label_people_select: '预约人数',
+    label_table_select: '选择桌位',
+    table_select_hint: '请选择到店时间后再选桌位；多人可组合选择多个桌位。',
+    table_select_time_first: '请先选择到店时间',
+    table_loading: '正在读取桌位状态…',
+    table_available: '可选择',
+    table_selected: '已选择',
+    table_occupied: '已占用',
+    table_empty: '暂无可用桌位',
+    label_personal_info: '填写预约信息',
     unit_min: '分钟',
     unit_person: '人',
     people_note: '超过4人请在下方特别说明中备注',
@@ -76,6 +104,7 @@ export const translations = {
   },
   en: {
     nav_home: 'Home',
+    nav_highlights: 'Gallery',
     nav_pricing: 'Pricing',
     nav_booking: 'Booking',
     nav_social: 'Social',
@@ -83,11 +112,11 @@ export const translations = {
     hero_slogan: 'Bead by bead, building a kingdom of your own',
     cta_booking: 'Book Now',
     cta_pricing: 'View Pricing',
-    reviews_title: 'Beads Land Customer Reviews',
+    reviews_title: 'IDOL BEADS Customer Reviews',
     member_title: 'Member Benefits',
     member_rule_1: 'S$19.90 monthly membership · S$149 annual membership',
     member_rule_2: 'One free DIY accessory with every piece, no quantity limit',
-    member_rule_3: 'One complimentary drink per store visit each day',
+    member_rule_3: 'Members enjoy 20% off in-store purchases',
     feat1_title: 'Professional Ironing',
     feat1_desc: 'We use fully automatic heat presses. Default is single-sided no-hole, special ironing also available.',
     feat2_title: 'Free Tools',
@@ -98,8 +127,23 @@ export const translations = {
     feat4_desc: 'Share on any social media and receive 30 free points added to your account.',
     highlights_title: 'Perler Bead Highlights',
     btn_view_details: 'View Details',
+    highlights_page_kicker: 'BEAD CREATIONS',
+    highlights_page_title: 'Bead Creations Gallery',
+    highlights_page_desc: 'From adorable miniatures to beloved characters, find inspiration for your next bead creation.',
+    highlights_gallery_label: 'All Creations',
+    highlights_gallery_count: 'creative pieces',
+    highlights_book_title: 'Found something you would love to make?',
+    highlights_book_desc: 'Choose your pattern and colors in store, then bring your own creation to life.',
+    highlights_book_button: 'Book a Beading Session',
+    highlights_back_home: 'Back to Home',
     studio_location: 'DIY Perler Bead Experience · Creative Pixel Art',
     pricing_title: 'Pricing',
+    pricing_card_title: 'Pricing',
+    pricing_note_title: 'Notes',
+    pricing_note_membership: 'Membership: S$19.90/month or S$149/year.',
+    pricing_note_benefits: 'Member benefits: One free DIY accessory with every piece, plus 20% off in-store purchases.',
+    pricing_note_group: 'Group rate: For 2 or more guests, non-members pay the group rate and members pay the member rate.',
+    pricing_note_weekend: 'Weekends & public holidays: A 10% service charge applies to all prices.',
     hourly_pricing: 'Hourly Rate',
     daypass_pricing: 'Day Pass',
     th_people: 'People',
@@ -110,10 +154,21 @@ export const translations = {
     td_wed_thu: 'Wed - Thu',
     td_fri_sun: 'Fri - Sun',
     booking_title: 'Book a Session',
+    booking_closed_title: 'Online Booking Coming Soon',
+    booking_closed_desc: 'We are getting the studio ready. Online booking will open soon—thank you for your patience.',
     label_date_select: 'Select Date',
     label_time_select: 'Arrival Time',
     label_duration_select: 'Expected Duration',
     label_people_select: 'Number of People',
+    label_table_select: 'Choose Seats',
+    table_select_hint: 'Choose an arrival time first. Larger groups can combine multiple tables.',
+    table_select_time_first: 'Choose an arrival time to view seats',
+    table_loading: 'Loading seat availability…',
+    table_available: 'Available',
+    table_selected: 'Selected',
+    table_occupied: 'Occupied',
+    table_empty: 'No seats are currently available',
+    label_personal_info: 'Your Details',
     unit_min: 'min',
     unit_person: 'people',
     people_note: 'For 5+ people, please note in the Special Instructions',
@@ -144,7 +199,18 @@ export const translations = {
 }
 
 export function t(key) {
-  return translations[state.lang]?.[key] ?? key
+  const override = state.store?.siteContent?.translations?.[state.lang]?.[key]
+  return typeof override === 'string' ? override : (translations[state.lang]?.[key] ?? key)
+}
+
+export function siteMedia(key, fallback = null) {
+  const value = state.store?.siteContent?.media?.[key]
+  return value == null || value === '' ? fallback : value
+}
+
+export function siteLink(key, fallback = '') {
+  const value = state.store?.siteContent?.links?.[key]
+  return typeof value === 'string' ? value : fallback
 }
 
 export function fmtPrice(n) {
@@ -159,23 +225,40 @@ export function addMinutes(hhmm, mins) {
 }
 
 export async function loadStore() {
-  try {
-    const r = await fetch('/api/stores/1')
-    if (r.ok) state.store = await r.json()
-  } catch {
-    /* keep last value */
+  const [storeResult, statusResult] = await Promise.allSettled([
+    fetch('/api/stores/1'),
+    fetch('/api/appointments/status')
+  ])
+  if (storeResult.status === 'fulfilled' && storeResult.value.ok) {
+    state.store = await storeResult.value.json()
   }
-  if (state.store?.name) document.title = `${state.store.name} | DIY Bead Workshop`
+  if (statusResult.status === 'fulfilled' && statusResult.value.ok) {
+    const status = await statusResult.value.json()
+    state.bookingEnabled = status.enabled === true
+  } else {
+    state.bookingEnabled = false
+  }
+  if (state.store?.name) {
+    const configuredTitle = state.store.siteContent?.meta?.title
+    document.title = configuredTitle || `${state.store.name} | DIY Bead Workshop`
+    const description = state.store.siteContent?.meta?.description
+    if (description) {
+      let meta = document.querySelector('meta[name="description"]')
+      if (!meta) {
+        meta = document.createElement('meta')
+        meta.name = 'description'
+        document.head.appendChild(meta)
+      }
+      meta.content = description
+    }
+  }
   return state.store
 }
 
 export async function fetchAvailability(date) {
-  try {
-    const r = await fetch(`/api/appointments/availability?storeId=1&date=${date}`)
-    return r.ok ? await r.json() : []
-  } catch {
-    return []
-  }
+  const r = await fetch(`/api/appointments/availability?storeId=1&date=${date}`)
+  if (!r.ok) throw new Error('Availability request failed')
+  return r.json()
 }
 
 export function createAppointment(dto) {
@@ -186,7 +269,15 @@ export function createAppointment(dto) {
   })
 }
 
+export const featuredHighlights = [
+  { src: 'photos/xhs-studio.jpg', altZh: 'IDOL BEADS 拼豆工作室', altEn: 'IDOL BEADS studio' },
+  { src: 'photos/xhs-character-wall.jpg', altZh: '拼豆角色作品墙', altEn: 'Perler bead character creations' },
+  { src: 'photos/xhs-display-wall.jpg', altZh: '拼豆作品展示墙', altEn: 'Perler bead creation display' }
+]
+
 export const allHighlights = [
+  'photos/xhs-bead-colors.jpg',
+  'photos/xhs-price-list.jpg',
   'photos/show_27.jpg',
   'photos/show_28.jpg',
   'photos/show_29.jpg',
@@ -242,3 +333,41 @@ export const allHighlights = [
   'photos/微信图片_20260411232350.jpg',
   'photos/微信图片_20260411232354.jpg'
 ]
+
+export const defaultReviews = [
+  {
+    image: '/photos/xhs-studio.jpg',
+    altZh: 'IDOL Beads 宽敞明亮的拼豆工作室',
+    quoteZh: '终于在新加坡找到环境舒服、桌面宽敞的拼豆店。工作日可以直接 walk in，安排起来很方便。',
+    altEn: 'The bright and spacious IDOL Beads studio',
+    quoteEn: 'A bright, comfortable bead studio in Singapore with plenty of workspace. Weekday walk-ins make it especially easy to visit.'
+  },
+  {
+    image: '/photos/xhs-character-wall.jpg',
+    altZh: 'IDOL Beads 顾客拼豆作品展示墙',
+    quoteZh: '牛车水里的宝藏拼豆店，常见角色和特殊烫款式都很丰富，选图的时候就已经很快乐。',
+    altEn: 'Customer bead creations displayed at IDOL Beads',
+    quoteEn: 'A Chinatown gem filled with character ideas and special finishing styles. Choosing a design is part of the fun.'
+  },
+  {
+    image: '/photos/xhs-display-wall.jpg',
+    altZh: 'IDOL Beads 拼豆作品与工具陈列',
+    quoteZh: '从豆板、豆铲到豆针都好看又顺手，颜色摆放清楚，慢慢拼一下午也很放松。',
+    altEn: 'Bead creations and tools displayed at IDOL Beads',
+    quoteEn: 'The boards, scoops, pens and neatly arranged colours are lovely to use—a relaxing place to spend a creative afternoon.'
+  }
+]
+
+export const defaultSiteMedia = {
+  logo: '/photos/idol-logo.png',
+  heroBackground: '/photos/indoor_1.webp',
+  banners: [1, 2, 3, 4, 5, 6].map((n) => `/photos/banner-${n}.webp`),
+  featureIcons: [1, 2, 3, 4].map((n) => `/photos/feat-icon-${n}.png`),
+  featuredHighlights: featuredHighlights.map((item) => `/${item.src}`),
+  galleryImages: [
+    ...featuredHighlights.map((item) => `/${item.src}`),
+    ...allHighlights
+      .filter((src) => src !== 'photos/xhs-price-list.jpg')
+      .map((src) => `/${src}`)
+  ]
+}

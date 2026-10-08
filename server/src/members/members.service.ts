@@ -60,7 +60,7 @@ export class MembersService implements OnModuleInit {
           originalPrice: '19.90',
           benefits: [
             '每件作品赠送 1 份 DIY 饰品，不限作品数量',
-            '每日到店可免费领取饮品 1 杯',
+            '会员到店消费享 8 折优惠',
           ],
           badge: '',
           recommended: false,
@@ -72,7 +72,7 @@ export class MembersService implements OnModuleInit {
           originalPrice: '149',
           benefits: [
             '每件作品赠送 1 份 DIY 饰品，不限作品数量',
-            '每日到店可免费领取饮品 1 杯',
+            '会员到店消费享 8 折优惠',
           ],
           badge: '最划算',
           recommended: true,

@@ -65,7 +65,7 @@ export class SeedIdolBeadsData1786346100000 implements MigrationInterface {
         (\`name\`, \`durationDays\`, \`price\`, \`originalPrice\`, \`benefits\`,
          \`badge\`, \`recommended\`, \`enabled\`, \`createdAt\`, \`updatedAt\`)
       SELECT '月卡', 30, '19.90', '19.90',
-             JSON_ARRAY('每件作品赠送 1 份 DIY 饰品，不限作品数量', '每日到店可免费领取饮品 1 杯'), '', 0, 1, NOW(6), NOW(6)
+             JSON_ARRAY('每件作品赠送 1 份 DIY 饰品，不限作品数量', '会员到店消费享 8 折优惠'), '', 0, 1, NOW(6), NOW(6)
       WHERE NOT EXISTS (SELECT 1 FROM \`member_plans\` WHERE \`name\` = '月卡')
     `);
     await queryRunner.query(`
@@ -73,20 +73,20 @@ export class SeedIdolBeadsData1786346100000 implements MigrationInterface {
         (\`name\`, \`durationDays\`, \`price\`, \`originalPrice\`, \`benefits\`,
          \`badge\`, \`recommended\`, \`enabled\`, \`createdAt\`, \`updatedAt\`)
       SELECT '年卡', 365, '149.00', '149.00',
-             JSON_ARRAY('每件作品赠送 1 份 DIY 饰品，不限作品数量', '每日到店可免费领取饮品 1 杯'), '最划算', 1, 1, NOW(6), NOW(6)
+             JSON_ARRAY('每件作品赠送 1 份 DIY 饰品，不限作品数量', '会员到店消费享 8 折优惠'), '最划算', 1, 1, NOW(6), NOW(6)
       WHERE NOT EXISTS (SELECT 1 FROM \`member_plans\` WHERE \`name\` = '年卡')
     `);
     await queryRunner.query(`
       UPDATE \`member_plans\`
       SET \`price\` = '19.90', \`originalPrice\` = '19.90',
-          \`benefits\` = JSON_ARRAY('每件作品赠送 1 份 DIY 饰品，不限作品数量', '每日到店可免费领取饮品 1 杯'),
+          \`benefits\` = JSON_ARRAY('每件作品赠送 1 份 DIY 饰品，不限作品数量', '会员到店消费享 8 折优惠'),
           \`enabled\` = 1, \`badge\` = ''
       WHERE \`name\` = '月卡'
     `);
     await queryRunner.query(`
       UPDATE \`member_plans\`
       SET \`price\` = '149.00', \`originalPrice\` = '149.00',
-          \`benefits\` = JSON_ARRAY('每件作品赠送 1 份 DIY 饰品，不限作品数量', '每日到店可免费领取饮品 1 杯'),
+          \`benefits\` = JSON_ARRAY('每件作品赠送 1 份 DIY 饰品，不限作品数量', '会员到店消费享 8 折优惠'),
           \`enabled\` = 1, \`badge\` = '最划算', \`recommended\` = 1
       WHERE \`name\` = '年卡'
     `);

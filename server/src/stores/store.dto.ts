@@ -2,6 +2,7 @@ import {
   IsArray,
   IsInt,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -42,6 +43,11 @@ export class CreateStoreDto {
   @IsArray()
   @IsString({ each: true })
   images?: string[];
+
+  /** 官网内容配置（文案、媒体与社交链接） */
+  @IsOptional()
+  @IsObject()
+  siteContent?: Record<string, unknown>;
 
   @IsOptional()
   @IsNumber()

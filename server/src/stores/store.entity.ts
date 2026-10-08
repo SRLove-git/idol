@@ -63,6 +63,13 @@ export class Store {
   @Column({ type: 'json', nullable: true })
   images: string[] | null;
 
+  /**
+   * 官网内容配置。使用 JSON 保留可扩展性，包含中英文文案、
+   * 轮播/作品/评价图片与社交链接。
+   */
+  @Column({ type: 'json', nullable: true })
+  siteContent: Record<string, unknown> | null;
+
   /** 预约单价（元/人/次），会员价为空时等同门市价 */
   /** 按小时预约时即「元/人/小时」 */
   @Column({

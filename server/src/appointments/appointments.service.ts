@@ -7,6 +7,7 @@ import {
   NotFoundException,
   OnModuleDestroy,
   OnModuleInit,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
@@ -311,6 +312,9 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     userId: number | undefined,
     dto: CreateAppointmentDto,
   ): Promise<Appointment> {
+    if (!this.isBookingEnabled()) {
+      throw new ServiceUnavailableException('预约功能暂未开放');
+    }
     // 未登录按游客身份创建；游客不限制「同一用户仅一张未完成预约」，避免不同顾客互相阻塞
     const resolvedUserId =
       userId ?? (await this.getOrCreateGuestUser(dto)).id;
@@ -323,6 +327,13 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       return this.createActivity(resolvedUserId, dto, isMember);
     }
     return this.createStore(resolvedUserId, dto, isMember);
+  }
+
+  /** 线上预约总开关；未配置时保持原有行为，显式关闭时采用 fail-closed。 */
+  isBookingEnabled(): boolean {
+    return !['false', '0', 'off', 'no'].includes(
+      (process.env.BOOKING_ENABLED ?? 'true').trim().toLowerCase(),
+    );
   }
 
   /**
@@ -1002,6 +1013,65 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       take: pageSize,
     });
     return { items: await this.withCouponCodes(items), total };
+  }
+
+  /** 手机号只保留数字，兼容 +65、空格、短横线与括号等常见输入格式。 */
+  private normalizePhone(phone: string): string {
+    return phone.replace(/\D/g, '');
+  }
+
+  /** 从现有预约备注末尾的「电话 xxx」字段读取预约手机号。 */
+  private appointmentPhone(appt: Appointment): string {
+    const match = /(?:^|\|\s*)电话\s*([^|]+)/u.exec(appt.note ?? '');
+    return this.normalizePhone(match?.[1] ?? '');
+  }
+
+  /** 返回公开查询页展示所需字段，不暴露 userId、核销人等内部数据。 */
+  private appointmentLookupView(appt: Appointment) {
+    return {
+      type: appt.type,
+      bookingType: appt.bookingType,
+      storeName: appt.storeName,
+      tableName: appt.tableName,
+      tables: appt.tables,
+      activityName: appt.activityName,
+      packageName: appt.packageName,
+      date: appt.date,
+      startTime: appt.startTime,
+      endTime: appt.endTime,
+      peopleCount: appt.peopleCount,
+      code: appt.code,
+      amount: appt.amount,
+      originalAmount: appt.originalAmount,
+      payStatus: appt.payStatus,
+      status: appt.status,
+      note: appt.note,
+      createdAt: appt.createdAt,
+    };
+  }
+
+  /** 游客预约查询：预约邮箱与预约手机号必须同时匹配。 */
+  async lookupByEmailAndPhone(email: string, phone: string) {
+    const owner = await this.users.findByEmail(email.trim().toLowerCase());
+    if (!owner) {
+      throw new NotFoundException('邮箱或手机号不正确');
+    }
+    const records = await this.appointments.find({
+      where: { userId: owner.id },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+    const normalizedPhone = this.normalizePhone(phone);
+    const matched = records.filter(
+      (appt) => this.appointmentPhone(appt) === normalizedPhone,
+    );
+    if (!matched.length) {
+      throw new NotFoundException('邮箱或手机号不正确');
+    }
+    return {
+      items: matched.map((appt) => this.appointmentLookupView(appt)),
+      total: matched.length,
+    };
   }
 
   /** 预约详情（仅本人或核销人） */

@@ -126,8 +126,10 @@ export class StoresService {
 
   async addTable(storeId: number, dto: CreateTableDto): Promise<StoreTable> {
     await this.adminDetail(storeId);
-    // 桌位名按容量规则自动生成，忽略入参 name
-    const name = await this.nextTableName(storeId, dto.capacity);
+    const customName = dto.name?.trim();
+    const name = customName || (await this.nextTableName(storeId, dto.capacity));
+    const duplicate = await this.tables.findOneBy({ storeId, name });
+    if (duplicate) throw new BadRequestException('桌位名称已存在');
     return this.tables.save(this.tables.create({ storeId, ...dto, name }));
   }
 
@@ -136,11 +138,21 @@ export class StoresService {
     if (!table) throw new NotFoundException('桌位不存在');
     const capacityChanged =
       dto.capacity != null && dto.capacity !== table.capacity;
-    // 桌位名不允许手改：忽略入参 name，容量变化时按规则重新生成
+    // 后台可自定义桌位名；未传名称且容量变化时仍按 A/B/C 规则自动重命名。
+    const customName = dto.name?.trim();
     const rest = { ...dto };
     delete rest.name;
     Object.assign(table, rest);
-    if (capacityChanged) {
+    if (customName && customName !== table.name) {
+      const duplicate = await this.tables.findOneBy({
+        storeId: table.storeId,
+        name: customName,
+      });
+      if (duplicate && duplicate.id !== table.id) {
+        throw new BadRequestException('桌位名称已存在');
+      }
+      table.name = customName;
+    } else if (!customName && capacityChanged) {
       table.name = await this.nextTableName(table.storeId, table.capacity);
     }
     return this.tables.save(table);

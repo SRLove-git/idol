@@ -76,6 +76,8 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-IDOL BEADS <no-reply@mail.idol-sg.com>}
+      # 线上预约总开关：筹备期间默认关闭，需要开放时在 .env 设置为 true。
+      BOOKING_ENABLED: ${BOOKING_ENABLED:-false}
       DB_MIGRATIONS_RUN: "true"
       TRUST_PROXY: "false"
       UPLOAD_DIR: /app/uploads

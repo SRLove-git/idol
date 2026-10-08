@@ -1,20 +1,8 @@
 <script setup>
-import { ref } from 'vue'
-import { t, allHighlights } from '../store.js'
+import { computed } from 'vue'
+import { defaultSiteMedia, siteMedia, state, t } from '../store.js'
 
-const initial = [
-  { src: '/photos/show_24.webp', alt: 'Highlight 1' },
-  { src: '/photos/show_25.jpg', alt: 'Highlight 2' },
-  { src: '/photos/show_26.jpg', alt: 'Highlight 3' }
-]
-const extra = ref([])
-let shown = 0
-
-function loadMore() {
-  const batch = allHighlights.slice(shown, shown + 3)
-  shown += batch.length
-  extra.value.push(...batch.map((src) => `/photos/${src.split('/').pop()}`))
-}
+const highlights = computed(() => siteMedia('featuredHighlights', defaultSiteMedia.featuredHighlights))
 </script>
 
 <template>
@@ -25,18 +13,15 @@ function loadMore() {
         <img src="/photos/high-title.png" alt="Highlight" class="title-icon">
       </h2>
       <div class="highlight-grid">
-        <div v-for="img in initial" :key="img.src" class="highlight-item">
-          <img :src="img.src" :alt="img.alt" loading="lazy" decoding="async">
-        </div>
-        <div v-for="(src, i) in extra" :key="'e' + i" class="highlight-item">
-          <img :src="src" alt="Highlight" loading="lazy" decoding="async">
+        <div v-for="(src, index) in highlights" :key="src" class="highlight-item">
+          <img :src="src" :alt="state.lang === 'zh' ? `拼豆精选作品 ${index + 1}` : `Featured bead creation ${index + 1}`" loading="lazy" decoding="async">
         </div>
       </div>
-      <div v-if="shown < allHighlights.length" class="highlights-cta">
-        <button type="button" class="btn btn-primary" @click="loadMore">
+      <div class="highlights-cta">
+        <a class="btn btn-primary" href="/highlights">
           <span>{{ t('btn_view_details') }}</span>
           <img src="/photos/view-details.png" alt="icon" class="btn-icon">
-        </button>
+        </a>
       </div>
     </div>
   </section>

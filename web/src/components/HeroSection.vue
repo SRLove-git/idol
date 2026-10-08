@@ -1,9 +1,12 @@
 <script setup>
-import { state, t } from '../store.js'
+import { computed } from 'vue'
+import { defaultSiteMedia, siteMedia, state, t } from '../store.js'
+
+const heroStyle = computed(() => ({ '--hero-background': `url("${siteMedia('heroBackground', defaultSiteMedia.heroBackground)}")` }))
 </script>
 
 <template>
-  <section id="home" class="hero">
+  <section id="home" class="hero" :style="heroStyle">
     <div class="container hero-container">
       <h1 class="hero-title">
         <img src="/photos/hero-left.png" alt="Bead" class="hero-deco-img">
@@ -19,7 +22,7 @@ import { state, t } from '../store.js'
         <span>{{ t('hero_slogan') }}</span>
       </div>
       <div class="cta-buttons">
-        <a href="/booking" class="btn btn-primary">
+        <a v-if="state.bookingEnabled" href="/booking" class="btn btn-primary">
           <span>{{ t('cta_booking') }}</span>
           <img src="/photos/btn-booking.png" alt="icon" class="btn-icon">
         </a>

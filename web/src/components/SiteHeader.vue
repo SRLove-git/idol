@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { state, t } from '../store.js'
+import { computed, onMounted, ref } from 'vue'
+import { defaultSiteMedia, siteMedia, state, t } from '../store.js'
 
 const menuOpen = ref(false)
 const loggedIn = ref(false)
+const logo = computed(() => siteMedia('logo', defaultSiteMedia.logo))
 
 onMounted(async () => {
   try {
@@ -18,7 +19,7 @@ onMounted(async () => {
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="/" aria-label="IDOL BEADS 首页">
-        <img src="/photos/idol-logo.png" alt="IDOL Beads" class="header-logo">
+        <img :src="logo" alt="IDOL Beads" class="header-logo">
         <span>
           <strong>{{ state.store?.name || 'IDOL BEADS' }}</strong>
           <small>DIY BEAD WORKSHOP</small>
@@ -31,11 +32,12 @@ onMounted(async () => {
 
       <nav class="site-nav" :class="{ 'is-open': menuOpen }" @click="menuOpen = false">
         <a href="/#home">{{ t('nav_home') }}</a>
+        <a href="/highlights">{{ t('nav_highlights') }}</a>
         <a href="/#pricing">{{ t('nav_pricing') }}</a>
-        <a href="/booking">{{ t('nav_booking') }}</a>
-        <a href="/#social">{{ t('nav_social') }}</a>
+        <a v-if="state.bookingEnabled" href="/booking">{{ t('nav_booking') }}</a>
         <a v-if="loggedIn" class="nav-account" href="/account">我的预约</a>
         <template v-else>
+          <a href="/account">查询预约</a>
           <a href="/login">登录</a>
           <a class="nav-account" href="/register">注册</a>
         </template>

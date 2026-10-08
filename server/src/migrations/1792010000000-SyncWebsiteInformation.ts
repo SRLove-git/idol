@@ -23,7 +23,7 @@ export class SyncWebsiteInformation1792010000000
       UPDATE \`member_plans\`
       SET \`benefits\` = JSON_ARRAY(
         '每件作品赠送 1 份 DIY 饰品，不限作品数量',
-        '每日到店可免费领取饮品 1 杯'
+        '会员到店消费享 8 折优惠'
       )
       WHERE \`name\` IN ('月卡', '年卡')
     `);

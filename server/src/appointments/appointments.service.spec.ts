@@ -1,4 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { isSurchargeDate } from '../common/singapore-holidays';
 import { Coupon, UserCoupon } from '../members/coupon.entity';
 import { Appointment } from './appointment.entity';
@@ -165,6 +168,23 @@ const baseDto = {
 
 describe('AppointmentsService', () => {
   describe('createStore', () => {
+    it('预约总开关关闭时拒绝创建且不产生游客账号', async () => {
+      const previous = process.env.BOOKING_ENABLED;
+      process.env.BOOKING_ENABLED = 'false';
+      const m = buildService();
+
+      try {
+        await expect(m.svc.create(undefined, baseDto)).rejects.toThrow(
+          ServiceUnavailableException,
+        );
+        expect(m.users.findByEmail).not.toHaveBeenCalled();
+        expect(m.users.create).not.toHaveBeenCalled();
+      } finally {
+        if (previous == null) delete process.env.BOOKING_ENABLED;
+        else process.env.BOOKING_ENABLED = previous;
+      }
+    });
+
     it('未登录预约必须填写邮箱', async () => {
       const m = buildService();
 
@@ -680,6 +700,64 @@ describe('AppointmentsService', () => {
       });
 
       await expect(m.svc.findByCode('123456')).rejects.toThrow('该预约已取消');
+    });
+  });
+
+  describe('lookupByEmailAndPhone', () => {
+    it('邮箱与手机号匹配时返回该手机号的预约并隐藏用户 ID', async () => {
+      const m = buildService();
+      m.users.findByEmail.mockResolvedValue({ id: 42 });
+      m.appointments.find.mockResolvedValue([
+        {
+          id: 9,
+          userId: 42,
+          type: 'store',
+          bookingType: 'hourly',
+          storeName: 'IDOL BEADS',
+          tableName: 'A1',
+          tables: [],
+          activityName: '',
+          packageName: '',
+          date: '2026-10-12',
+          startTime: '14:00',
+          endTime: '15:00',
+          peopleCount: 2,
+          code: 'AB2C3D',
+          amount: 39.9,
+          originalAmount: 39.9,
+          payStatus: 'paid',
+          status: 'completed',
+          note: '想做小猫 | 电话 +65 8123-4567',
+          createdAt: new Date('2026-10-08T00:00:00Z'),
+        },
+        { id: 10, note: '电话 90001111' },
+      ]);
+
+      const result = await m.svc.lookupByEmailAndPhone(
+        ' Guest@Example.com ',
+        '(65) 8123 4567',
+      );
+
+      expect(m.users.findByEmail).toHaveBeenCalledWith('guest@example.com');
+      expect(m.appointments.find).toHaveBeenCalledWith({
+        where: { userId: 42 },
+        order: { createdAt: 'DESC' },
+        take: 50,
+      });
+      expect(result.total).toBe(1);
+      expect(result.items[0].code).toBe('AB2C3D');
+      expect(result.items[0]).not.toHaveProperty('userId');
+      expect(result.items[0]).not.toHaveProperty('id');
+    });
+
+    it('邮箱不存在或不匹配时使用统一错误提示', async () => {
+      const m = buildService();
+      m.users.findByEmail.mockResolvedValue(null);
+
+      await expect(
+        m.svc.lookupByEmailAndPhone('missing@example.com', '81234567'),
+      ).rejects.toThrow('邮箱或手机号不正确');
+      expect(m.appointments.find).not.toHaveBeenCalled();
     });
   });
 

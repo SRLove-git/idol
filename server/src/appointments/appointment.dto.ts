@@ -109,6 +109,18 @@ export class CheckInDto {
   code: string;
 }
 
+/** 游客查询预约：邮箱与预约手机号必须同时匹配 */
+export class LookupAppointmentDto {
+  @IsEmail({}, { message: '请输入正确的预约邮箱' })
+  @MaxLength(255)
+  email: string;
+
+  @IsString()
+  @MaxLength(30)
+  @Matches(/^[+()\d\s-]{6,30}$/, { message: '请输入正确的预约手机号' })
+  phone: string;
+}
+
 /** 管理端线下开台：散客免注册，创建即服务中（上钟），到点自动下钟 */
 export class WalkInDto {
   @IsInt()

@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { state, fmtPrice } from '../store.js'
+import { state, fmtPrice, t } from '../store.js'
 
 const fourHour = computed(() =>
   state.store?.packages?.find((p) => Number(p.hours) === 4) ?? state.store?.packages?.[0]
@@ -39,14 +39,14 @@ const rows = computed(() => {
   <section id="pricing" class="pricing">
     <div class="container">
       <h2 class="section-title">
-        <span>价位表</span>
+        <span>{{ t('pricing_title') }}</span>
         <img src="/photos/price-title.png" alt="Pricing" class="title-icon">
       </h2>
       <div class="price-tables">
         <div class="price-card pricing-full">
           <div class="card-header">
             <img src="/photos/price-title.png" alt="Pricing" class="card-title-icon">
-            <h3>价位表 · Pricing</h3>
+            <h3>{{ t('pricing_card_title') }}</h3>
           </div>
           <div class="price-table-scroll">
             <table class="pricing-table">
@@ -69,11 +69,11 @@ const rows = computed(() => {
             </table>
           </div>
           <div class="pricing-notes">
-            <h4>备注 · Note</h4>
-            <p><strong>会员 Membership:</strong> $19.90 SGD/月 (month)，$149 SGD/年 (year)。</p>
-            <p><strong>会员福利 Member benefits:</strong> 每件作品可获赠 1 份 DIY 饰品，不限作品数量；每日到店可免费领取饮品 1 杯。</p>
-            <p><strong>多人同行 Group rate:</strong> 两人及以上同行，非会员按多人同行价；同行里有会员，该会员按会员价计算。<br><span>2 or more pax. Non-members pay the group rate; members in the group pay the member rate.</span></p>
-            <p><strong>周末及节假日 Weekends &amp; public holidays:</strong> 所有价格加收 10% 服务费 (10% service charge applies)。</p>
+            <h4>{{ t('pricing_note_title') }}</h4>
+            <p>{{ t('pricing_note_membership') }}</p>
+            <p>{{ t('pricing_note_benefits') }}</p>
+            <p>{{ t('pricing_note_group') }}</p>
+            <p>{{ t('pricing_note_weekend') }}</p>
           </div>
         </div>
       </div>

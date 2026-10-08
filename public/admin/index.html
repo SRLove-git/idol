@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>IDOL BEADS · 管理后台</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=1.0.0">
+  <link rel="stylesheet" href="/admin/admin.css?v=1.1.2">
 </head>
 <body>
   <div id="login-view" class="login-shell" hidden>
@@ -17,13 +17,14 @@
       <div class="login-copy">
         <span class="eyebrow">安全登录</span>
         <h1>管理后台</h1>
-        <p>使用管理员账号登录，管理门店、预约、会员和用户。</p>
+        <p>使用管理员账号登录，管理官网内容、门店、预约、会员和用户。</p>
       </div>
       <div id="login-error" class="alert alert-error" hidden></div>
       <form class="login-form" method="post" action="/auth/login">
         <input type="hidden" name="next" value="/admin">
         <label><span>管理员账号</span><input name="account" autocomplete="username" required placeholder="admin"></label>
         <label><span>密码</span><input name="password" type="password" autocomplete="current-password" required placeholder="请输入密码"></label>
+        <label class="captcha-field"><span>图形验证码</span><div><input name="captchaText" autocomplete="off" maxlength="4" required placeholder="4 位验证码"><img id="captcha-image" alt="图形验证码"><button id="captcha-refresh" type="button">换一张</button></div><input id="captcha-id" name="captchaId" type="hidden"></label>
         <button type="submit">登录后台</button>
       </form>
       <a class="back-site" href="/">← 返回官网</a>
@@ -39,7 +40,9 @@
       <nav id="admin-nav" class="sidebar-nav">
         <button data-page="dashboard" class="is-active"><span>▦</span>数据看板</button>
         <button data-page="appointments" data-role="operator"><span>◷</span>预约管理<i id="pending-appt"></i></button>
+        <button data-page="content" data-role="operator"><span>✎</span>官网内容</button>
         <button data-page="pricing" data-role="operator"><span>◈</span>门店与价格</button>
+        <button data-page="seats" data-role="operator"><span>▦</span>桌位管理</button>
         <button data-page="members" data-role="operator"><span>☆</span>会员管理<i id="pending-member"></i></button>
         <button data-page="users" data-role="operator"><span>◎</span>用户管理</button>
         <button data-page="security"><span>⚿</span>账号安全</button>
@@ -64,6 +67,6 @@
   <div id="confirm-modal" class="modal" hidden>
     <div class="modal-card"><h3 id="confirm-title">确认操作</h3><p id="confirm-message"></p><div><button data-confirm="cancel" class="button button-ghost">取消</button><button data-confirm="ok" class="button button-danger">确认</button></div></div>
   </div>
-  <script src="/admin/admin.js?v=1.0.0" defer></script>
+  <script src="/admin/admin.js?v=1.1.2" defer></script>
 </body>
 </html>

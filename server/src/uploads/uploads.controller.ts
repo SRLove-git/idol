@@ -118,7 +118,7 @@ function multerStorage() {
 }
 
 /** 允许的图片业务目录（query 参数 folder，防止路径穿越） */
-const ALLOWED_FOLDERS = new Set(['chat', 'avatar', 'post']);
+const ALLOWED_FOLDERS = new Set(['chat', 'avatar', 'post', 'site']);
 
 /**
  * 聊天图片上传。

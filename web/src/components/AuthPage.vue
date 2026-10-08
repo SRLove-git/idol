@@ -1,5 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { state } from '../store.js'
 
 const props = defineProps({
   mode: { type: String, required: true }
@@ -142,7 +143,7 @@ async function submit() {
           {{ isLogin ? '还没有账号？' : '已经有账号？' }}
           <a :href="isLogin ? '/register' : '/login'">{{ isLogin ? '立即注册' : '去登录' }}</a>
         </p>
-        <p class="auth-booking-note">只想预约？<a href="/booking">无需登录，直接预约</a></p>
+        <p v-if="state.bookingEnabled" class="auth-booking-note">只想预约？<a href="/booking">无需登录，直接预约</a></p>
       </div>
     </section>
   </main>

@@ -1,14 +1,11 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { defaultSiteMedia, siteMedia } from '../store.js'
 
-const banners = [
-  '/photos/banner-1.webp',
-  '/photos/banner-2.webp',
-  '/photos/banner-3.webp',
-  '/photos/banner-4.webp',
-  '/photos/banner-5.webp',
-  '/photos/banner-6.webp'
-]
+const banners = computed(() => {
+  const configured = siteMedia('banners', defaultSiteMedia.banners)
+  return Array.isArray(configured) && configured.length ? configured : defaultSiteMedia.banners
+})
 const current = ref(0)
 let timer = null
 
@@ -21,7 +18,7 @@ function restart() {
   timer = setInterval(() => go(current.value + 1), 5000)
 }
 function go(i) {
-  current.value = (i + banners.length) % banners.length
+  current.value = (i + banners.value.length) % banners.value.length
   restart()
 }
 

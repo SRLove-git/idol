@@ -26,7 +26,7 @@ const MIME = {
   ".woff2": "font/woff2",
 };
 
-const SPA_ROUTES = new Set(["/", "/booking", "/login", "/register", "/account"]);
+const SPA_ROUTES = new Set(["/", "/booking", "/highlights", "/login", "/register", "/account"]);
 
 async function callBackend(pathname, { method = "GET", token, body } = {}) {
   const headers = {};
@@ -45,6 +45,31 @@ async function callBackend(pathname, { method = "GET", token, body } = {}) {
     data = text;
   }
   return { status: response.status, data };
+}
+
+/** 透传 multipart 上传与后端静态资源，不对二进制内容做 JSON 转换。 */
+async function proxyRaw(req, res, target, token) {
+  const headers = {};
+  if (req.headers["content-type"]) headers["content-type"] = req.headers["content-type"];
+  if (token) headers.authorization = `Bearer ${token}`;
+  const options = { method: req.method, headers };
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    options.body = req;
+    options.duplex = "half";
+  }
+  const response = await fetch(target, options);
+  const responseHeaders = {};
+  for (const name of ["content-type", "content-length", "cache-control", "etag", "last-modified"]) {
+    const value = response.headers.get(name);
+    if (value) responseHeaders[name] = value;
+  }
+  res.writeHead(response.status, responseHeaders);
+  if (!response.body || req.method === "HEAD") {
+    res.end();
+    return;
+  }
+  for await (const chunk of response.body) res.write(chunk);
+  res.end();
 }
 
 function parseCookies(req) {
@@ -172,7 +197,13 @@ const server = http.createServer(async (req, res) => {
       const body = await parseBody(req);
       const result = await callBackend("/auth/login", {
         method: "POST",
-        body: { account: body.account, password: body.password },
+        body: {
+          account: body.account,
+          password: body.password,
+          captchaToken: body.captchaToken,
+          captchaId: body.captchaId,
+          captchaText: body.captchaText,
+        },
       });
       if (result.status === 200 || result.status === 201) {
         setToken(res, result.data.accessToken);
@@ -224,10 +255,19 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/api/")) {
       const apiPath = pathname.slice(4) + url.search;
+      if (req.headers["content-type"]?.includes("multipart/form-data")) {
+        await proxyRaw(req, res, `${BACKEND}/api${apiPath}`, token);
+        return;
+      }
       let body;
       if (req.method !== "GET" && req.method !== "HEAD") body = await parseBody(req);
       const result = await callBackend(apiPath, { method: req.method, token, body });
       sendJson(res, result.status, result.data);
+      return;
+    }
+
+    if (pathname.startsWith("/uploads/") || pathname.startsWith("/assets/demo/") || pathname.startsWith("/assets/music/")) {
+      await proxyRaw(req, res, `${BACKEND}${pathname}${url.search}`, token);
       return;
     }
 
