@@ -15,7 +15,7 @@ const pageMeta = {
 
 const CONTENT_DEFAULTS = {
   zh: {
-    hero_desc: '拼豆工作室', hero_slogan: '一粒粒豆子，组成属于自己的王国', cta_booking: '预约体验', cta_pricing: '查看价位',
+    hero_desc: '拼豆工作室', hero_slogan: 'IDOL BEADS， 与快乐同行', cta_booking: '预约体验', cta_pricing: '查看价位',
     reviews_title: 'IDOL BEADS 顾客评价', member_title: '会员专享福利', member_rule_1: '会员月卡 $19.90 SGD，年卡 $149 SGD', member_rule_2: '每件作品赠送 1 份 DIY 饰品，不限作品数量', member_rule_3: '会员到店消费享 8 折优惠',
     feat1_title: '专业烫印', feat1_desc: '店内使用全自动烫画机，默认单面无孔，也提供特殊烫。工作人员会帮你完成最后的烫印步骤，确保作品完美。', feat2_title: '免费工具', feat2_desc: '店内工具有大小豆板，单双针豆笔，豆铲，立豆盘，尖头弯头镊子等。', feat3_title: '自定成品', feat3_desc: '成品可做钥匙扣，冰箱贴，手机链，风铃，Crocs鞋扣等。', feat4_title: '分享特惠', feat4_desc: '在任何社交媒体上分享，即可免费获取 30 积分。',
     highlights_title: '拼豆精选', highlights_page_title: '拼豆作品集', highlights_page_desc: '从萌趣小物到人气角色，在这里找到你的下一个拼豆灵感。', highlights_book_title: '找到想做的款式了吗？', highlights_book_desc: '到店挑选图纸和颜色，亲手完成你的专属作品。', highlights_book_button: '预约拼豆体验',
@@ -23,7 +23,7 @@ const CONTENT_DEFAULTS = {
     booking_title: '预约体验', booking_closed_title: '预约暂未开放', booking_closed_desc: '门店正在筹备中，线上预约开放后我们会第一时间更新。感谢你的理解与耐心等待。', studio_location: '手工拼豆制作体验 · 创意像素艺术', footer_hours_note: '全年无休，公共假期正常营业'
   },
   en: {
-    hero_desc: 'Perler Bead Workshop', hero_slogan: 'Bead by bead, building a kingdom of your own', cta_booking: 'Book Now', cta_pricing: 'View Pricing',
+    hero_desc: 'Perler Bead Workshop', hero_slogan: 'IDOL BEADS, joy every step of the way', cta_booking: 'Book Now', cta_pricing: 'View Pricing',
     reviews_title: 'IDOL BEADS Customer Reviews', member_title: 'Member Benefits', member_rule_1: 'S$19.90 monthly membership · S$149 annual membership', member_rule_2: 'One free DIY accessory with every piece, no quantity limit', member_rule_3: 'Members enjoy 20% off in-store purchases',
     feat1_title: 'Professional Ironing', feat1_desc: 'We use fully automatic heat presses. Default is single-sided no-hole, special ironing also available.', feat2_title: 'Free Tools', feat2_desc: 'Various boards, bead pens, scrapers, plates, and tweezers available for use.', feat3_title: 'Custom Products', feat3_desc: 'Can be made into keychains, fridge magnets, phone straps, wind chimes, Crocs jibbitz, etc.', feat4_title: 'Sharing Offer', feat4_desc: 'Share on any social media and receive 30 free points added to your account.',
     highlights_title: 'Perler Bead Highlights', highlights_page_title: 'Bead Creations Gallery', highlights_page_desc: 'From adorable miniatures to beloved characters, find inspiration for your next bead creation.', highlights_book_title: 'Found something you would love to make?', highlights_book_desc: 'Choose your pattern and colors in store, then bring your own creation to life.', highlights_book_button: 'Book a Beading Session',
@@ -48,7 +48,7 @@ const REVIEW_DEFAULTS = [
 ]
 
 const MEDIA_DEFAULTS = {
-  logo: '/photos/idol-logo.png', heroBackground: '/photos/indoor_1.webp',
+  logo: '/photos/idol-logo.png', heroBackground: '/photos/hero-studio.jpg',
   banners: ['/photos/banner-floor-2.png', '/photos/banner-floor-1.png'],
   featureIcons: [1, 2, 3, 4].map((n) => `/photos/feat-icon-${n}.png`),
   featuredHighlights: ['/photos/xhs-studio.jpg', '/photos/xhs-character-wall.jpg', '/photos/xhs-display-wall.jpg']

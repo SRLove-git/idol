@@ -9,6 +9,7 @@ public/assets/
 public/photos/*
 !public/photos/banner-floor-1.png
 !public/photos/banner-floor-2.png
+!public/photos/hero-studio.jpg
 
 # 密钥 / 本地环境（绝不提交；模板用 *.env.example）
 .env

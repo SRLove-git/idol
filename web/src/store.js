@@ -34,7 +34,7 @@ export const translations = {
     mobile_menu_label: '打开导航',
     language_switch_label: '切换语言',
     hero_desc: '拼豆工作室',
-    hero_slogan: '一粒粒豆子，组成属于自己的王国',
+    hero_slogan: 'IDOL BEADS， 与快乐同行',
     cta_booking: '预约体验',
     cta_pricing: '查看价位',
     reviews_title: 'IDOL BEADS 顾客评价',
@@ -293,7 +293,7 @@ export const translations = {
     mobile_menu_label: 'Open navigation',
     language_switch_label: 'Switch language',
     hero_desc: 'Perler Bead Workshop',
-    hero_slogan: 'Bead by bead, building a kingdom of your own',
+    hero_slogan: 'IDOL BEADS, joy every step of the way',
     cta_booking: 'Book Now',
     cta_pricing: 'View Pricing',
     reviews_title: 'IDOL BEADS Customer Reviews',
@@ -701,7 +701,7 @@ export const defaultReviews = [
 
 export const defaultSiteMedia = {
   logo: '/photos/idol-logo.png',
-  heroBackground: '/photos/indoor_1.webp',
+  heroBackground: '/photos/hero-studio.jpg',
   banners: ['/photos/banner-floor-2.png', '/photos/banner-floor-1.png'],
   featureIcons: [1, 2, 3, 4].map((n) => `/photos/feat-icon-${n}.png`),
   featuredHighlights: featuredHighlights.map((item) => `/${item.src}`),
