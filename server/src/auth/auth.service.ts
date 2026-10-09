@@ -28,8 +28,9 @@ export interface JwtPayload {
 }
 
 const REFRESH_TTL = 30 * 24 * 3600; // 刷新令牌 30 天
-const PASSWORD_ATTEMPT_MAX = 5; // 密码登录 10 分钟内最多失败 5 次
-const PASSWORD_LOCK_TTL = 600; // 连续失败后锁定 10 分钟
+const PASSWORD_ATTEMPT_MAX_DEFAULT = 8;
+const PASSWORD_ATTEMPT_WINDOW_DEFAULT = 600;
+const PASSWORD_LOCK_TTL_DEFAULT = 300;
 
 /** 同一 IP 24 小时内最大注册数（REGISTER_IP_MAX 可覆盖） */
 const REGISTER_IP_MAX_DEFAULT = 5;
@@ -395,20 +396,44 @@ export class AuthService {
 
   /** 密码登录锁检查：锁定期间直接拒绝 */
   private async checkLoginLock(key: string) {
-    if (await this.redis.exists(`login:lock:${key}`)) {
-      throw new UnauthorizedException('尝试次数过多，请 10 分钟后再试');
+    const ttl = await this.redis.ttl(`login:lock:${key}`);
+    if (ttl > 0) {
+      throw new UnauthorizedException(
+        `尝试次数过多，请 ${Math.max(1, Math.ceil(ttl / 60))} 分钟后再试`,
+      );
     }
   }
 
   /** 记录一次密码登录失败，连续失败达到上限后锁定 */
   private async recordLoginFailure(key: string) {
+    const maxAttempts = this.config.get<number>(
+      'LOGIN_ATTEMPT_MAX',
+      PASSWORD_ATTEMPT_MAX_DEFAULT,
+    );
+    const attemptWindow = this.config.get<number>(
+      'LOGIN_ATTEMPT_WINDOW_SEC',
+      PASSWORD_ATTEMPT_WINDOW_DEFAULT,
+    );
+    const lockTtl = this.config.get<number>(
+      'LOGIN_LOCK_SEC',
+      PASSWORD_LOCK_TTL_DEFAULT,
+    );
     const attemptKey = `login:attempt:${key}`;
     const attempts = await this.redis.incr(attemptKey);
-    if (attempts === 1) await this.redis.expire(attemptKey, 600);
-    if (attempts >= PASSWORD_ATTEMPT_MAX) {
-      await this.redis.set(`login:lock:${key}`, '1', 'EX', PASSWORD_LOCK_TTL);
+    if (attempts === 1) {
+      await this.redis.expire(attemptKey, Math.max(1, attemptWindow));
+    }
+    if (attempts >= Math.max(1, maxAttempts)) {
+      await this.redis.set(
+        `login:lock:${key}`,
+        '1',
+        'EX',
+        Math.max(1, lockTtl),
+      );
       await this.redis.del(attemptKey);
-      throw new UnauthorizedException('尝试次数过多，请 10 分钟后再试');
+      throw new UnauthorizedException(
+        `尝试次数过多，请 ${Math.max(1, Math.ceil(lockTtl / 60))} 分钟后再试`,
+      );
     }
   }
 

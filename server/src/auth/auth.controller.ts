@@ -28,7 +28,7 @@ export class AuthController {
 
   /** 发送注册邮箱验证码 */
   @Post('register-code')
-  @Throttle({ auth: { limit: 3, ttl: 60000, blockDuration: 300000 } })
+  @Throttle({ auth: { limit: 5, ttl: 60000, blockDuration: 60000 } })
   sendRegistrationCode(
     @Req() req: Request,
     @Body() dto: SendRegistrationCodeDto,
@@ -38,7 +38,7 @@ export class AuthController {
 
   /** 注册：用户名 + 密码 + 邮箱验证码；游客邮箱账号会原地升级并保留预约 */
   @Post('register')
-  @Throttle({ auth: { limit: 5, ttl: 60000, blockDuration: 300000 } })
+  @Throttle({ auth: { limit: 10, ttl: 60000, blockDuration: 60000 } })
   async register(@Req() req: Request, @Body() dto: RegisterDto) {
     await this.auth.assertIpRegisterAllowed(req.ip);
     const deviceId = dto.deviceId?.trim() || null;
@@ -49,7 +49,7 @@ export class AuthController {
 
   /** 用户名 / 邮箱 + 密码登录 */
   @Post('login')
-  @Throttle({ auth: { limit: 5, ttl: 60000, blockDuration: 300000 } })
+  @Throttle({ auth: { limit: 10, ttl: 60000, blockDuration: 60000 } })
   login(@Req() req: Request, @Body() dto: LoginDto) {
     return this.auth.login(
       dto.account,

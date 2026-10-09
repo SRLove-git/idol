@@ -41,14 +41,18 @@ import { REDIS_CLIENT } from './redis/redis.module';
     GlobalJwtModule,
     // 全局限流：默认按 IP 全站配额（THROTTLE_LIMIT 次/分钟），
     // 超限后封锁 THROTTLE_BLOCK_MS；auth 命名限流只作用于 AuthController，
-    // 注册/登录/刷新在路由上再用 @Throttle 收紧。测试与显式关闭时不生效。
+    // 且按路由分开计数，避免重复注册误伤后续登录。测试与显式关闭时不生效。
     ThrottlerModule.forRootAsync({
       inject: [REDIS_CLIENT, ConfigService],
       useFactory: (redis: Redis, config: ConfigService) => ({
         errorMessage: '请求过于频繁，请稍后再试',
         storage: new RedisThrottlerStorage(redis),
-        // 统一 key：default:<ip> / auth:<ip>（跨路由共享配额，防爬虫轮换路径）
-        generateKey: (_context, tracker, name) => `${name}:${tracker}`,
+        // 普通请求全局共享 IP 配额；认证接口按路由独立计数，
+        // 避免注册、验证码和登录之间相互封锁。
+        generateKey: (context, tracker, name) =>
+          name === 'auth'
+            ? `${name}:${context.getClass().name}:${context.getHandler().name}:${tracker}`
+            : `${name}:${tracker}`,
         skipIf: () =>
           process.env.NODE_ENV === 'test' ||
           process.env.THROTTLE_DISABLED === 'true',
