@@ -4081,9 +4081,14 @@ footer.site-footer {
 
 .guest-lookup-form input {
     min-height: 48px;
+    padding: 0 18px;
     border: 1px solid #eadde1;
     border-radius: 13px;
     background: #fffafb;
+    color: #493e42;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
 }
 
 .guest-lookup-form .btn {
