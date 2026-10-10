@@ -52,11 +52,11 @@ export class AppointmentsController {
     return this.appointments.myList(user.id, page ?? 1, pageSize ?? 20);
   }
 
-  /** 未登录用户凭预约邮箱 + 预约手机号查询预约记录 */
+  /** 未登录用户凭预约邮箱查询预约记录 */
   @Post('lookup')
   @Throttle({ default: { limit: 10, ttl: 60000, blockDuration: 300000 } })
   lookup(@Body() dto: LookupAppointmentDto) {
-    return this.appointments.lookupByEmailAndPhone(dto.email, dto.phone);
+    return this.appointments.lookupByEmail(dto.email);
   }
 
   /**

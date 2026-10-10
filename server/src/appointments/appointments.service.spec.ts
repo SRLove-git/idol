@@ -803,8 +803,8 @@ describe('AppointmentsService', () => {
     });
   });
 
-  describe('lookupByEmailAndPhone', () => {
-    it('邮箱与手机号匹配时返回该手机号的预约并隐藏用户 ID', async () => {
+  describe('lookupByEmail', () => {
+    it('邮箱匹配时返回该邮箱下的预约并隐藏用户 ID', async () => {
       const m = buildService();
       m.users.findByEmail.mockResolvedValue({ id: 42 });
       m.appointments.find.mockResolvedValue([
@@ -830,13 +830,9 @@ describe('AppointmentsService', () => {
           note: '想做小猫 | 电话 +65 8123-4567',
           createdAt: new Date('2026-10-08T00:00:00Z'),
         },
-        { id: 10, note: '电话 90001111' },
       ]);
 
-      const result = await m.svc.lookupByEmailAndPhone(
-        ' Guest@Example.com ',
-        '(65) 8123 4567',
-      );
+      const result = await m.svc.lookupByEmail(' Guest@Example.com ');
 
       expect(m.users.findByEmail).toHaveBeenCalledWith('guest@example.com');
       expect(m.appointments.find).toHaveBeenCalledWith({
@@ -854,10 +850,20 @@ describe('AppointmentsService', () => {
       const m = buildService();
       m.users.findByEmail.mockResolvedValue(null);
 
-      await expect(
-        m.svc.lookupByEmailAndPhone('missing@example.com', '81234567'),
-      ).rejects.toThrow('邮箱或手机号不正确');
+      await expect(m.svc.lookupByEmail('missing@example.com')).rejects.toThrow(
+        '未找到该邮箱对应的预约',
+      );
       expect(m.appointments.find).not.toHaveBeenCalled();
+    });
+
+    it('邮箱存在但没有预约时返回未找到', async () => {
+      const m = buildService();
+      m.users.findByEmail.mockResolvedValue({ id: 42 });
+      m.appointments.find.mockResolvedValue([]);
+
+      await expect(m.svc.lookupByEmail('guest@example.com')).rejects.toThrow(
+        '未找到该邮箱对应的预约',
+      );
     });
   });
 

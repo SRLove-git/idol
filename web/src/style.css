@@ -4062,7 +4062,7 @@ footer.site-footer {
 
 .guest-lookup-form {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(190px, .65fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 14px;
     align-items: end;
     margin-top: 28px;

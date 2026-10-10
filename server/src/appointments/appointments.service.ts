@@ -1077,19 +1077,6 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     return { items: await this.withCouponCodes(items), total };
   }
 
-  /** 常见号码按数字匹配；无数字的自由输入则按原文匹配。 */
-  private normalizePhone(phone: string): string {
-    const value = phone.trim();
-    const digits = value.replace(/\D/g, '');
-    return digits ? digits : value.toLocaleLowerCase();
-  }
-
-  /** 从现有预约备注末尾的「电话 xxx」字段读取预约手机号。 */
-  private appointmentPhone(appt: Appointment): string {
-    const match = /(?:^|\|\s*)电话\s*([^|]+)/u.exec(appt.note ?? '');
-    return this.normalizePhone(match?.[1] ?? '');
-  }
-
   /** 返回公开查询页展示所需字段，不暴露 userId、核销人等内部数据。 */
   private appointmentLookupView(appt: Appointment) {
     return {
@@ -1114,27 +1101,23 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  /** 游客预约查询：预约邮箱与预约手机号必须同时匹配。 */
-  async lookupByEmailAndPhone(email: string, phone: string) {
+  /** 游客预约查询：返回该预约邮箱下的记录。 */
+  async lookupByEmail(email: string) {
     const owner = await this.users.findByEmail(email.trim().toLowerCase());
     if (!owner) {
-      throw new NotFoundException('邮箱或手机号不正确');
+      throw new NotFoundException('未找到该邮箱对应的预约');
     }
     const records = await this.appointments.find({
       where: { userId: owner.id },
       order: { createdAt: 'DESC' },
       take: 50,
     });
-    const normalizedPhone = this.normalizePhone(phone);
-    const matched = records.filter(
-      (appt) => this.appointmentPhone(appt) === normalizedPhone,
-    );
-    if (!matched.length) {
-      throw new NotFoundException('邮箱或手机号不正确');
+    if (!records.length) {
+      throw new NotFoundException('未找到该邮箱对应的预约');
     }
     return {
-      items: matched.map((appt) => this.appointmentLookupView(appt)),
-      total: matched.length,
+      items: records.map((appt) => this.appointmentLookupView(appt)),
+      total: records.length,
     };
   }
 

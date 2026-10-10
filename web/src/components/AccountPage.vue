@@ -12,7 +12,6 @@ const memberOrders = ref([])
 const membershipError = ref('')
 const purchasingPlanId = ref(null)
 const guestEmail = ref('')
-const guestPhone = ref('')
 const lookupLoading = ref(false)
 const lookupError = ref('')
 const lookupDone = ref(false)
@@ -126,8 +125,7 @@ async function lookupAppointment() {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        email: guestEmail.value.trim(),
-        phone: guestPhone.value.trim()
+        email: guestEmail.value.trim()
       })
     })
     const data = await response.json().catch(() => ({}))
@@ -175,11 +173,7 @@ onMounted(loadAccount)
         <form class="guest-lookup-form" @submit.prevent="lookupAppointment">
           <label>
             <span>{{ t('account_booking_email') }}</span>
-            <input v-model="guestEmail" type="email" autocomplete="email" required placeholder="name@example.com">
-          </label>
-          <label>
-            <span>{{ t('account_booking_phone') }}</span>
-            <input v-model="guestPhone" type="tel" autocomplete="tel" required :placeholder="t('account_phone_placeholder')">
+            <input v-model="guestEmail" type="email" autocomplete="off" required>
           </label>
           <button class="btn btn-primary" type="submit" :disabled="lookupLoading">
             {{ lookupLoading ? t('account_searching') : t('account_lookup_button') }}
