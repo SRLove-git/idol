@@ -655,7 +655,9 @@ describe('AppointmentsService', () => {
         'guest@example.com',
         expect.stringContaining('预约未获确认'),
         expect.stringMatching(/原因：预约信息不完整[\s\S]*期待下一次与你相遇/),
-        expect.stringMatching(/IDOL BEADS[\s\S]*期待下一次与你相遇/),
+        expect.stringMatching(
+          /IDOL BEADS[\s\S]*期待下一次与你相遇[\s\S]*加入拼豆世界[\s\S]*IDOLBeads[\s\S]*wechat\.html/,
+        ),
       );
     });
   });

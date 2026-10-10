@@ -1411,6 +1411,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
               ? '很抱歉，这次暂时无法为你确认预约。'
               : '很抱歉，你的预约已由门店取消。',
             reason: cancellationReason,
+            reasonLabel: rejected ? '未能确认的原因' : '取消原因',
             closingNote: comfortingNote,
             appointment: saved,
             address: store?.address,

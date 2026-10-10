@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#fff7f8">
+  <title>添加 IDOL BEADS 微信</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#fff7f8;color:#443a3d;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.card{width:100%;max-width:420px;padding:34px 28px;text-align:center;background:#fff;border:1px solid #f0dfe3;border-radius:20px;box-shadow:0 16px 44px rgba(91,55,66,.09)}.logo{width:76px;height:76px;border-radius:50%;object-fit:cover}.brand{margin-top:13px;color:#ec7591;font-size:19px;font-weight:800;letter-spacing:1.5px}h1{margin:24px 0 8px;font-size:24px}.tip{margin:0;color:#796c70;font-size:14px;line-height:1.75}.wechat{margin:24px 0 14px;padding:15px;background:#f8f5f3;border-radius:12px;font-size:20px;font-weight:800;letter-spacing:.5px}.copy{width:100%;padding:14px;border:0;border-radius:999px;background:#ee7894;color:#fff;font-size:15px;font-weight:800;cursor:pointer}.result{min-height:20px;margin-top:12px;color:#8a777c;font-size:12px}.back{display:inline-block;margin-top:14px;color:#a16d79;font-size:13px;text-decoration:none}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="/photos/idol-logo.png" alt="IDOL BEADS">
+    <div class="brand">IDOL BEADS</div>
+    <h1>加入拼豆世界</h1>
+    <p class="tip">添加微信并备注“加群”，我们会邀请你加入拼豆交流群。</p>
+    <div class="wechat" id="wechatId">IDOLBeads</div>
+    <button class="copy" id="copyWechat" type="button">复制微信号</button>
+    <div class="result" id="copyResult" aria-live="polite">点击复制后，打开微信添加好友</div>
+    <a class="back" href="/">返回 IDOL BEADS 官网</a>
+  </main>
+  <script>
+    const value = 'IDOLBeads';
+    const button = document.getElementById('copyWechat');
+    const result = document.getElementById('copyResult');
+    async function copyWechat() {
+      try {
+        await navigator.clipboard.writeText(value);
+      } catch (_) {
+        const input = document.createElement('textarea');
+        input.value = value;
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        input.remove();
+      }
+      button.textContent = '已复制 IDOLBeads';
+      result.textContent = '复制成功，可以打开微信添加好友了';
+      setTimeout(() => { button.textContent = '再次复制'; }, 1800);
+    }
+    button.addEventListener('click', copyWechat);
+  </script>
+</body>
+</html>
