@@ -654,8 +654,8 @@ describe('AppointmentsService', () => {
       expect(m.email.send).toHaveBeenCalledWith(
         'guest@example.com',
         expect.stringContaining('预约未获确认'),
-        expect.stringContaining('原因：预约信息不完整'),
-        expect.stringContaining('IDOL BEADS'),
+        expect.stringMatching(/原因：预约信息不完整[\s\S]*期待下一次与你相遇/),
+        expect.stringMatching(/IDOL BEADS[\s\S]*期待下一次与你相遇/),
       );
     });
   });

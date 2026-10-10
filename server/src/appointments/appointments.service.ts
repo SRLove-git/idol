@@ -1396,7 +1396,10 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     ]);
     if (user?.email) {
       const rejected = previousStatus === 'pending';
-      const text = `您好，\n\n很抱歉，您在 IDOL BEADS 的预约${rejected ? '未能确认' : '已取消'}。\n原因：${cancellationReason}\n\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n\n如需更换时间，欢迎重新提交预约或联系我们。${this.appointmentEmailContactText(store)}`;
+      const comfortingNote = rejected
+        ? '很遗憾这次没能如约见面，感谢你的理解。欢迎选择其他时间重新预约，我们期待下一次与你相遇。'
+        : '如需更换时间，欢迎重新提交预约或联系我们。';
+      const text = `您好，\n\n很抱歉，您在 IDOL BEADS 的预约${rejected ? '未能确认' : '已取消'}。\n原因：${cancellationReason}\n\n${comfortingNote}\n\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}${this.appointmentEmailContactText(store)}`;
       await this.email
         .send(
           user.email,
@@ -1408,6 +1411,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
               ? '很抱歉，这次暂时无法为你确认预约。'
               : '很抱歉，你的预约已由门店取消。',
             reason: cancellationReason,
+            closingNote: comfortingNote,
             appointment: saved,
             address: store?.address,
             phone: store?.phone,

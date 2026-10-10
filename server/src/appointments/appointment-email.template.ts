@@ -12,6 +12,7 @@ type AppointmentEmailOptions = {
   intro: string;
   appointment: AppointmentEmailDetails;
   reason?: string;
+  closingNote?: string;
   address?: string;
   phone?: string;
   siteUrl?: string;
@@ -76,6 +77,11 @@ export function buildAppointmentEmailHtml(
           ${
             options.reason
               ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:22px;background:#fff2f5;border:1px solid #f4ccd6;border-radius:14px;"><tr><td style="padding:16px 18px;"><div style="color:#bb536d;font-size:12px;font-weight:800;letter-spacing:.5px;">拒绝/取消原因</div><div style="margin-top:7px;color:#5d474e;font-size:15px;line-height:1.65;">${escapeHtml(options.reason)}</div></td></tr></table>`
+              : ''
+          }
+          ${
+            options.closingNote
+              ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:22px;background:#fffaf0;border:1px solid #f3e5c8;border-radius:14px;"><tr><td style="padding:16px 18px;color:#756257;font-size:14px;line-height:1.8;">${escapeHtml(options.closingNote)}</td></tr></table>`
               : ''
           }
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:8px 20px;background:#fbfaf9;border:1px solid #eee8e9;border-radius:14px;">
