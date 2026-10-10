@@ -250,6 +250,10 @@ export class Appointment {
   @Column({ length: 200, default: '' })
   note: string;
 
+  /** 管理员拒绝或取消预约时告知顾客的原因 */
+  @Column({ length: 200, default: '' })
+  cancellationReason: string;
+
   /** 核销时间 */
   @Column({ type: 'datetime', nullable: true })
   checkInTime: Date | null;

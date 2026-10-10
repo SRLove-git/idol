@@ -1,7 +1,7 @@
 const $ = (selector, root = document) => root.querySelector(selector)
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)]
 
-const state = { me: null, page: 'dashboard', stores: [], siteContent: null, confirmAction: null }
+const state = { me: null, page: 'dashboard', stores: [], siteContent: null, confirmAction: null, cancelReasonAction: null }
 const pageMeta = {
   dashboard: ['OVERVIEW', '数据看板'],
   appointments: ['RESERVATIONS', '预约管理'],
@@ -245,19 +245,28 @@ function appointmentRow(item) {
   if (item.status === 'booked') actions.push(actionButton(item.id, 'checkin', '核销', 'button-green'))
   if (item.status === 'checked_in') actions.push(actionButton(item.id, 'clockin', '上钟', 'button-green'))
   if (item.status === 'in_service') actions.push(actionButton(item.id, 'clockout', '下钟', 'button-green'))
-  if (['pending','booked','checked_in'].includes(item.status)) actions.push(actionButton(item.id, 'cancel', '取消', 'button-ghost'))
+  if (['pending','booked','checked_in'].includes(item.status)) actions.push(actionButton(item.id, 'cancel', item.status === 'pending' ? '拒绝' : '取消', 'button-ghost', item.status))
   const memberTag = item.isMember ? '<span class="appointment-member-tag">★ 会员预约</span>' : ''
-  return `<tr class="${item.isMember ? 'appointment-member-row' : ''}"><td><strong>${esc(item.code)}</strong>${memberTag}</td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small></td><td>${esc(item.date)}<br><small>${esc(item.startTime)} - ${esc(item.endTime)}</small></td><td>${item.peopleCount}</td><td>$${Number(item.amount || 0).toFixed(2)}${item.isMember && Number(item.originalAmount || 0) > Number(item.amount || 0) ? `<br><small class="member-saving">原价 $${Number(item.originalAmount).toFixed(2)}</small>` : ''}</td><td><span class="status status-${item.status}">${statusText(item.status)}</span></td><td class="actions">${actions.join('') || '—'}</td></tr>`
+  const cancellationReason = item.status === 'cancelled' && item.cancellationReason ? `<small class="cancellation-reason">${esc(item.cancellationReason)}</small>` : ''
+  return `<tr class="${item.isMember ? 'appointment-member-row' : ''}"><td><strong>${esc(item.code)}</strong>${memberTag}</td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small></td><td>${esc(item.date)}<br><small>${esc(item.startTime)} - ${esc(item.endTime)}</small></td><td>${item.peopleCount}</td><td>$${Number(item.amount || 0).toFixed(2)}${item.isMember && Number(item.originalAmount || 0) > Number(item.amount || 0) ? `<br><small class="member-saving">原价 $${Number(item.originalAmount).toFixed(2)}</small>` : ''}</td><td><span class="status status-${item.status}">${statusText(item.status)}</span>${cancellationReason}</td><td class="actions">${actions.join('') || '—'}</td></tr>`
 }
-function actionButton(id, action, label, cls) { return `<button class="button button-small ${cls}" data-appt-action="${action}" data-id="${id}">${label}</button>` }
+function actionButton(id, action, label, cls, status = '') { return `<button class="button button-small ${cls}" data-appt-action="${action}" data-id="${id}" data-status="${status}">${label}</button>` }
 
 async function appointmentAction(button) {
   const labels = { confirm: '确认这笔预约', checkin: '核销这笔预约', clockin: '开始计时', clockout: '结束计时', cancel: '取消这笔预约' }
-  const ok = await confirmDialog(labels[button.dataset.apptAction] || '确认操作')
-  if (!ok) return
+  const action = button.dataset.apptAction
+  let body
+  if (action === 'cancel') {
+    const reason = await appointmentCancelDialog(button.dataset.status)
+    if (!reason) return
+    body = { reason }
+  } else {
+    const ok = await confirmDialog(labels[action] || '确认操作')
+    if (!ok) return
+  }
   try {
-    await api(`/admin/appointments/${button.dataset.id}/${button.dataset.apptAction}`, { method: 'POST' })
-    toast('操作成功')
+    await api(`/admin/appointments/${button.dataset.id}/${action}`, { method: 'POST', body })
+    toast(action === 'cancel' ? '已处理预约并发送通知邮件' : '操作成功')
     await Promise.all([renderAppointments(), refreshPending()])
   } catch (error) { toast(error.message, true) }
 }
@@ -851,6 +860,24 @@ function confirmDialog(message) {
   })
 }
 
+function appointmentCancelDialog(status) {
+  return new Promise((resolve) => {
+    state.cancelReasonAction = resolve
+    $('#appointment-cancel-title').textContent = status === 'pending' ? '拒绝预约' : '取消预约'
+    $('#appointment-cancel-message').textContent = `请选择或填写告知客人的原因。提交后将自动发送邮件。`
+    $('#appointment-cancel-reason').value = ''
+    $('#appointment-cancel-error').hidden = true
+    $$('[data-cancel-reason]').forEach((button) => button.classList.remove('is-selected'))
+    $('#appointment-cancel-modal').hidden = false
+  })
+}
+
+function closeAppointmentCancelDialog(reason = null) {
+  $('#appointment-cancel-modal').hidden = true
+  state.cancelReasonAction?.(reason)
+  state.cancelReasonAction = null
+}
+
 $('#admin-nav').addEventListener('click', (event) => {
   const button = event.target.closest('[data-page]')
   if (button && !button.hidden) navigate(button.dataset.page)
@@ -863,6 +890,26 @@ $('#confirm-modal').addEventListener('click', (event) => {
   $('#confirm-modal').hidden = true
   state.confirmAction?.(action === 'ok')
   state.confirmAction = null
+})
+$$('[data-cancel-reason]').forEach((button) => button.addEventListener('click', () => {
+  $('#appointment-cancel-reason').value = button.dataset.cancelReason
+  $$('[data-cancel-reason]').forEach((item) => item.classList.toggle('is-selected', item === button))
+  $('#appointment-cancel-error').hidden = true
+}))
+$('#appointment-cancel-reason').addEventListener('input', (event) => {
+  $$('[data-cancel-reason]').forEach((button) => button.classList.toggle('is-selected', button.dataset.cancelReason === event.target.value.trim()))
+  $('#appointment-cancel-error').hidden = true
+})
+$('#appointment-cancel-close').addEventListener('click', () => closeAppointmentCancelDialog())
+$('#appointment-cancel-form').addEventListener('submit', (event) => {
+  event.preventDefault()
+  const reason = $('#appointment-cancel-reason').value.trim()
+  if (!reason) {
+    $('#appointment-cancel-error').textContent = '请选择或填写拒绝/取消理由'
+    $('#appointment-cancel-error').hidden = false
+    return
+  }
+  closeAppointmentCancelDialog(reason)
 })
 
 init()

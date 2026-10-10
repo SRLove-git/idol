@@ -67,6 +67,28 @@
   <div id="confirm-modal" class="modal" hidden>
     <div class="modal-card"><h3 id="confirm-title">确认操作</h3><p id="confirm-message"></p><div><button data-confirm="cancel" class="button button-ghost">取消</button><button data-confirm="ok" class="button button-danger">确认</button></div></div>
   </div>
-  <script src="/admin/admin.js?v=1.1.2" defer></script>
+  <div id="appointment-cancel-modal" class="modal" hidden>
+    <form id="appointment-cancel-form" class="modal-card cancel-modal-card">
+      <h3 id="appointment-cancel-title">取消预约</h3>
+      <p id="appointment-cancel-message">请选择或填写告知客人的原因。提交后将自动发送邮件。</p>
+      <section class="cancel-reason-options" aria-label="快捷选择理由">
+        <button type="button" data-cancel-reason="预约时段已满">预约时段已满</button>
+        <button type="button" data-cancel-reason="门店临时调整营业安排">营业安排调整</button>
+        <button type="button" data-cancel-reason="预约信息不完整或无法联系">信息不完整/无法联系</button>
+        <button type="button" data-cancel-reason="该预约不符合门店预约要求">不符合预约要求</button>
+      </section>
+      <label class="cancel-reason-field">
+        <span>拒绝/取消理由</span>
+        <textarea id="appointment-cancel-reason" maxlength="200" rows="3" placeholder="可选择上方理由，也可直接输入" required></textarea>
+        <small>该内容会原样发送给客人</small>
+      </label>
+      <p id="appointment-cancel-error" class="modal-error" hidden></p>
+      <footer class="modal-actions">
+        <button id="appointment-cancel-close" type="button" class="button button-ghost">返回</button>
+        <button type="submit" class="button button-danger">确认并发送邮件</button>
+      </footer>
+    </form>
+  </div>
+  <script src="/admin/admin.js?v=1.1.3" defer></script>
 </body>
 </html>

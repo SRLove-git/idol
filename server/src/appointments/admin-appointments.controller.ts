@@ -18,7 +18,11 @@ import {
   AdminPermissionsGuard,
   Permissions,
 } from '../common/permissions.guard';
-import { CheckInDto, WalkInDto } from './appointment.dto';
+import {
+  AdminCancelAppointmentDto,
+  CheckInDto,
+  WalkInDto,
+} from './appointment.dto';
 import { AppointmentsService } from './appointments.service';
 
 /** 管理端：预约订单管理（需 admin 角色） */
@@ -75,8 +79,11 @@ export class AdminAppointmentsController {
 
   /** 取消预约（店员代操作） */
   @Post(':id/cancel')
-  cancel(@Param('id', ParseIntPipe) id: number) {
-    return this.appointments.adminCancel(id);
+  cancel(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AdminCancelAppointmentDto,
+  ) {
+    return this.appointments.adminCancel(id, dto.reason);
   }
 
   /** 上钟（店员代操作） */

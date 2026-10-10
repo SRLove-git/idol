@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsIn,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
@@ -10,6 +11,14 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+
+/** 管理员拒绝或取消预约时填写的通知原因。 */
+export class AdminCancelAppointmentDto {
+  @IsString()
+  @IsNotEmpty({ message: '请选择或填写取消理由' })
+  @MaxLength(200, { message: '取消理由最多 200 个字' })
+  reason: string;
+}
 
 /** 创建预约：门店桌位 或 活动场次 + 人数 + 支付方式 */
 export class CreateAppointmentDto {
@@ -118,8 +127,6 @@ export class LookupAppointmentDto {
   email: string;
 
   @IsString()
-  @MaxLength(30)
-  @Matches(/^[+()\d\s-]{6,30}$/, { message: '请输入正确的预约手机号' })
   phone: string;
 }
 

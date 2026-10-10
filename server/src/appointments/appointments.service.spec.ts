@@ -26,9 +26,10 @@ function timeStr(offsetMs: number): string {
   ).padStart(2, '0')}`;
 }
 
-/** 下一个周六或周日的日期（用于周末加价测试） */
+/** 从明天起的下一个周六或周日（避免周末当天时段已过导致测试漂移） */
 function nextWeekendDate(): string {
   const d = new Date();
+  d.setDate(d.getDate() + 1);
   while (d.getDay() !== 6 && d.getDay() !== 0) {
     d.setDate(d.getDate() + 1);
   }
@@ -313,7 +314,9 @@ describe('AppointmentsService', () => {
       });
 
       expect(result.tables).toHaveLength(2);
-      expect(result.tables?.reduce((sum, table) => sum + table.capacity, 0)).toBe(6);
+      expect(
+        result.tables?.reduce((sum, table) => sum + table.capacity, 0),
+      ).toBe(6);
       expect(m.em.insert).toHaveBeenCalledWith(
         AppointmentTable,
         expect.arrayContaining([
@@ -619,10 +622,41 @@ describe('AppointmentsService', () => {
         status: 'cancelled',
       });
 
-      const result = await m.svc.adminCancel(1);
+      const result = await m.svc.adminCancel(1, '门店临时调整营业安排');
 
       expect(result.status).toBe('cancelled');
       expect(m.appointments.save).not.toHaveBeenCalled();
+    });
+
+    it('管理端拒绝待确认预约时保存理由并发送邮件', async () => {
+      const m = buildService();
+      m.appointments.findOneBy.mockResolvedValue({
+        id: 1,
+        userId: 7,
+        storeId: 3,
+        storeName: 'IDOL BEADS',
+        code: 'ABC123',
+        date: '2026-08-12',
+        startTime: '10:00',
+        endTime: '11:00',
+        peopleCount: 2,
+        status: 'pending',
+      });
+      m.users.findById.mockResolvedValue({ email: 'guest@example.com' });
+      m.appointments.save.mockImplementation((x: unknown) =>
+        Promise.resolve(x),
+      );
+
+      const result = await m.svc.adminCancel(1, '预约信息不完整');
+
+      expect(result.status).toBe('cancelled');
+      expect(result.cancellationReason).toBe('预约信息不完整');
+      expect(m.email.send).toHaveBeenCalledWith(
+        'guest@example.com',
+        expect.stringContaining('预约未获确认'),
+        expect.stringContaining('原因：预约信息不完整'),
+        expect.stringContaining('IDOL BEADS'),
+      );
     });
   });
 
@@ -853,6 +887,7 @@ describe('AppointmentsService', () => {
         'guest@example.com',
         expect.stringContaining('预约确认'),
         expect.stringContaining('ABC123'),
+        expect.stringContaining('idol-logo.png'),
       );
     });
 

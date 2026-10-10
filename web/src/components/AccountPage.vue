@@ -179,7 +179,7 @@ onMounted(loadAccount)
           </label>
           <label>
             <span>{{ t('account_booking_phone') }}</span>
-            <input v-model="guestPhone" type="tel" autocomplete="tel" maxlength="30" required :placeholder="t('account_phone_placeholder')">
+            <input v-model="guestPhone" type="tel" autocomplete="tel" required :placeholder="t('account_phone_placeholder')">
           </label>
           <button class="btn btn-primary" type="submit" :disabled="lookupLoading">
             {{ lookupLoading ? t('account_searching') : t('account_lookup_button') }}

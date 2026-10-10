@@ -36,7 +36,27 @@ describe('SmtpEmailService', () => {
       to: 'a@example.com',
       subject: '主题',
       text: '正文',
+      html: undefined,
     });
+  });
+
+  it('可同时发送纯文本与 HTML 邮件内容', async () => {
+    sendMail.mockResolvedValue({ messageId: 'm2' });
+    const svc = new SmtpEmailService(config);
+
+    await svc.send(
+      'a@example.com',
+      '主题',
+      '纯文本',
+      '<strong>品牌邮件</strong>',
+    );
+
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: '纯文本',
+        html: '<strong>品牌邮件</strong>',
+      }),
+    );
   });
 
   it('发送失败时抛出异常', async () => {

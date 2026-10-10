@@ -96,8 +96,7 @@ function timeCapacityLabel(time) {
   const capacity = timeSlotCapacity(time)
   if (capacity == null) return '…'
   if (capacity === 0) return t('time_full')
-  if (capacity === 1) return t('time_capacity_one')
-  return t('time_capacity').replace('{count}', String(capacity))
+  return t('time_available')
 }
 const selectedDurationLabel = computed(() => {
   if (selected.bookingType === 'all_day') return t('opt_daypass')
@@ -114,11 +113,7 @@ const membershipLabel = computed(() => {
   if (memberActive.value) return state.lang === 'zh' ? `有效会员 · ${membership.value.levelName}` : `Active member · ${membership.value.levelName}`
   return state.lang === 'zh' ? '已登录 · 普通用户' : 'Signed in · Standard account'
 })
-const normalizedPhone = computed(() => form.phone.trim().replace(/[\s-]/g, ''))
-const formattedPhone = computed(() => {
-  const value = normalizedPhone.value
-  return /^\+65\d{8}$/.test(value) ? `${value.slice(0, 3)} ${value.slice(3, 7)} ${value.slice(7)}` : form.phone.trim()
-})
+const formattedPhone = computed(() => form.phone.trim())
 
 async function loadAccountMembership() {
   try {
@@ -298,10 +293,6 @@ function validateBooking() {
   validationMsg.value = ''
   if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
     validationMsg.value = t('booking_validation_personal')
-    return false
-  }
-  if (!/^\+65[89]\d{7}$/.test(normalizedPhone.value)) {
-    validationMsg.value = t('booking_validation_phone')
     return false
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) {
@@ -552,7 +543,7 @@ watch(() => state.lang, buildDates)
           <div class="personal-info-form">
             <div class="form-row">
               <input v-model="form.name" type="text" :placeholder="t('placeholder_name')" required @input="validationMsg = ''">
-              <input v-model="form.phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" :placeholder="t('placeholder_phone')" required @input="validationMsg = ''">
+              <input v-model="form.phone" type="tel" inputmode="tel" autocomplete="tel" :placeholder="t('placeholder_phone')" required @input="validationMsg = ''">
             </div>
             <input v-model="form.email" type="email" :placeholder="t('placeholder_email')" required @input="validationMsg = ''">
             <textarea v-model="form.notes" rows="2" :placeholder="t('placeholder_notes')"></textarea>

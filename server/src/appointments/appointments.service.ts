@@ -41,6 +41,7 @@ import { StoreTable } from '../stores/store-table.entity';
 import { StorePackage } from '../stores/store-package.entity';
 import { UsersService } from '../users/users.service';
 import { Appointment } from './appointment.entity';
+import { buildAppointmentEmailHtml } from './appointment-email.template';
 import { CreateAppointmentDto, WalkInDto } from './appointment.dto';
 import { AppointmentTable } from './appointment-table.entity';
 
@@ -98,6 +99,38 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       serviceEndTime: appt.serviceEndTime?.toISOString() ?? null,
       createdAt: appt.createdAt?.toISOString() ?? null,
     });
+  }
+
+  private appointmentEmailLinks(store?: Store | null): {
+    siteUrl: string;
+    instagramUrl?: string;
+    xiaohongshuUrl?: string;
+  } {
+    const links = store?.siteContent?.links as
+      Record<string, unknown> | undefined;
+    return {
+      siteUrl: (process.env.PUBLIC_SITE_URL || 'https://idol-sg.com').replace(
+        /\/$/,
+        '',
+      ),
+      instagramUrl:
+        typeof links?.instagram === 'string' ? links.instagram : undefined,
+      xiaohongshuUrl:
+        typeof links?.xiaohongshu === 'string' ? links.xiaohongshu : undefined,
+    };
+  }
+
+  private appointmentEmailContactText(store?: Store | null): string {
+    const links = this.appointmentEmailLinks(store);
+    return [
+      '\n\n联系 IDOL BEADS：',
+      store?.address ? `地址：${store.address}` : '',
+      store?.phone ? `电话：${store.phone}` : '',
+      `官网：${links.siteUrl}`,
+      `Instagram：${links.instagramUrl || 'https://www.instagram.com/idol_beads'}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
   }
 
   /** availability 缓存 key：某门店某日的桌位占用快照 */
@@ -318,8 +351,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       throw new ServiceUnavailableException('预约功能暂未开放');
     }
     // 未登录按游客身份创建；游客不限制「同一用户仅一张未完成预约」，避免不同顾客互相阻塞
-    const resolvedUserId =
-      userId ?? (await this.getOrCreateGuestUser(dto)).id;
+    const resolvedUserId = userId ?? (await this.getOrCreateGuestUser(dto)).id;
     if (userId != null) {
       await this.assertNoActiveAppointment(resolvedUserId);
     }
@@ -430,11 +462,14 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    return [...combinations.entries()]
-      .filter(([capacity]) => capacity >= peopleCount)
-      .sort(([capacityA, tablesA], [capacityB, tablesB]) =>
-        tablesA.length - tablesB.length || capacityA - capacityB,
-      )[0]?.[1] ?? [];
+    return (
+      [...combinations.entries()]
+        .filter(([capacity]) => capacity >= peopleCount)
+        .sort(
+          ([capacityA, tablesA], [capacityB, tablesB]) =>
+            tablesA.length - tablesB.length || capacityA - capacityB,
+        )[0]?.[1] ?? []
+    );
   }
 
   /**
@@ -607,9 +642,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     const lockKey = `booking:auto:${dto.storeId}:${dto.date}`;
     const acquired = await this.redis.set(lockKey, '1', 'EX', 10, 'NX');
     if (!acquired) {
-      throw new BadRequestException(
-        '该时段正在被其他用户预约，请稍后重试',
-      );
+      throw new BadRequestException('该时段正在被其他用户预约，请稍后重试');
     }
 
     try {
@@ -1044,9 +1077,11 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     return { items: await this.withCouponCodes(items), total };
   }
 
-  /** 手机号只保留数字，兼容 +65、空格、短横线与括号等常见输入格式。 */
+  /** 常见号码按数字匹配；无数字的自由输入则按原文匹配。 */
   private normalizePhone(phone: string): string {
-    return phone.replace(/\D/g, '');
+    const value = phone.trim();
+    const digits = value.replace(/\D/g, '');
+    return digits ? digits : value.toLocaleLowerCase();
   }
 
   /** 从现有预约备注末尾的「电话 xxx」字段读取预约手机号。 */
@@ -1319,13 +1354,26 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     const saved = await this.appointments.save(appt);
     this.broadcastAppointment(saved);
     await this.invalidateAvailability(saved.storeId, saved.date);
-    const user = await this.users.findById(saved.userId);
+    const [user, store] = await Promise.all([
+      this.users.findById(saved.userId),
+      saved.storeId ? this.stores.findOneBy({ id: saved.storeId }) : null,
+    ]);
     if (user?.email) {
+      const text = `您的预约已确认。\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n请妥善保存预约码，到店时出示。${this.appointmentEmailContactText(store)}`;
       await this.email
         .send(
           user.email,
           `IDOL BEADS 预约确认 · ${saved.date}`,
-          `您的预约已确认。\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n请妥善保存预约码，到店时出示。`,
+          text,
+          buildAppointmentEmailHtml({
+            heading: '预约已确认',
+            intro: '我们已为你保留好时间，到店时请出示下方预约码。',
+            appointment: saved,
+            address: store?.address,
+            phone: store?.phone,
+            ...this.appointmentEmailLinks(store),
+            actionLabel: '查看 IDOL BEADS',
+          }),
         )
         .catch((error: Error) => {
           this.logger.warn(`预约确认邮件发送失败：${error.message}`);
@@ -1338,7 +1386,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
    * 管理端取消预约（待确认/待核销/已核销状态，服务开始前）。
    * 幂等：已取消的预约直接返回成功，店员重复操作/超时重试不报 4xx。
    */
-  async adminCancel(id: number): Promise<Appointment> {
+  async adminCancel(id: number, reason: string): Promise<Appointment> {
     const appt = await this.appointments.findOneBy({ id });
     if (!appt) throw new NotFoundException('预约单不存在');
     if (appt.status === 'cancelled') return appt;
@@ -1349,10 +1397,45 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     ) {
       throw new BadRequestException('仅待确认、待核销或已核销状态的预约可取消');
     }
+    const cancellationReason = reason.trim();
+    if (!cancellationReason) {
+      throw new BadRequestException('请选择或填写取消理由');
+    }
+    const previousStatus = appt.status;
     appt.status = 'cancelled';
+    appt.cancellationReason = cancellationReason;
     const saved = await this.appointments.save(appt);
     this.broadcastAppointment(saved);
     await this.invalidateAvailability(saved.storeId, saved.date);
+    const [user, store] = await Promise.all([
+      this.users.findById(saved.userId),
+      saved.storeId ? this.stores.findOneBy({ id: saved.storeId }) : null,
+    ]);
+    if (user?.email) {
+      const rejected = previousStatus === 'pending';
+      const text = `您好，\n\n很抱歉，您在 IDOL BEADS 的预约${rejected ? '未能确认' : '已取消'}。\n原因：${cancellationReason}\n\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n\n如需更换时间，欢迎重新提交预约或联系我们。${this.appointmentEmailContactText(store)}`;
+      await this.email
+        .send(
+          user.email,
+          `IDOL BEADS 预约${rejected ? '未获确认' : '已取消'} · ${saved.date}`,
+          text,
+          buildAppointmentEmailHtml({
+            heading: rejected ? '预约未能确认' : '预约已取消',
+            intro: rejected
+              ? '很抱歉，这次暂时无法为你确认预约。'
+              : '很抱歉，你的预约已由门店取消。',
+            reason: cancellationReason,
+            appointment: saved,
+            address: store?.address,
+            phone: store?.phone,
+            ...this.appointmentEmailLinks(store),
+            actionLabel: '重新预约',
+          }),
+        )
+        .catch((error: Error) => {
+          this.logger.warn(`预约取消邮件发送失败：${error.message}`);
+        });
+    }
     return saved;
   }
 
