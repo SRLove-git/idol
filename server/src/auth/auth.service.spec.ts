@@ -120,7 +120,7 @@ describe('AuthService.register（设备账号数限制）', () => {
       email: 'USER@example.com',
     });
 
-    expect(result).toEqual({ sent: true, expiresIn: 600, retryAfter: 60 });
+    expect(result).toEqual({ sent: true, expiresIn: 300, retryAfter: 60 });
     expect(m.email.send).toHaveBeenCalledWith(
       'user@example.com',
       'IDOL BEADS 注册验证码',
@@ -130,7 +130,7 @@ describe('AuthService.register（设备账号数限制）', () => {
       expect.stringMatching(/^register:email-code:[a-f0-9]{64}$/),
       expect.stringContaining('"digest"'),
       'EX',
-      600,
+      300,
     );
   });
 

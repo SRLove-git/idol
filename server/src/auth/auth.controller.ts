@@ -39,8 +39,7 @@ export class AuthController {
   /** 注册：用户名 + 密码 + 邮箱验证码；游客邮箱账号会原地升级并保留预约 */
   @Post('register')
   @Throttle({ auth: { limit: 10, ttl: 60000, blockDuration: 60000 } })
-  async register(@Req() req: Request, @Body() dto: RegisterDto) {
-    await this.auth.assertIpRegisterAllowed(req.ip);
+  register(@Req() req: Request, @Body() dto: RegisterDto) {
     const deviceId = dto.deviceId?.trim() || null;
     // 未上报设备标识时用服务端指纹兜底（防批量注册），上报时保持原值不变
     const identifier = deviceId || requestFingerprint(req, null);

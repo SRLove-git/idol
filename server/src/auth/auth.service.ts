@@ -32,11 +32,7 @@ const PASSWORD_ATTEMPT_MAX_DEFAULT = 8;
 const PASSWORD_ATTEMPT_WINDOW_DEFAULT = 600;
 const PASSWORD_LOCK_TTL_DEFAULT = 300;
 
-/** 同一 IP 24 小时内最大注册数（REGISTER_IP_MAX 可覆盖） */
-const REGISTER_IP_MAX_DEFAULT = 5;
-/** IP 注册计数窗口（小时，REGISTER_IP_WINDOW_H 可覆盖） */
-const REGISTER_IP_WINDOW_H_DEFAULT = 24;
-const EMAIL_CODE_TTL_DEFAULT = 10 * 60;
+const EMAIL_CODE_TTL_DEFAULT = 5 * 60;
 const EMAIL_CODE_COOLDOWN_DEFAULT = 60;
 const EMAIL_CODE_MAX_ATTEMPTS = 5;
 
@@ -322,35 +318,6 @@ export class AuthService {
 
     const tokens = await this.signTokens(user.id);
     return { userId: user.id, ...tokens };
-  }
-
-  /**
-   * IP 维度注册限制：同一 IP 24 小时内最多注册 REGISTER_IP_MAX 个账号。
-   * Redis 异常时降级放行（避免注册链路被缓存故障阻断）。
-   */
-  async assertIpRegisterAllowed(ip?: string): Promise<void> {
-    if (!ip) return;
-    try {
-      const max = this.config.get<number>(
-        'REGISTER_IP_MAX',
-        REGISTER_IP_MAX_DEFAULT,
-      );
-      const windowH = this.config.get<number>(
-        'REGISTER_IP_WINDOW_H',
-        REGISTER_IP_WINDOW_H_DEFAULT,
-      );
-      const key = `register:ip:${ip}`;
-      const count = await this.redis.incr(key);
-      if (count === 1) {
-        await this.redis.expire(key, Math.max(1, windowH) * 3600);
-      }
-      if (count > max) {
-        throw new BadRequestException('该网络注册过于频繁，请稍后再试');
-      }
-    } catch (e) {
-      if (e instanceof BadRequestException) throw e;
-      // Redis 不可用时降级放行
-    }
   }
 
   /** 修改登录密码（登录态下）：校验原密码后写入新密码 */
