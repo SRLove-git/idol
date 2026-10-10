@@ -41,8 +41,15 @@ export class AuthController {
   @Throttle({ auth: { limit: 10, ttl: 60000, blockDuration: 60000 } })
   register(@Req() req: Request, @Body() dto: RegisterDto) {
     const deviceId = dto.deviceId?.trim() || null;
-    // 未上报设备标识时用服务端指纹兜底（防批量注册），上报时保持原值不变
-    const identifier = deviceId || requestFingerprint(req, null);
+    const fingerprintHeader = (
+      (req.headers['x-device-fingerprint'] as string | undefined) ?? ''
+    ).trim();
+    // 仅对客户端明确上报的安装/设备标识执行设备账号上限。
+    // 不能用 UA + IP 兜底：共享网络下的不同访客会被误判为同一设备。
+    const identifier =
+      deviceId || fingerprintHeader
+        ? requestFingerprint(req, deviceId)
+        : undefined;
     return this.auth.register({ ...dto, deviceId: identifier });
   }
 
