@@ -71,6 +71,16 @@ import { REDIS_CLIENT } from './redis/redis.module';
             // 只对 AuthController 生效，其他路由不受 auth 配额影响
             skipIf: (ctx) => ctx.getClass().name !== 'AuthController',
           },
+          {
+            name: 'lookup',
+            ttl: 60000,
+            limit: 30,
+            blockDuration: 30000,
+            // 预约查询使用独立配额，避免页面加载等普通请求占用查询次数。
+            skipIf: (ctx) =>
+              ctx.getClass().name !== 'AppointmentsController' ||
+              ctx.getHandler().name !== 'lookup',
+          },
         ],
       }),
     }),

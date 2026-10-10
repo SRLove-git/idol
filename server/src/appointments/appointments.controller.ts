@@ -8,7 +8,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CurrentUser, CurrentUserOptional } from '../auth/current-user.decorator';
@@ -54,7 +54,8 @@ export class AppointmentsController {
 
   /** 未登录用户凭预约邮箱查询预约记录 */
   @Post('lookup')
-  @Throttle({ default: { limit: 10, ttl: 60000, blockDuration: 300000 } })
+  @SkipThrottle({ default: true })
+  @Throttle({ lookup: { limit: 30, ttl: 60000, blockDuration: 30000 } })
   lookup(@Body() dto: LookupAppointmentDto) {
     return this.appointments.lookupByEmail(dto.email);
   }
