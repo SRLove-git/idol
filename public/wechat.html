@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#fff7f8">
-  <title>添加 IDOL BEADS 微信</title>
+  <title>添加 IDOL BEADS 微信 / Add IDOL BEADS on WeChat</title>
   <style>
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#fff7f8;color:#443a3d;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.card{width:100%;max-width:420px;padding:34px 28px;text-align:center;background:#fff;border:1px solid #f0dfe3;border-radius:20px;box-shadow:0 16px 44px rgba(91,55,66,.09)}.logo{width:76px;height:76px;border-radius:50%;object-fit:cover}.brand{margin-top:13px;color:#ec7591;font-size:19px;font-weight:800;letter-spacing:1.5px}h1{margin:24px 0 8px;font-size:24px}.tip{margin:0;color:#796c70;font-size:14px;line-height:1.75}.wechat{margin:24px 0 14px;padding:15px;background:#f8f5f3;border-radius:12px;font-size:20px;font-weight:800;letter-spacing:.5px}.copy{width:100%;padding:14px;border:0;border-radius:999px;background:#ee7894;color:#fff;font-size:15px;font-weight:800;cursor:pointer}.result{min-height:20px;margin-top:12px;color:#8a777c;font-size:12px}.back{display:inline-block;margin-top:14px;color:#a16d79;font-size:13px;text-decoration:none}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#fff7f8;color:#443a3d;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.card{width:100%;max-width:440px;padding:34px 28px;text-align:center;background:#fff;border:1px solid #f0dfe3;border-radius:20px;box-shadow:0 16px 44px rgba(91,55,66,.09)}.logo{width:76px;height:76px;border-radius:50%;object-fit:cover}.brand{margin-top:13px;color:#ec7591;font-size:19px;font-weight:800;letter-spacing:1.5px}h1{margin:24px 0 4px;font-size:24px}.subtitle{margin-bottom:12px;color:#75686c;font-size:16px;font-weight:700}.tip{margin:0;color:#796c70;font-size:14px;line-height:1.75}.tip-en{margin-top:5px;color:#96898d;font-size:13px}.wechat{margin:24px 0 14px;padding:15px;background:#f8f5f3;border-radius:12px;font-size:20px;font-weight:800;letter-spacing:.5px}.copy{width:100%;padding:14px;border:0;border-radius:999px;background:#ee7894;color:#fff;font-size:15px;font-weight:800;cursor:pointer}.result{min-height:38px;margin-top:12px;color:#8a777c;font-size:12px;line-height:1.55}.back{display:inline-block;margin-top:14px;color:#a16d79;font-size:13px;text-decoration:none}
   </style>
 </head>
 <body>
@@ -14,11 +14,13 @@
     <img class="logo" src="/photos/idol-logo.png" alt="IDOL BEADS">
     <div class="brand">IDOL BEADS</div>
     <h1>加入拼豆世界</h1>
+    <div class="subtitle">Join our bead community</div>
     <p class="tip">添加微信并备注“加群”，我们会邀请你加入拼豆交流群。</p>
+    <p class="tip tip-en">Add us on WeChat and send “Join group”. We will invite you to our bead community group chat.</p>
     <div class="wechat" id="wechatId">IDOLBeads</div>
-    <button class="copy" id="copyWechat" type="button">复制微信号</button>
-    <div class="result" id="copyResult" aria-live="polite">点击复制后，打开微信添加好友</div>
-    <a class="back" href="/">返回 IDOL BEADS 官网</a>
+    <button class="copy" id="copyWechat" type="button">复制微信号 / Copy WeChat ID</button>
+    <div class="result" id="copyResult" aria-live="polite">点击复制后，打开微信添加好友<br>Copy the ID, then open WeChat to add us.</div>
+    <a class="back" href="/">返回官网 / Back to IDOL BEADS</a>
   </main>
   <script>
     const value = 'IDOLBeads';
@@ -37,9 +39,9 @@
         document.execCommand('copy');
         input.remove();
       }
-      button.textContent = '已复制 IDOLBeads';
-      result.textContent = '复制成功，可以打开微信添加好友了';
-      setTimeout(() => { button.textContent = '再次复制'; }, 1800);
+      button.textContent = '已复制 IDOLBeads / Copied';
+      result.innerHTML = '复制成功，可以打开微信添加好友了<br>Copied! Open WeChat to add IDOLBeads.';
+      setTimeout(() => { button.textContent = '再次复制 / Copy again'; }, 1800);
     }
     button.addEventListener('click', copyWechat);
   </script>

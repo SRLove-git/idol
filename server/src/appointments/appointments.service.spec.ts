@@ -647,16 +647,18 @@ describe('AppointmentsService', () => {
         Promise.resolve(x),
       );
 
-      const result = await m.svc.adminCancel(1, '预约信息不完整');
+      const result = await m.svc.adminCancel(1, '预约信息不完整或无法联系');
 
       expect(result.status).toBe('cancelled');
-      expect(result.cancellationReason).toBe('预约信息不完整');
+      expect(result.cancellationReason).toBe('预约信息不完整或无法联系');
       expect(m.email.send).toHaveBeenCalledWith(
         'guest@example.com',
-        expect.stringContaining('预约未获确认'),
-        expect.stringMatching(/原因：预约信息不完整[\s\S]*期待下一次与你相遇/),
+        expect.stringMatching(/预约未获确认[\s\S]*Booking Not Confirmed/),
         expect.stringMatching(
-          /IDOL BEADS[\s\S]*期待下一次与你相遇[\s\S]*加入拼豆世界[\s\S]*IDOLBeads[\s\S]*wechat\.html/,
+          /原因：预约信息不完整或无法联系[\s\S]*Reason: The booking information is incomplete[\s\S]*look forward to seeing you next time/,
+        ),
+        expect.stringMatching(
+          /IDOL BEADS[\s\S]*期待下一次与你相遇[\s\S]*look forward to seeing you next time[\s\S]*Join our bead community[\s\S]*IDOLBeads[\s\S]*wechat\.html/,
         ),
       );
     });
@@ -893,9 +895,13 @@ describe('AppointmentsService', () => {
       expect(result.status).toBe('booked');
       expect(m.email.send).toHaveBeenCalledWith(
         'guest@example.com',
-        expect.stringContaining('预约确认'),
-        expect.stringContaining('ABC123'),
-        expect.stringContaining('idol-logo.png'),
+        expect.stringMatching(/预约确认[\s\S]*Booking Confirmed/),
+        expect.stringMatching(
+          /ABC123[\s\S]*Your booking is confirmed[\s\S]*Booking code: ABC123/,
+        ),
+        expect.stringMatching(
+          /idol-logo\.png[\s\S]*Your booking is confirmed[\s\S]*Booking code[\s\S]*Join our bead community/,
+        ),
       );
     });
 

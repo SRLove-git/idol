@@ -123,14 +123,30 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
   private appointmentEmailContactText(store?: Store | null): string {
     const links = this.appointmentEmailLinks(store);
     return [
-      '\n\n联系 IDOL BEADS：',
-      store?.address ? `地址：${store.address}` : '',
-      store?.phone ? `电话：${store.phone}` : '',
-      `官网：${links.siteUrl}`,
+      '\n\n联系 IDOL BEADS / Contact IDOL BEADS:',
+      store?.address ? `地址 / Address: ${store.address}` : '',
+      store?.phone ? `电话 / Phone: ${store.phone}` : '',
+      `官网 / Website: ${links.siteUrl}`,
       `Instagram：${links.instagramUrl || 'https://www.instagram.com/idol_beads'}`,
     ]
       .filter(Boolean)
       .join('\n');
+  }
+
+  /** 管理端快捷理由使用固定英文，避免把自定义内容交给不可靠的自动翻译。 */
+  private appointmentCancellationReasonEnglish(
+    reason: string,
+  ): string | undefined {
+    const translations: Record<string, string> = {
+      预约时段已满: 'The selected time slot is fully booked.',
+      门店临时调整营业安排:
+        'The studio has made a temporary adjustment to its opening schedule.',
+      预约信息不完整或无法联系:
+        'The booking information is incomplete, or we were unable to reach you.',
+      该预约不符合门店预约要求:
+        "This booking does not meet the studio's booking requirements.",
+    };
+    return translations[reason];
   }
 
   /** availability 缓存 key：某门店某日的桌位占用快照 */
@@ -1342,20 +1358,24 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       saved.storeId ? this.stores.findOneBy({ id: saved.storeId }) : null,
     ]);
     if (user?.email) {
-      const text = `您的预约已确认。\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n请妥善保存预约码，到店时出示。${this.appointmentEmailContactText(store)}`;
+      const text = `您的预约已确认。\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n请妥善保存预约码，到店时出示。\n\nYour booking is confirmed.\nBooking code: ${saved.code}\nDate: ${saved.date}\nTime: ${saved.startTime}-${saved.endTime}\nGuests: ${saved.peopleCount}\nStudio: ${saved.storeName}\nPlease keep your booking code and show it when you arrive.${this.appointmentEmailContactText(store)}`;
       await this.email
         .send(
           user.email,
-          `IDOL BEADS 预约确认 · ${saved.date}`,
+          `IDOL BEADS 预约确认 / Booking Confirmed · ${saved.date}`,
           text,
           buildAppointmentEmailHtml({
             heading: '预约已确认',
+            headingEn: 'Your booking is confirmed',
             intro: '我们已为你保留好时间，到店时请出示下方预约码。',
+            introEn:
+              'Your time slot is reserved. Please show the booking code below when you arrive.',
             appointment: saved,
             address: store?.address,
             phone: store?.phone,
             ...this.appointmentEmailLinks(store),
             actionLabel: '查看 IDOL BEADS',
+            actionLabelEn: 'View IDOL BEADS',
           }),
         )
         .catch((error: Error) => {
@@ -1399,25 +1419,42 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       const comfortingNote = rejected
         ? '很遗憾这次没能如约见面，感谢你的理解。欢迎选择其他时间重新预约，我们期待下一次与你相遇。'
         : '如需更换时间，欢迎重新提交预约或联系我们。';
-      const text = `您好，\n\n很抱歉，您在 IDOL BEADS 的预约${rejected ? '未能确认' : '已取消'}。\n原因：${cancellationReason}\n\n${comfortingNote}\n\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}${this.appointmentEmailContactText(store)}`;
+      const comfortingNoteEn = rejected
+        ? 'We are sorry we could not welcome you this time, and we truly appreciate your understanding. You are always welcome to choose another time—we look forward to seeing you next time.'
+        : 'If you would like to choose another time, please submit a new booking or contact us.';
+      const cancellationReasonEn =
+        this.appointmentCancellationReasonEnglish(cancellationReason);
+      const text = `您好，\n\n很抱歉，您在 IDOL BEADS 的预约${rejected ? '未能确认' : '已取消'}。\n原因：${cancellationReason}\n\n${comfortingNote}\n\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n\nHello,\n\nWe are sorry that your IDOL BEADS booking ${rejected ? 'could not be confirmed' : 'has been cancelled'}.\nReason: ${cancellationReasonEn || cancellationReason}\n\n${comfortingNoteEn}\n\nBooking code: ${saved.code}\nDate: ${saved.date}\nTime: ${saved.startTime}-${saved.endTime}\nGuests: ${saved.peopleCount}\nStudio: ${saved.storeName}${this.appointmentEmailContactText(store)}`;
       await this.email
         .send(
           user.email,
-          `IDOL BEADS 预约${rejected ? '未获确认' : '已取消'} · ${saved.date}`,
+          `IDOL BEADS 预约${rejected ? '未获确认 / Booking Not Confirmed' : '已取消 / Booking Cancelled'} · ${saved.date}`,
           text,
           buildAppointmentEmailHtml({
             heading: rejected ? '预约未能确认' : '预约已取消',
+            headingEn: rejected
+              ? 'We could not confirm your booking'
+              : 'Your booking has been cancelled',
             intro: rejected
               ? '很抱歉，这次暂时无法为你确认预约。'
               : '很抱歉，你的预约已由门店取消。',
+            introEn: rejected
+              ? 'We are sorry that we are unable to confirm this booking.'
+              : 'We are sorry that your booking has been cancelled by the studio.',
             reason: cancellationReason,
+            reasonEn: cancellationReasonEn,
             reasonLabel: rejected ? '未能确认的原因' : '取消原因',
+            reasonLabelEn: rejected
+              ? 'Why we could not confirm it'
+              : 'Cancellation reason',
             closingNote: comfortingNote,
+            closingNoteEn: comfortingNoteEn,
             appointment: saved,
             address: store?.address,
             phone: store?.phone,
             ...this.appointmentEmailLinks(store),
             actionLabel: '重新预约',
+            actionLabelEn: 'Book another time',
           }),
         )
         .catch((error: Error) => {

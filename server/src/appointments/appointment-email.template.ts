@@ -9,17 +9,23 @@ type AppointmentEmailDetails = {
 
 type AppointmentEmailOptions = {
   heading: string;
+  headingEn: string;
   intro: string;
+  introEn: string;
   appointment: AppointmentEmailDetails;
   reason?: string;
+  reasonEn?: string;
   reasonLabel?: string;
+  reasonLabelEn?: string;
   closingNote?: string;
+  closingNoteEn?: string;
   address?: string;
   phone?: string;
   siteUrl?: string;
   instagramUrl?: string;
   xiaohongshuUrl?: string;
   actionLabel?: string;
+  actionLabelEn?: string;
   wechatId?: string;
 };
 
@@ -77,51 +83,54 @@ export function buildAppointmentEmailHtml(
           </tr></table>
         </td></tr>
         <tr><td style="padding:36px 40px 32px;">
-          <div style="color:#c45d76;font-size:12px;font-weight:700;letter-spacing:1px;">预约状态通知</div>
+          <div style="color:#c45d76;font-size:12px;font-weight:700;letter-spacing:1px;">预约状态通知 · BOOKING UPDATE</div>
           <h1 style="margin:8px 0 12px;color:#3f3739;font-size:26px;line-height:1.35;">${escapeHtml(options.heading)}</h1>
-          <p style="margin:0 0 26px;color:#766b6e;font-size:15px;line-height:1.8;">${escapeHtml(options.intro)}</p>
+          <div style="margin:-5px 0 17px;color:#74686b;font-size:17px;font-weight:700;line-height:1.45;">${escapeHtml(options.headingEn)}</div>
+          <p style="margin:0;color:#766b6e;font-size:15px;line-height:1.8;">${escapeHtml(options.intro)}</p>
+          <p style="margin:5px 0 26px;color:#8d8184;font-size:14px;line-height:1.7;">${escapeHtml(options.introEn)}</p>
           ${
             options.reason
-              ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:22px;background:#fff5f6;border-left:3px solid #ee7b96;border-radius:4px 12px 12px 4px;"><tr><td style="padding:17px 18px;"><div style="color:#a45a6b;font-size:12px;font-weight:700;">${escapeHtml(options.reasonLabel || '预约变更原因')}</div><div style="margin-top:7px;color:#514649;font-size:15px;line-height:1.65;">${escapeHtml(options.reason)}</div></td></tr></table>`
+              ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:22px;background:#fff5f6;border-left:3px solid #ee7b96;border-radius:4px 12px 12px 4px;"><tr><td style="padding:17px 18px;"><div style="color:#a45a6b;font-size:12px;font-weight:700;">${escapeHtml(options.reasonLabel || '预约变更原因')} · ${escapeHtml(options.reasonLabelEn || 'Reason for the booking update')}</div><div style="margin-top:7px;color:#514649;font-size:15px;line-height:1.65;">${escapeHtml(options.reason)}</div>${options.reasonEn ? `<div style="margin-top:4px;color:#75696c;font-size:13px;line-height:1.65;">${escapeHtml(options.reasonEn)}</div>` : ''}</td></tr></table>`
               : ''
           }
           ${
             options.closingNote
-              ? `<p style="margin:0 0 26px;color:#675b5e;font-size:14px;line-height:1.8;">${escapeHtml(options.closingNote)}</p>`
+              ? `<p style="margin:0;color:#675b5e;font-size:14px;line-height:1.8;">${escapeHtml(options.closingNote)}</p>${options.closingNoteEn ? `<p style="margin:4px 0 26px;color:#887c7f;font-size:13px;line-height:1.7;">${escapeHtml(options.closingNoteEn)}</p>` : '<div style="height:26px;"></div>'}`
               : ''
           }
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top:1px solid #e8e2df;">
-            ${detailRow('预约码', appt.code)}
-            ${detailRow('日期', appt.date)}
-            ${detailRow('时间', `${appt.startTime} – ${appt.endTime}`)}
-            ${detailRow('人数', `${appt.peopleCount} 人`)}
-            ${detailRow('门店', appt.storeName)}
+            ${detailRow('预约码 / Booking code', appt.code)}
+            ${detailRow('日期 / Date', appt.date)}
+            ${detailRow('时间 / Time', `${appt.startTime} – ${appt.endTime}`)}
+            ${detailRow('人数 / Guests', `${appt.peopleCount} 人 / ${appt.peopleCount} ${appt.peopleCount === 1 ? 'guest' : 'guests'}`)}
+            ${detailRow('门店 / Studio', appt.storeName)}
           </table>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="padding-top:28px;">
-            <a href="${escapeHtml(siteUrl)}" style="display:inline-block;padding:13px 28px;border-radius:999px;background:#ee7894;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">${escapeHtml(options.actionLabel || '访问 IDOL BEADS')}</a>
+            <a href="${escapeHtml(siteUrl)}" style="display:inline-block;padding:13px 28px;border-radius:999px;background:#ee7894;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">${escapeHtml(options.actionLabel || '访问 IDOL BEADS')} · ${escapeHtml(options.actionLabelEn || 'Visit IDOL BEADS')}</a>
           </td></tr></table>
         </td></tr>
         <tr><td style="padding:0 40px 36px;">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f5f3;border-radius:14px;"><tr><td style="padding:24px;">
-            <div style="color:#473e40;font-size:17px;font-weight:800;">加入拼豆世界</div>
+            <div style="color:#473e40;font-size:17px;font-weight:800;">加入拼豆世界 <span style="color:#8d8184;font-size:14px;">· Join our bead community</span></div>
             <div style="margin-top:9px;color:#756a6d;font-size:13px;line-height:1.8;">想认识更多拼豆同好、获取活动和空位消息？添加下方微信并备注“加群”，由 ${escapeHtml(wechatId)} 邀请你加入群聊。</div>
+            <div style="margin-top:5px;color:#8d8184;font-size:12px;line-height:1.7;">Meet fellow bead lovers and hear about events or available slots. Add us on WeChat and send “Join group”; ${escapeHtml(wechatId)} will invite you to the group chat.</div>
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:14px;"><tr>
-              <td style="padding:10px 13px;background:#ffffff;border:1px solid #ded6d3;border-radius:8px 0 0 8px;color:#40383a;font-size:14px;font-weight:800;">微信号：${escapeHtml(wechatId)}</td>
-              <td><a href="${escapeHtml(copyWechatUrl)}" style="display:block;padding:11px 13px;border-radius:0 8px 8px 0;background:#ee7894;color:#ffffff;font-size:12px;font-weight:800;text-decoration:none;">复制微信号</a></td>
+              <td style="padding:10px 13px;background:#ffffff;border:1px solid #ded6d3;border-radius:8px 0 0 8px;color:#40383a;font-size:14px;font-weight:800;">微信号 / WeChat：${escapeHtml(wechatId)}</td>
+              <td><a href="${escapeHtml(copyWechatUrl)}" style="display:block;padding:11px 13px;border-radius:0 8px 8px 0;background:#ee7894;color:#ffffff;font-size:12px;font-weight:800;text-decoration:none;">复制 / Copy</a></td>
             </tr></table>
           </td></tr></table>
         </td></tr>
         <tr><td align="center" style="padding:22px 32px 25px;background:#302b2c;color:#d8cfd1;">
           ${contactRows.map((row) => `<div style="color:#d8cfd1;font-size:12px;line-height:1.8;">${row}</div>`).join('')}
-          <div style="color:#d8cfd1;font-size:12px;line-height:1.8;">微信 ${escapeHtml(wechatId)}</div>
+          <div style="color:#d8cfd1;font-size:12px;line-height:1.8;">微信 / WeChat ${escapeHtml(wechatId)}</div>
           <div style="margin-top:5px;font-size:12px;line-height:1.8;">
-            <a href="${escapeHtml(siteUrl)}" style="color:#ffb3c5;text-decoration:none;">官网</a>
+            <a href="${escapeHtml(siteUrl)}" style="color:#ffb3c5;text-decoration:none;">官网 / Website</a>
             <span style="color:#766d70;"> &nbsp;·&nbsp; </span>
             <a href="${escapeHtml(instagramUrl)}" style="color:#ffb3c5;text-decoration:none;">Instagram @idol_beads</a>
             <span style="color:#766d70;"> &nbsp;·&nbsp; </span>
-            <a href="${escapeHtml(xiaohongshuUrl)}" style="color:#ffb3c5;text-decoration:none;">小红书 IDOL Beads</a>
+            <a href="${escapeHtml(xiaohongshuUrl)}" style="color:#ffb3c5;text-decoration:none;">小红书 / REDnote IDOL Beads</a>
           </div>
-          <div style="margin-top:10px;color:#92888a;font-size:10px;line-height:1.6;">此邮件由 IDOL BEADS 预约系统自动发送，请勿直接回复。</div>
+          <div style="margin-top:10px;color:#92888a;font-size:10px;line-height:1.6;">此邮件由 IDOL BEADS 预约系统自动发送，请勿直接回复。<br>This is an automated email from IDOL BEADS. Please do not reply directly.</div>
         </td></tr>
       </table>
     </td></tr>
