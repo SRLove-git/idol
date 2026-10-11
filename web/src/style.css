@@ -873,6 +873,20 @@ th {
     border-radius: 12px;
 }
 
+.booking-test-notice {
+    width: min(100%, 1080px);
+    margin: -20px auto 22px;
+    padding: 11px 18px;
+    color: #b14f67;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.6;
+    text-align: center;
+    background: #fff0f3;
+    border: 1px solid #ffcbd7;
+    border-radius: 12px;
+}
+
 .booking-app {
     display: grid;
     grid-template-areas:
@@ -3621,6 +3635,10 @@ footer.site-footer {
 
 .booking-standalone > .container > .booking-success-condition {
     display: none;
+}
+
+.booking-standalone > .container > .booking-test-notice {
+    margin-top: 0;
 }
 
 .booking-code {

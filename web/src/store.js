@@ -87,7 +87,7 @@ export const translations = {
     td_wed_thu: '周三 - 周四',
     td_fri_sun: '周五 - 周日',
     booking_title: '预约体验',
-    booking_test_notice: '测试阶段，不支持预约。',
+    booking_test_notice: '测试阶段，暂不支持预约。',
     booking_success_condition: '提交后记得留意邮箱哦～收到“预约已确认”邮件才算预约成功！时间或人数有变化，请提前前往小红书联系 IDOL Beads 客服；预约时段最多为你保留 30 分钟。',
     booking_closed_title: '预约暂未开放',
     booking_closed_desc: '门店正在筹备中，线上预约开放后我们会第一时间更新。感谢你的理解与耐心等待。',

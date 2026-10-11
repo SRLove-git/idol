@@ -403,6 +403,9 @@ watch(() => state.lang, buildDates)
         <img src="/photos/booking-title.png" alt="Booking" class="title-icon">
       </h2>
       <p class="booking-success-condition">{{ t('booking_success_condition') }}</p>
+      <p v-if="state.bookingEnabled" class="booking-test-notice" role="status">
+        {{ t('booking_test_notice') }}
+      </p>
       <div v-if="!state.bookingEnabled" class="booking-closed-card" role="status">
         <span>{{ t('booking_test_notice') }}</span>
         <h3>{{ t('booking_closed_title') }}</h3>
