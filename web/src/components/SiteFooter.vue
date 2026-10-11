@@ -7,6 +7,7 @@ const instagram = computed(() => siteLink('instagram', 'https://www.instagram.co
 const xiaohongshu = computed(() => siteLink('xiaohongshu', 'https://www.xiaohongshu.com/user/profile/650d5c8e00000000120075e5'))
 const douyin = computed(() => siteLink('douyin', 'https://v.douyin.com/lQTCIhRoSAY/'))
 const arrivalGuide = 'https://www.xiaohongshu.com/explore/6abcd1cc000000001203e0b5?app_platform=ios&app_version=9.49.1&share_from_user_hidden=true&xsec_source=app_share&type=normal&xsec_token=CBuPlDuJwPTtceKdj76OXmC_A-jxJV8M8UOKeufjdnKx8=&author_share=1&xhsshare=WeixinSession&shareRedId=ODg7REZIO0o2NzUyOTgwNjg0OTk6OTlP&apptime=1791468933&share_id=760d94f870f44c60b2df59bd8f26686e&wechatWid=6212a0e4a48431998387778190c73055&wechatOrigin=menu'
+const mapLink = 'https://www.google.com/maps/search/?api=1&query=18A%20Sago%20Street%2C%20Singapore%20059017'
 
 const routes = computed(() => [
   {
@@ -42,7 +43,7 @@ const routes = computed(() => [
         </section>
         <section class="footer-column">
           <h3 class="footer-title">{{ t('footer_location_title') }}</h3>
-          <address class="footer-address">{{ state.store?.address }}</address>
+          <address class="footer-address">{{ state.store?.address || '18A Sago Street, Singapore 059017' }}</address>
         </section>
         <section class="footer-column">
           <h3 class="footer-title">{{ t('footer_social_title') }}</h3>
@@ -71,16 +72,31 @@ const routes = computed(() => [
             {{ t('footer_directions_guide') }} <span aria-hidden="true">↗</span>
           </a>
         </div>
-        <div class="footer-route-grid">
-          <article v-for="route in routes" :key="route.station" class="footer-route-card">
-            <div class="footer-route-station">
-              <span class="footer-route-icon" aria-hidden="true">🚇</span>
-              <div><strong>{{ route.station }}</strong><small>{{ route.line }} · {{ route.exit }}</small></div>
+        <div class="footer-directions-content">
+          <article class="footer-map-card">
+            <div class="footer-map-heading">
+              <span class="footer-map-pin" aria-hidden="true">📍</span>
+              <div>
+                <strong>18A Sago Street</strong>
+                <small>Singapore 059017 · Level 2</small>
+              </div>
+              <a :href="mapLink" target="_blank" rel="noopener noreferrer">{{ t('footer_map_open') }} ↗</a>
             </div>
-            <ol>
-              <li v-for="step in route.steps" :key="step">{{ step }}</li>
-            </ol>
+            <a :href="mapLink" target="_blank" rel="noopener noreferrer" class="footer-map-image-link">
+              <img :src="'/photos/idol-beads-map.png'" :alt="t('footer_map_image_alt')" loading="lazy" decoding="async">
+            </a>
           </article>
+          <div class="footer-route-grid">
+            <article v-for="route in routes" :key="route.station" class="footer-route-card">
+              <div class="footer-route-station">
+                <span class="footer-route-icon" aria-hidden="true">🚇</span>
+                <div><strong>{{ route.station }}</strong><small>{{ route.line }} · {{ route.exit }}</small></div>
+              </div>
+              <ol>
+                <li v-for="step in route.steps" :key="step">{{ step }}</li>
+              </ol>
+            </article>
+          </div>
         </div>
       </section>
       <div class="footer-bottom">

@@ -20,6 +20,7 @@ watch(() => state.lang, (language) => {
 
 export const translations = {
   zh: {
+    nav_contact: '联系我们',
     nav_home: '首页',
     nav_highlights: '拼豆精选',
     nav_pricing: '价位表',
@@ -165,6 +166,9 @@ export const translations = {
     footer_directions_title: '如何找到我们',
     footer_directions_address: '18A Sago Street, Singapore 059017 · 门店位于二楼，请从临街楼梯上楼。',
     footer_directions_guide: '查看小红书图文到店指南',
+    footer_map_open: '打开地图',
+    footer_map_title: 'IDOL Beads 门店地图',
+    footer_map_image_alt: '18A Sago Street 周边地图，标记 IDOL Beads 门店位置',
     footer_route_maxwell_exit: '1号出口',
     footer_route_maxwell_step_1: '出站后朝佛牙寺方向步行。',
     footer_route_maxwell_step_2: '进入 Sago Street，找到 18A 门牌。',
@@ -280,6 +284,7 @@ export const translations = {
     mon: '周一', tue: '周二', wed: '周三', thu: '周四', fri: '周五', sat: '周六', sun: '周日'
   },
   en: {
+    nav_contact: 'Contact Us',
     nav_home: 'Home',
     nav_highlights: 'Gallery',
     nav_pricing: 'Pricing',
@@ -425,6 +430,9 @@ export const translations = {
     footer_directions_title: 'How to Find Us',
     footer_directions_address: '18A Sago Street, Singapore 059017 · We are on level 2; take the street-facing stairs.',
     footer_directions_guide: 'View the illustrated RedNote guide',
+    footer_map_open: 'Open map',
+    footer_map_title: 'Map to IDOL Beads',
+    footer_map_image_alt: 'Map around 18A Sago Street marking the IDOL Beads studio',
     footer_route_maxwell_exit: 'Exit 1',
     footer_route_maxwell_step_1: 'Walk towards the Buddha Tooth Relic Temple.',
     footer_route_maxwell_step_2: 'Turn right into Sago Street and look for No. 18A.',

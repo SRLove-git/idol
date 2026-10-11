@@ -39,6 +39,7 @@ onMounted(async () => {
 
       <nav class="site-nav" :class="{ 'is-open': menuOpen }" @click="menuOpen = false">
         <a href="/#home">{{ t('nav_home') }}</a>
+        <a href="/#social">{{ t('nav_contact') }}</a>
         <a href="/highlights">{{ t('nav_highlights') }}</a>
         <a href="/#pricing">{{ t('nav_pricing') }}</a>
         <a v-if="state.bookingEnabled" href="/booking">{{ t('nav_booking') }}</a>
