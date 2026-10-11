@@ -16,7 +16,14 @@ const customDurationActive = ref(false)
 const customDuration = ref(2)
 const customPeopleActive = ref(false)
 const customPeople = ref(5)
-const form = reactive({ name: '', phone: '', email: '', notes: '' })
+const form = reactive({
+  name: '',
+  phone: '',
+  email: '',
+  source: '',
+  notes: '',
+  marketingEmailConsent: false
+})
 const submitting = ref(false)
 const confirming = ref(false)
 const validationMsg = ref('')
@@ -39,6 +46,13 @@ const durationOptions = computed(() => [
   { key: 'all-day', bookingType: 'all_day', hours: null, label: t('opt_daypass') }
 ])
 const peopleOptions = [1, 2, 3, 4]
+const sourceOptions = computed(() => [
+  { value: 'xiaohongshu', label: t('booking_source_xiaohongshu') },
+  { value: 'instagram', label: t('booking_source_instagram') },
+  { value: 'google', label: t('booking_source_google') },
+  { value: 'friend', label: t('booking_source_friend') },
+  { value: 'other', label: t('booking_source_other') }
+])
 const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
 const storeTables = computed(() =>
@@ -114,6 +128,9 @@ const membershipLabel = computed(() => {
   return state.lang === 'zh' ? '已登录 · 普通用户' : 'Signed in · Standard account'
 })
 const formattedPhone = computed(() => form.phone.trim())
+const selectedSourceLabel = computed(() =>
+  sourceOptions.value.find((item) => item.value === form.source)?.label || ''
+)
 
 async function loadAccountMembership() {
   try {
@@ -358,6 +375,8 @@ async function submit() {
       payMethod: 'wechat',
       guestName: form.name.trim(),
       guestEmail: form.email.trim().toLowerCase(),
+      acquisitionSource: form.source,
+      marketingEmailConsent: form.marketingEmailConsent,
       note: [form.notes, `电话 ${formattedPhone.value}`].filter(Boolean).join(' | ')
     }
     if (bookingType === 'hourly') {
@@ -550,7 +569,23 @@ watch(() => state.lang, buildDates)
               <input v-model="form.phone" type="tel" inputmode="tel" autocomplete="tel" :placeholder="t('placeholder_phone')" required @input="validationMsg = ''">
             </div>
             <input v-model="form.email" type="email" :placeholder="t('placeholder_email')" required @input="validationMsg = ''">
+            <label class="booking-source-field">
+              <span>{{ t('booking_source_question') }}</span>
+              <select v-model="form.source" @change="validationMsg = ''">
+                <option value="" disabled>{{ t('booking_source_placeholder') }}</option>
+                <option v-for="item in sourceOptions" :key="item.value" :value="item.value">
+                  {{ item.label }}
+                </option>
+              </select>
+            </label>
             <textarea v-model="form.notes" rows="2" :placeholder="t('placeholder_notes')"></textarea>
+            <label class="booking-marketing-consent">
+              <input v-model="form.marketingEmailConsent" type="checkbox">
+              <span>
+                <strong>{{ t('booking_marketing_consent') }}</strong>
+                <small>{{ t('booking_marketing_consent_note') }}</small>
+              </span>
+            </label>
           </div>
         </div>
 
@@ -589,6 +624,8 @@ watch(() => state.lang, buildDates)
             <div class="is-important"><dt>{{ t('booking_review_tables') }}</dt><dd>{{ t('booking_table_auto') }}</dd></div>
             <div v-if="accountUser"><dt>{{ state.lang === 'zh' ? '会员身份' : 'Membership' }}</dt><dd>{{ membershipLabel }}</dd></div>
             <div><dt>{{ t('booking_review_contact') }}</dt><dd>{{ form.name.trim() }} · {{ formattedPhone }}<br>{{ form.email.trim().toLowerCase() }}</dd></div>
+            <div v-if="form.source"><dt>{{ t('booking_review_source') }}</dt><dd>{{ selectedSourceLabel }}</dd></div>
+            <div v-if="form.marketingEmailConsent"><dt>{{ t('booking_review_marketing') }}</dt><dd>{{ t('booking_review_marketing_yes') }}</dd></div>
           </dl>
           <div class="booking-confirm-actions">
             <button type="button" class="btn btn-secondary" :disabled="submitting" @click="closeConfirmation">

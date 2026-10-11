@@ -1418,7 +1418,8 @@ th {
     gap: 12px;
 }
 
-.personal-info-form input, 
+.personal-info-form input,
+.personal-info-form select,
 .personal-info-form textarea {
     width: 100%;
     background-color: #f8f8f8;
@@ -1428,7 +1429,60 @@ th {
     font-size: 14px;
 }
 
-.personal-info-form input:focus, 
+.personal-info-form select {
+    color: #4b4245;
+    cursor: pointer;
+}
+
+.booking-source-field {
+    display: grid;
+    gap: 7px;
+    color: #594d51;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.5;
+}
+
+.booking-marketing-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 14px;
+    color: #594d51;
+    background: #fff7f9;
+    border: 1px solid #f8dce4;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.personal-info-form .booking-marketing-consent input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    padding: 0;
+    accent-color: var(--primary-color);
+}
+
+.booking-marketing-consent span {
+    display: grid;
+    gap: 4px;
+}
+
+.booking-marketing-consent strong {
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.booking-marketing-consent small {
+    color: #8d7d82;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.55;
+}
+
+.personal-info-form input:focus,
+.personal-info-form select:focus,
 .personal-info-form textarea:focus {
     background-color: white;
     border-color: #ffc2d1;

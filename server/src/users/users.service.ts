@@ -247,6 +247,21 @@ export class UsersService {
     return this.users.save(this.users.create(data));
   }
 
+  /** 记录用户主动同意营销邮件；调用方必须已取得明确同意。 */
+  async grantMarketingEmailConsent(
+    id: number,
+    source = 'booking',
+  ): Promise<void> {
+    await this.users.update(
+      { id },
+      {
+        marketingEmailConsent: true,
+        marketingEmailConsentAt: new Date(),
+        marketingEmailConsentSource: source,
+      },
+    );
+  }
+
   /**
    * 将游客邮箱占位账号升级为正式账号。
    * 原记录 ID 不变，因此游客预约会自动保留在注册后的账号下。

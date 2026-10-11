@@ -5,6 +5,7 @@ function buildService() {
   const users = {
     findOneBy: jest.fn(),
     findAndCount: jest.fn(),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
   };
   const svc = new UsersService(
     {} as never, // redis
@@ -76,6 +77,23 @@ describe('UsersService.findById', () => {
     await expect(m.svc.findById(7)).resolves.toHaveProperty(
       'passwordHash',
       'scrypt$172343d1:deadbeef',
+    );
+  });
+});
+
+describe('UsersService.grantMarketingEmailConsent', () => {
+  it('记录明确同意、时间和预约来源', async () => {
+    const m = buildService();
+
+    await m.svc.grantMarketingEmailConsent(7, 'booking');
+
+    expect(m.users.update).toHaveBeenCalledWith(
+      { id: 7 },
+      expect.objectContaining({
+        marketingEmailConsent: true,
+        marketingEmailConsentAt: expect.any(Date),
+        marketingEmailConsentSource: 'booking',
+      }),
     );
   });
 });

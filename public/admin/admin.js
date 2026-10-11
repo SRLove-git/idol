@@ -248,7 +248,12 @@ function appointmentRow(item) {
   if (['pending','booked','checked_in'].includes(item.status)) actions.push(actionButton(item.id, 'cancel', item.status === 'pending' ? '拒绝' : '取消', 'button-ghost', item.status))
   const memberTag = item.isMember ? '<span class="appointment-member-tag">★ 会员预约</span>' : ''
   const cancellationReason = item.status === 'cancelled' && item.cancellationReason ? `<small class="cancellation-reason">${esc(item.cancellationReason)}</small>` : ''
-  return `<tr class="${item.isMember ? 'appointment-member-row' : ''}"><td><strong>${esc(item.code)}</strong>${memberTag}</td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small></td><td>${esc(item.date)}<br><small>${esc(item.startTime)} - ${esc(item.endTime)}</small></td><td>${item.peopleCount}</td><td>$${Number(item.amount || 0).toFixed(2)}${item.isMember && Number(item.originalAmount || 0) > Number(item.amount || 0) ? `<br><small class="member-saving">原价 $${Number(item.originalAmount).toFixed(2)}</small>` : ''}</td><td><span class="status status-${item.status}">${statusText(item.status)}</span>${cancellationReason}</td><td class="actions">${actions.join('') || '—'}</td></tr>`
+  const source = acquisitionSourceText(item.acquisitionSource)
+  const marketingConsent = item.marketingEmailConsent ? '<br><small>✓ 已同意营销邮件</small>' : ''
+  return `<tr class="${item.isMember ? 'appointment-member-row' : ''}"><td><strong>${esc(item.code)}</strong>${memberTag}</td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small>${source ? `<br><small>来源：${esc(source)}</small>` : ''}${marketingConsent}</td><td>${esc(item.date)}<br><small>${esc(item.startTime)} - ${esc(item.endTime)}</small></td><td>${item.peopleCount}</td><td>$${Number(item.amount || 0).toFixed(2)}${item.isMember && Number(item.originalAmount || 0) > Number(item.amount || 0) ? `<br><small class="member-saving">原价 $${Number(item.originalAmount).toFixed(2)}</small>` : ''}</td><td><span class="status status-${item.status}">${statusText(item.status)}</span>${cancellationReason}</td><td class="actions">${actions.join('') || '—'}</td></tr>`
+}
+function acquisitionSourceText(value) {
+  return ({ xiaohongshu: '小红书', instagram: 'Instagram', google: 'Google / Google Maps', friend: '朋友推荐', other: '其他' })[value] || ''
 }
 function actionButton(id, action, label, cls, status = '') { return `<button class="button button-small ${cls}" data-appt-action="${action}" data-id="${id}" data-status="${status}">${label}</button>` }
 
@@ -807,7 +812,8 @@ async function renderUsers(search = '') {
 }
 function userRow(user) {
   const isSelf = user.id === state.me.id
-  return `<tr><td>#${user.id}</td><td><strong>${esc(user.nickname || user.username || '未命名')}</strong><br><small>@${esc(user.username || '—')}</small></td><td>${esc(user.email || '—')}</td><td>${user.role === 'admin' ? `<span class="status status-booked">${esc(user.adminRole || '管理员')}</span>` : '用户'}</td><td>${formatDate(user.createdAt)}</td><td><span class="status ${user.isBanned ? 'status-banned' : 'status-active'}">${user.isBanned ? '已封禁' : '正常'}</span></td><td class="actions">${isSelf ? '当前账号' : `<button class="button button-small ${user.isBanned ? 'button-green' : 'button-ghost'}" data-user-ban="${user.isBanned ? 'false' : 'true'}" data-id="${user.id}">${user.isBanned ? '解封' : '封禁'}</button><button class="button button-small button-ghost" data-user-offline data-id="${user.id}">强制下线</button>`}</td></tr>`
+  const marketing = user.marketingEmailConsent ? '<br><small>✓ 营销邮件订阅</small>' : ''
+  return `<tr><td>#${user.id}</td><td><strong>${esc(user.nickname || user.username || '未命名')}</strong><br><small>@${esc(user.username || '—')}</small></td><td>${esc(user.email || '—')}${marketing}</td><td>${user.role === 'admin' ? `<span class="status status-booked">${esc(user.adminRole || '管理员')}</span>` : '用户'}</td><td>${formatDate(user.createdAt)}</td><td><span class="status ${user.isBanned ? 'status-banned' : 'status-active'}">${user.isBanned ? '已封禁' : '正常'}</span></td><td class="actions">${isSelf ? '当前账号' : `<button class="button button-small ${user.isBanned ? 'button-green' : 'button-ghost'}" data-user-ban="${user.isBanned ? 'false' : 'true'}" data-id="${user.id}">${user.isBanned ? '解封' : '封禁'}</button><button class="button button-small button-ghost" data-user-offline data-id="${user.id}">强制下线</button>`}</td></tr>`
 }
 async function banUser(button) {
   const ban = button.dataset.userBan === 'true'

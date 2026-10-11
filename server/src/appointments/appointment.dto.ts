@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEmail,
   IsIn,
   IsInt,
@@ -94,6 +95,19 @@ export class CreateAppointmentDto {
   @IsString()
   @MaxLength(200)
   note?: string;
+
+  /** 顾客最初认识品牌的渠道（可选）。 */
+  @IsOptional()
+  @IsIn(['xiaohongshu', 'instagram', 'google', 'friend', 'other'], {
+    message: '请选择有效的了解渠道',
+  })
+  acquisitionSource?:
+    'xiaohongshu' | 'instagram' | 'google' | 'friend' | 'other';
+
+  /** 可选营销邮件订阅；必须由用户主动勾选后传 true。 */
+  @IsOptional()
+  @IsBoolean()
+  marketingEmailConsent?: boolean;
 
   /** 游客预约邮箱：未登录时用作游客账号的唯一标识（同邮箱预约归并到同一游客账号） */
   @IsOptional()

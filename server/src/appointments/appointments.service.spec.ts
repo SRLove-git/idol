@@ -75,6 +75,7 @@ function buildService() {
     findByEmail: jest.fn(),
     findById: jest.fn().mockResolvedValue(null),
     create: jest.fn(),
+    grantMarketingEmailConsent: jest.fn().mockResolvedValue(undefined),
   };
   const gateway = { sendAppointment: jest.fn() };
   const email = { send: jest.fn().mockResolvedValue(undefined) };
@@ -169,6 +170,7 @@ const baseDto = {
   date: nextRegularDate(),
   startTime: '10:00',
   durationHours: 2,
+  acquisitionSource: 'xiaohongshu' as const,
 };
 
 describe('AppointmentsService', () => {
@@ -261,7 +263,10 @@ describe('AppointmentsService', () => {
       );
       m.em.save.mockImplementation((x: unknown) => Promise.resolve(x));
 
-      const result = await m.svc.create(7, baseDto);
+      const result = await m.svc.create(7, {
+        ...baseDto,
+        marketingEmailConsent: true,
+      });
 
       expect(result.status).toBe('pending');
       expect(result.code).toMatch(/^[A-Z0-9]{6}$/);
@@ -269,6 +274,13 @@ describe('AppointmentsService', () => {
       expect(result.amount).toBe(159.6);
       expect(result.originalAmount).toBe(159.6);
       expect(result.isMember).toBe(false);
+      expect(result.acquisitionSource).toBe('xiaohongshu');
+      expect(result.marketingEmailConsent).toBe(true);
+      expect(result.marketingEmailConsentAt).toBeInstanceOf(Date);
+      expect(m.users.grantMarketingEmailConsent).toHaveBeenCalledWith(
+        7,
+        'booking',
+      );
       expect(m.em.save).toHaveBeenCalled();
       // 一单多桌关系写入 appointment_tables 关联表（availability/冲突校验用）
       expect(m.em.insert).toHaveBeenCalledWith(

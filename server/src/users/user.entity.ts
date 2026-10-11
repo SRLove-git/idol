@@ -9,6 +9,10 @@ import {
 
 @Entity('users')
 @Index(['deviceId']) // 防刷号：同一设备（MAC/安装ID）最多注册 3 个账号
+@Index('IDX_users_marketing_email_consent', [
+  'marketingEmailConsent',
+  'marketingEmailConsentAt',
+])
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -71,6 +75,18 @@ export class User {
   /** 所在地，空串表示未设置 */
   @Column({ type: 'varchar', length: 60, default: '' })
   location: string;
+
+  /** 是否已明确同意接收营销邮件；默认不同意。 */
+  @Column({ default: false })
+  marketingEmailConsent: boolean;
+
+  /** 最近一次明确同意营销邮件的时间。 */
+  @Column({ type: 'datetime', nullable: true })
+  marketingEmailConsentAt: Date | null;
+
+  /** 同意来源，例如 booking。 */
+  @Column({ type: 'varchar', length: 30, default: '' })
+  marketingEmailConsentSource: string;
 
   /** 密码哈希（scrypt），格式 scrypt$<salt>:<hash> 共 168 字符；null 表示未设置密码 */
   @Column({ type: 'varchar', length: 255, nullable: true })

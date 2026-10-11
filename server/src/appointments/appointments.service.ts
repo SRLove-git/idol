@@ -373,10 +373,19 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     }
     const type = dto.type ?? 'store';
     const isMember = await this.isMemberActive(resolvedUserId);
-    if (type === 'activity') {
-      return this.createActivity(resolvedUserId, dto, isMember);
+    const appointment =
+      type === 'activity'
+        ? await this.createActivity(resolvedUserId, dto, isMember)
+        : await this.createStore(resolvedUserId, dto, isMember);
+    if (dto.marketingEmailConsent === true) {
+      await this.users
+        .grantMarketingEmailConsent(resolvedUserId, 'booking')
+        .catch((error: Error) => {
+          // 预约单本身已保留同意快照；用户订阅汇总失败不应让已成功预约显示失败。
+          this.logger.warn(`营销邮件订阅状态同步失败：${error.message}`);
+        });
     }
-    return this.createStore(resolvedUserId, dto, isMember);
+    return appointment;
   }
 
   /** 线上预约总开关；未配置时保持原有行为，显式关闭时采用 fail-closed。 */
@@ -736,6 +745,10 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
           status: 'pending',
           code: await this.generateCode(em),
           note: dto.note ?? '',
+          acquisitionSource: dto.acquisitionSource ?? '',
+          marketingEmailConsent: dto.marketingEmailConsent === true,
+          marketingEmailConsentAt:
+            dto.marketingEmailConsent === true ? new Date() : null,
           amount: finalAmount,
           originalAmount,
           isMember,
@@ -879,6 +892,10 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
           status: 'pending',
           code: await this.generateCode(em),
           note: dto.note ?? '',
+          acquisitionSource: dto.acquisitionSource ?? '',
+          marketingEmailConsent: dto.marketingEmailConsent === true,
+          marketingEmailConsentAt:
+            dto.marketingEmailConsent === true ? new Date() : null,
           amount: finalAmount,
           originalAmount,
           isMember,
@@ -1113,6 +1130,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       payStatus: appt.payStatus,
       status: appt.status,
       note: appt.note,
+      acquisitionSource: appt.acquisitionSource,
       createdAt: appt.createdAt,
     };
   }

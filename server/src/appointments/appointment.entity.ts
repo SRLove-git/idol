@@ -26,6 +26,10 @@ export type BookingType = 'hourly' | 'package' | 'all_day';
 /** 支付状态：预约时同步支付（演示支付），历史数据为 unpaid */
 export type PayStatus = 'unpaid' | 'paid';
 
+/** 顾客最初了解品牌的渠道。 */
+export type AppointmentAcquisitionSource =
+  'xiaohongshu' | 'instagram' | 'google' | 'friend' | 'other';
+
 /** 预约单 */
 @Entity('appointments')
 @Index(['storeId', 'tableId', 'date']) // 防超卖：同店同桌同日期按时间段重叠校验
@@ -249,6 +253,18 @@ export class Appointment {
 
   @Column({ length: 200, default: '' })
   note: string;
+
+  /** 顾客最初认识 IDOL BEADS 的渠道。 */
+  @Column({ length: 30, default: '' })
+  acquisitionSource: AppointmentAcquisitionSource | '';
+
+  /** 本次预约提交时，顾客是否主动勾选营销邮件订阅。 */
+  @Column({ default: false })
+  marketingEmailConsent: boolean;
+
+  /** 本次营销邮件同意时间；未同意为 null。 */
+  @Column({ type: 'datetime', nullable: true })
+  marketingEmailConsentAt: Date | null;
 
   /** 管理员拒绝或取消预约时告知顾客的原因 */
   @Column({ length: 200, default: '' })
