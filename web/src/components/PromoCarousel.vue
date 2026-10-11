@@ -15,6 +15,7 @@ function stop() {
 }
 function restart() {
   stop()
+  if (banners.value.length <= 1) return
   timer = setInterval(() => go(current.value + 1), 5000)
 }
 function go(i) {
@@ -30,13 +31,19 @@ onBeforeUnmount(stop)
   <section class="promo-carousel" :aria-label="t('promo_carousel_label')">
     <div class="promo-carousel-wrapper">
       <div class="promo-carousel-track">
-        <div v-for="(b, i) in banners" :key="b" class="promo-slide" :class="{ active: i === current }" :aria-hidden="i !== current">
+        <div
+          v-for="(b, i) in banners"
+          :key="b"
+          class="promo-slide"
+          :class="{ active: i === current }"
+          :aria-hidden="i !== current"
+        >
           <img :src="b" :alt="`promotion ${i + 1}`" draggable="false" loading="lazy" decoding="async">
         </div>
       </div>
-      <button type="button" class="promo-carousel-btn promo-carousel-prev" :aria-label="t('promo_previous')" @click="go(current - 1)">&#10094;</button>
-      <button type="button" class="promo-carousel-btn promo-carousel-next" :aria-label="t('promo_next')" @click="go(current + 1)">&#10095;</button>
-      <div class="promo-carousel-dots" :aria-label="t('promo_navigation')">
+      <button v-if="banners.length > 1" type="button" class="promo-carousel-btn promo-carousel-prev" :aria-label="t('promo_previous')" @click="go(current - 1)">&#10094;</button>
+      <button v-if="banners.length > 1" type="button" class="promo-carousel-btn promo-carousel-next" :aria-label="t('promo_next')" @click="go(current + 1)">&#10095;</button>
+      <div v-if="banners.length > 1" class="promo-carousel-dots" :aria-label="t('promo_navigation')">
         <button
           v-for="(b, i) in banners"
           :key="'d' + i"

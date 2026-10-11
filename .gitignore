@@ -7,6 +7,10 @@ coverage/
 public/index.html
 public/assets/
 public/photos/*
+!public/photos/thumbnails/
+!public/photos/thumbnails/*
+!public/photos/banner-studio-room.jpg
+!public/photos/banner-studio-story.jpg
 !public/photos/banner-floor-1.png
 !public/photos/banner-floor-2.png
 !public/photos/hero-studio.jpg

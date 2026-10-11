@@ -49,7 +49,7 @@ const REVIEW_DEFAULTS = [
 
 const MEDIA_DEFAULTS = {
   logo: '/photos/idol-logo.png', heroBackground: '/photos/hero-studio.jpg',
-  banners: ['/photos/banner-floor-2.png', '/photos/banner-floor-1.png'],
+  banners: ['/photos/banner-studio-room.jpg', '/photos/banner-studio-story.jpg'],
   featureIcons: [1, 2, 3, 4].map((n) => `/photos/feat-icon-${n}.png`),
   featuredHighlights: ['/photos/xhs-studio.jpg', '/photos/xhs-character-wall.jpg', '/photos/xhs-display-wall.jpg']
 }

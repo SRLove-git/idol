@@ -3,16 +3,28 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { defaultSiteMedia, siteMedia, state, t } from '../store.js'
 
 const activeIndex = ref(-1)
+const visibleCount = ref(16)
+const loadSentinel = ref(null)
+const galleryBatchSize = 12
+const defaultGalleryImages = new Set(defaultSiteMedia.galleryImages)
+let galleryObserver = null
+
+function thumbnailSource(src) {
+  if (!defaultGalleryImages.has(src) || !src.startsWith('/photos/')) return src
+  return src.replace('/photos/', '/photos/thumbnails/')
+}
 
 const images = computed(() => {
   const paths = siteMedia('galleryImages', defaultSiteMedia.galleryImages)
 
   return [...new Set(paths)].map((src, index) => ({
     src,
+    thumbnailSrc: thumbnailSource(src),
     alt: state.lang === 'zh' ? `拼豆精选作品 ${index + 1}` : `Featured bead creation ${index + 1}`
   }))
 })
 
+const visibleImages = computed(() => images.value.slice(0, visibleCount.value))
 const activeImage = computed(() => images.value[activeIndex.value] || null)
 
 function openLightbox(index) {
@@ -40,9 +52,24 @@ function handleKeydown(event) {
   if (event.key === 'ArrowRight') showNext()
 }
 
-onMounted(() => window.addEventListener('keydown', handleKeydown))
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+
+  if (!('IntersectionObserver' in window)) {
+    visibleCount.value = images.value.length
+    return
+  }
+
+  galleryObserver = new IntersectionObserver(([entry]) => {
+    if (!entry?.isIntersecting) return
+    visibleCount.value = Math.min(visibleCount.value + galleryBatchSize, images.value.length)
+  }, { rootMargin: '800px 0px' })
+
+  if (loadSentinel.value) galleryObserver.observe(loadSentinel.value)
+})
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
+  galleryObserver?.disconnect()
   document.body.classList.remove('lightbox-open')
 })
 </script>
@@ -72,19 +99,31 @@ onBeforeUnmount(() => {
 
         <div class="works-gallery-grid">
           <button
-            v-for="(image, index) in images"
+            v-for="(image, index) in visibleImages"
             :key="image.src"
             class="works-gallery-card"
             type="button"
             :aria-label="image.alt"
             @click="openLightbox(index)"
           >
-            <img :src="image.src" :alt="image.alt" loading="lazy" decoding="async">
+            <img
+              :src="image.thumbnailSrc"
+              :alt="image.alt"
+              :loading="index < 4 ? 'eager' : 'lazy'"
+              decoding="async"
+              :fetchpriority="index < 4 ? 'high' : 'low'"
+            >
             <span class="works-gallery-card-overlay" aria-hidden="true">
               <span>+</span>
             </span>
           </button>
         </div>
+        <div
+          v-if="visibleImages.length < images.length"
+          ref="loadSentinel"
+          class="works-gallery-load-sentinel"
+          aria-hidden="true"
+        ></div>
 
         <aside class="gallery-booking-card">
           <img src="/photos/high-title.png" alt="" aria-hidden="true">
