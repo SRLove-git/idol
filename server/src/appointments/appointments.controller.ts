@@ -28,7 +28,10 @@ export class AppointmentsController {
   /** 前台用于同步显示预约开放状态。 */
   @Get('status')
   status() {
-    return { enabled: this.appointments.isBookingEnabled() };
+    return {
+      enabled: this.appointments.isBookingEnabled(),
+      accepting: this.appointments.isBookingSubmissionEnabled(),
+    };
   }
 
   /** 生成预约单（无需登录：未登录时按游客身份创建） */

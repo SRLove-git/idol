@@ -6,7 +6,8 @@ export const state = reactive({
   lang: savedLanguage === 'en' ? 'en' : 'zh',
   store: null,
   wechat: false,
-  bookingEnabled: false
+  bookingEnabled: false,
+  bookingAccepting: false
 })
 
 if (typeof document !== 'undefined') document.documentElement.lang = state.lang === 'en' ? 'en' : 'zh-CN'
@@ -88,7 +89,13 @@ export const translations = {
     td_fri_sun: '周五 - 周日',
     booking_title: '预约体验',
     booking_test_notice: '测试阶段，暂不支持预约。',
-    booking_success_condition: '提交后记得留意邮箱哦～收到“预约已确认”邮件才算预约成功！时间或人数有变化，请提前前往小红书联系 IDOL Beads 客服；预约时段最多为你保留 30 分钟。',
+    booking_test_notice_title: '⚠️ 目前暂不接受正式预约',
+    booking_test_notice_desc: '页面仅供流程测试，请勿按此安排到店。',
+    booking_test_modal_kicker: 'BOOKING NOTICE',
+    booking_test_modal_title: '测试阶段，暂不接受预约',
+    booking_test_modal_desc: '感谢你的关注！当前页面仅供流程测试，本次预约不会提交。',
+    booking_test_modal_button: '我知道了',
+    booking_success_condition: '无需登录，填写邮箱即可提交。收到“预约已确认”邮件后，预约才算成功。',
     booking_closed_title: '预约暂未开放',
     booking_closed_desc: '门店正在筹备中，线上预约开放后我们会第一时间更新。感谢你的理解与耐心等待。',
     label_date_select: '选择日期',
@@ -191,7 +198,7 @@ export const translations = {
     footer_route_chinatown_step_3: '找到 18A 门牌，从楼梯上二楼到店。',
     social_douyin: '抖音',
     booking_page_title: '预约 IDOL BEADS',
-    booking_page_desc: '不用登录，填写邮箱就能提交预约啦！收到确认邮件才算预约成功；时间或人数有变化，请提前前往小红书联系 IDOL Beads 客服，预约时段最多保留 30 分钟。',
+    booking_page_desc: '不用登录，填写邮箱即可提交。收到“预约已确认”邮件后，预约才算成功。',
     not_found_title: '页面走丢了',
     not_found_desc: '这个链接已经不存在，返回首页继续浏览吧。',
     promo_carousel_label: '活动图片轮播',
@@ -364,7 +371,13 @@ export const translations = {
     td_fri_sun: 'Fri - Sun',
     booking_title: 'Book a Session',
     booking_test_notice: 'Testing phase — bookings are currently unavailable.',
-    booking_success_condition: 'Your booking is official once the confirmation email arrives! For any time or party-size changes, please contact IDOL Beads customer service on Xiaohongshu in advance; we can hold your slot for up to 30 minutes.',
+    booking_test_notice_title: '⚠️ Official bookings are not open yet',
+    booking_test_notice_desc: 'This page is for flow testing only. Please do not use it to plan your visit.',
+    booking_test_modal_kicker: 'BOOKING NOTICE',
+    booking_test_modal_title: 'Bookings are unavailable during testing',
+    booking_test_modal_desc: 'Thanks for your interest! This page is for flow testing only, so your booking has not been submitted.',
+    booking_test_modal_button: 'Got it',
+    booking_success_condition: 'No sign-in needed—just enter your email. Your booking is official only after the confirmation email arrives.',
     booking_closed_title: 'Online Booking Coming Soon',
     booking_closed_desc: 'We are getting the studio ready. Online booking will open soon—thank you for your patience.',
     label_date_select: 'Select Date',
@@ -467,7 +480,7 @@ export const translations = {
     footer_route_chinatown_step_3: 'Find No. 18A and take the stairs to the studio on level 2.',
     social_douyin: 'TikTok',
     booking_page_title: 'Book IDOL BEADS',
-    booking_page_desc: 'No sign-in needed—just submit with your email! Once confirmed, contact IDOL Beads customer service on Xiaohongshu in advance for any changes; slots are held for up to 30 minutes.',
+    booking_page_desc: 'No sign-in needed—just enter your email. Your booking is official only after the confirmation email arrives.',
     not_found_title: 'Page Not Found',
     not_found_desc: 'This page no longer exists. Head back home to keep exploring.',
     promo_carousel_label: 'Promotional image carousel',
@@ -610,8 +623,10 @@ export async function loadStore() {
   if (statusResult.status === 'fulfilled' && statusResult.value.ok) {
     const status = await statusResult.value.json()
     state.bookingEnabled = status.enabled === true
+    state.bookingAccepting = status.accepting === true
   } else {
     state.bookingEnabled = false
+    state.bookingAccepting = false
   }
   if (state.store?.name) {
     const configuredTitle = state.store.siteContent?.meta?.title

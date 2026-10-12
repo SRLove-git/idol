@@ -366,6 +366,9 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     if (!this.isBookingEnabled()) {
       throw new ServiceUnavailableException('预约功能暂未开放');
     }
+    if (!this.isBookingSubmissionEnabled()) {
+      throw new ServiceUnavailableException('测试阶段暂不接受预约');
+    }
     // 未登录按游客身份创建；游客不限制「同一用户仅一张未完成预约」，避免不同顾客互相阻塞
     const resolvedUserId = userId ?? (await this.getOrCreateGuestUser(dto)).id;
     if (userId != null) {
@@ -392,6 +395,15 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
   isBookingEnabled(): boolean {
     return !['false', '0', 'off', 'no'].includes(
       (process.env.BOOKING_ENABLED ?? 'true').trim().toLowerCase(),
+    );
+  }
+
+  /** 保留预约页预览时，可独立禁止产生新预约单。 */
+  isBookingSubmissionEnabled(): boolean {
+    const configured = process.env.BOOKING_SUBMISSION_ENABLED;
+    if (configured == null && process.env.NODE_ENV === 'test') return true;
+    return ['true', '1', 'on', 'yes'].includes(
+      (configured ?? 'false').trim().toLowerCase(),
     );
   }
 
@@ -1376,7 +1388,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
       saved.storeId ? this.stores.findOneBy({ id: saved.storeId }) : null,
     ]);
     if (user?.email) {
-      const text = `您的预约已确认。\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n请妥善保存预约码，到店时出示。\n\nYour booking is confirmed.\nBooking code: ${saved.code}\nDate: ${saved.date}\nTime: ${saved.startTime}-${saved.endTime}\nGuests: ${saved.peopleCount}\nStudio: ${saved.storeName}\nPlease keep your booking code and show it when you arrive.${this.appointmentEmailContactText(store)}`;
+      const text = `您的预约已确认。\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n请妥善保存预约码，到店时出示。\n时间或人数如有变化，请提前前往小红书联系 IDOL Beads 客服。预约时段最多保留 30 分钟。\n\nYour booking is confirmed.\nBooking code: ${saved.code}\nDate: ${saved.date}\nTime: ${saved.startTime}-${saved.endTime}\nGuests: ${saved.peopleCount}\nStudio: ${saved.storeName}\nPlease keep your booking code and show it when you arrive. If your arrival time or party size changes, contact IDOL Beads on Xiaohongshu in advance. We can hold your slot for up to 30 minutes.${this.appointmentEmailContactText(store)}`;
       await this.email
         .send(
           user.email,
@@ -1389,6 +1401,10 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
             introEn:
               'Your time slot is reserved. Please show the booking code below when you arrive.',
             appointment: saved,
+            visitNotice:
+              '时间或人数如有变化，请提前前往小红书联系 IDOL Beads 客服。预约时段最多保留 30 分钟。',
+            visitNoticeEn:
+              'If your arrival time or party size changes, contact IDOL Beads on Xiaohongshu in advance. We can hold your slot for up to 30 minutes.',
             address: store?.address,
             phone: store?.phone,
             ...this.appointmentEmailLinks(store),

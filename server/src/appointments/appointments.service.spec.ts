@@ -192,6 +192,23 @@ describe('AppointmentsService', () => {
       }
     });
 
+    it('测试阶段关闭提交时拒绝创建且不产生游客账号', async () => {
+      const previous = process.env.BOOKING_SUBMISSION_ENABLED;
+      process.env.BOOKING_SUBMISSION_ENABLED = 'false';
+      const m = buildService();
+
+      try {
+        await expect(m.svc.create(undefined, baseDto)).rejects.toThrow(
+          '测试阶段暂不接受预约',
+        );
+        expect(m.users.findByEmail).not.toHaveBeenCalled();
+        expect(m.users.create).not.toHaveBeenCalled();
+      } finally {
+        if (previous == null) delete process.env.BOOKING_SUBMISSION_ENABLED;
+        else process.env.BOOKING_SUBMISSION_ENABLED = previous;
+      }
+    });
+
     it('未登录预约必须填写邮箱', async () => {
       const m = buildService();
 

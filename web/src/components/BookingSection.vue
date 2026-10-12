@@ -26,6 +26,7 @@ const form = reactive({
 })
 const submitting = ref(false)
 const confirming = ref(false)
+const submissionBlocked = ref(false)
 const validationMsg = ref('')
 const successNotice = ref(false)
 const accountUser = ref(null)
@@ -330,6 +331,10 @@ function validateBooking() {
 
 function reviewBooking() {
   errorMsg.value = ''
+  if (!state.bookingAccepting) {
+    submissionBlocked.value = true
+    return
+  }
   if (!validateBooking()) return
   confirming.value = true
 }
@@ -340,6 +345,11 @@ function closeConfirmation() {
 
 async function submit() {
   errorMsg.value = ''
+  if (!state.bookingAccepting) {
+    confirming.value = false
+    submissionBlocked.value = true
+    return
+  }
   if (!validateBooking()) {
     confirming.value = false
     return
@@ -422,9 +432,10 @@ watch(() => state.lang, buildDates)
         <img src="/photos/booking-title.png" alt="Booking" class="title-icon">
       </h2>
       <p class="booking-success-condition">{{ t('booking_success_condition') }}</p>
-      <p v-if="state.bookingEnabled" class="booking-test-notice" role="status">
-        {{ t('booking_test_notice') }}
-      </p>
+      <div v-if="state.bookingEnabled" class="booking-test-notice" role="alert">
+        <strong>{{ t('booking_test_notice_title') }}</strong>
+        <span>{{ t('booking_test_notice_desc') }}</span>
+      </div>
       <div v-if="!state.bookingEnabled" class="booking-closed-card" role="status">
         <span>{{ t('booking_test_notice') }}</span>
         <h3>{{ t('booking_closed_title') }}</h3>
@@ -571,12 +582,15 @@ watch(() => state.lang, buildDates)
             <input v-model="form.email" type="email" :placeholder="t('placeholder_email')" required @input="validationMsg = ''">
             <label class="booking-source-field">
               <span>{{ t('booking_source_question') }}</span>
-              <select v-model="form.source" @change="validationMsg = ''">
-                <option value="" disabled>{{ t('booking_source_placeholder') }}</option>
-                <option v-for="item in sourceOptions" :key="item.value" :value="item.value">
-                  {{ item.label }}
-                </option>
-              </select>
+              <span class="booking-source-select">
+                <select v-model="form.source" @change="validationMsg = ''">
+                  <option value="" disabled>{{ t('booking_source_placeholder') }}</option>
+                  <option v-for="item in sourceOptions" :key="item.value" :value="item.value">
+                    {{ item.label }}
+                  </option>
+                </select>
+                <span class="booking-source-arrow" aria-hidden="true"></span>
+              </span>
             </label>
             <textarea v-model="form.notes" rows="2" :placeholder="t('placeholder_notes')"></textarea>
             <label class="booking-marketing-consent">
@@ -593,6 +607,25 @@ watch(() => state.lang, buildDates)
           <p v-if="validationMsg" class="booking-validation-error" role="alert">{{ validationMsg }}</p>
           <button type="button" class="btn btn-submit" :disabled="submitting" @click="reviewBooking">
             {{ t('btn_review_booking') }}
+          </button>
+        </div>
+      </div>
+
+      <div
+        v-if="submissionBlocked"
+        class="booking-confirm-overlay"
+        role="alertdialog"
+        aria-modal="true"
+        :aria-label="t('booking_test_modal_title')"
+        @click.self="submissionBlocked = false"
+      >
+        <div class="booking-blocked-card">
+          <div class="booking-blocked-icon" aria-hidden="true">!</div>
+          <span class="booking-confirm-kicker">{{ t('booking_test_modal_kicker') }}</span>
+          <h3>{{ t('booking_test_modal_title') }}</h3>
+          <p>{{ t('booking_test_modal_desc') }}</p>
+          <button type="button" class="btn btn-primary" @click="submissionBlocked = false">
+            {{ t('booking_test_modal_button') }}
           </button>
         </div>
       </div>

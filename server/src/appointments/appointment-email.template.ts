@@ -19,6 +19,8 @@ type AppointmentEmailOptions = {
   reasonLabelEn?: string;
   closingNote?: string;
   closingNoteEn?: string;
+  visitNotice?: string;
+  visitNoticeEn?: string;
   address?: string;
   phone?: string;
   siteUrl?: string;
@@ -105,6 +107,11 @@ export function buildAppointmentEmailHtml(
             ${detailRow('人数 / Guests', `${appt.peopleCount} 人 / ${appt.peopleCount} ${appt.peopleCount === 1 ? 'guest' : 'guests'}`)}
             ${detailRow('门店 / Studio', appt.storeName)}
           </table>
+          ${
+            options.visitNotice
+              ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:24px;background:#fff8e8;border:1px solid #f1dba2;border-radius:12px;"><tr><td style="padding:18px 20px;"><div style="color:#7a5b19;font-size:14px;font-weight:800;">到店前请留意 · Before you visit</div><div style="margin-top:8px;color:#665b43;font-size:13px;line-height:1.75;">${escapeHtml(options.visitNotice)}</div>${options.visitNoticeEn ? `<div style="margin-top:5px;color:#85775b;font-size:12px;line-height:1.7;">${escapeHtml(options.visitNoticeEn)}</div>` : ''}</td></tr></table>`
+              : ''
+          }
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="padding-top:28px;">
             <a href="${escapeHtml(siteUrl)}" style="display:inline-block;padding:13px 28px;border-radius:999px;background:#ee7894;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">${escapeHtml(options.actionLabel || '访问 IDOL BEADS')} · ${escapeHtml(options.actionLabelEn || 'Visit IDOL BEADS')}</a>
           </td></tr></table>
