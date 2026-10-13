@@ -74,7 +74,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shad
 .loading i { width: 30px; height: 30px; border: 3px solid #e2e8ef; border-top-color: var(--brand); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.stats-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
 .stat-card, .panel { border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: 0 8px 28px rgba(31,45,61,.04); }
 .stat-card { position: relative; overflow: hidden; padding: 22px; }
 .stat-card::after { position: absolute; right: -20px; bottom: -30px; width: 90px; height: 90px; border-radius: 50%; background: var(--tone, #eef3f8); content: ""; }
@@ -89,6 +89,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shad
 .trend-chart { height: 240px; display: flex; align-items: end; gap: 12px; padding-top: 25px; }
 .trend-day { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: end; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
 .trend-bar { width: min(34px, 80%); min-height: 4px; border-radius: 6px 6px 2px 2px; background: linear-gradient(#ef96ab, var(--brand)); }
+.trend-bars { width: min(58px, 90%); height: 170px; display: flex; align-items: end; justify-content: center; gap: 5px; }
+.trend-bars .trend-bar { width: 20px; }
+.trend-bar-visitor { background: linear-gradient(#a8d999, #5aa570); }
+.trend-legend { display: flex; gap: 12px; color: var(--muted); font-size: 11px; }
+.trend-legend span { display: flex; align-items: center; gap: 5px; }
+.trend-legend i { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+.trend-legend i.is-visitor { background: #5aa570; }
 .task-list { display: grid; gap: 10px; }
 .task-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px; border-radius: 11px; background: #f7f9fc; }
 .task-item b { min-width: 30px; padding: 4px 8px; border-radius: 8px; background: #fff; text-align: center; }

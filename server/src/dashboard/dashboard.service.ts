@@ -8,6 +8,21 @@ import { Post } from '../community/post.entity';
 import { MemberOrder } from '../members/member-order.entity';
 import { User } from '../users/user.entity';
 import { Video } from '../videos/video.entity';
+import { createHash } from 'crypto';
+import { SiteVisit } from './site-visit.entity';
+
+function singaporeDate(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Singapore',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const value = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  );
+  return `${value.year}-${value.month}-${value.day}`;
+}
 
 @Injectable()
 export class DashboardService {
@@ -26,7 +41,22 @@ export class DashboardService {
     private readonly videoRepo: Repository<Video>,
     @InjectRepository(MemberOrder)
     private readonly memberOrderRepo: Repository<MemberOrder>,
+    @InjectRepository(SiteVisit)
+    private readonly siteVisitRepo: Repository<SiteVisit>,
   ) {}
+
+  /** 同一匿名浏览器每天只计一次；原始浏览器标识不落库。 */
+  async recordVisit(visitorId: string, path: string): Promise<void> {
+    const visitorHash = createHash('sha256').update(visitorId).digest('hex');
+    const entryPath = path.startsWith('/') ? path.slice(0, 120) : '/';
+    await this.siteVisitRepo
+      .createQueryBuilder()
+      .insert()
+      .values({ visitorHash, visitDate: singaporeDate(), entryPath })
+      .orIgnore()
+      .updateEntity(false)
+      .execute();
+  }
 
   async getOverview() {
     const today = new Date();
@@ -48,6 +78,8 @@ export class DashboardService {
       todayVideos,
       pendingPosts,
       pendingVideos,
+      totalVisitorsResult,
+      todayVisitors,
     ] = await Promise.all([
       this.userRepo.count(),
       this.userRepo
@@ -82,10 +114,19 @@ export class DashboardService {
         .getCount(),
       this.postRepo.count({ where: { status: 'pending' } }),
       this.videoRepo.count({ where: { status: 'pending' } }),
+      this.siteVisitRepo
+        .createQueryBuilder('visit')
+        .select('COUNT(DISTINCT visit.visitorHash)', 'count')
+        .getRawOne<{ count: string }>(),
+      this.siteVisitRepo.count({ where: { visitDate: singaporeDate() } }),
     ]);
 
     return {
       users: { total: totalUsers, today: todayUsers },
+      visitors: {
+        total: Number(totalVisitorsResult?.count || 0),
+        today: todayVisitors,
+      },
       appointments: {
         total: totalAppointments,
         today: todayAppointments,
@@ -116,7 +157,7 @@ export class DashboardService {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      dates.push(d.toISOString().split('T')[0]);
+      dates.push(singaporeDate(d));
     }
 
     const results = await Promise.all(
@@ -124,7 +165,7 @@ export class DashboardService {
         const start = new Date(`${date}T00:00:00`);
         const end = new Date(`${date}T23:59:59`);
 
-        const [users, appointments, posts, likes, comments, videos] =
+        const [users, appointments, posts, likes, comments, videos, visitors] =
           await Promise.all([
             this.userRepo
               .createQueryBuilder('u')
@@ -150,8 +191,18 @@ export class DashboardService {
               .createQueryBuilder('v')
               .where('v.createdAt BETWEEN :start AND :end', { start, end })
               .getCount(),
+            this.siteVisitRepo.count({ where: { visitDate: date } }),
           ]);
-        return { date, users, appointments, posts, likes, comments, videos };
+        return {
+          date,
+          users,
+          appointments,
+          posts,
+          likes,
+          comments,
+          videos,
+          visitors,
+        };
       }),
     );
 

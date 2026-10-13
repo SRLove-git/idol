@@ -10,6 +10,8 @@ import { Video } from '../videos/video.entity';
 import { UsersModule } from '../users/users.module';
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { DashboardService } from './dashboard.service';
+import { SiteVisitController } from './site-visit.controller';
+import { SiteVisit } from './site-visit.entity';
 
 @Module({
   imports: [
@@ -21,10 +23,11 @@ import { DashboardService } from './dashboard.service';
       Comment,
       Video,
       MemberOrder,
+      SiteVisit,
     ]),
     UsersModule,
   ],
-  controllers: [AdminDashboardController],
+  controllers: [AdminDashboardController, SiteVisitController],
   providers: [DashboardService],
 })
 export class DashboardModule {}

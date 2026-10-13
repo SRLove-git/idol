@@ -189,17 +189,18 @@ async function renderDashboard() {
   const [overview, trends, pending] = await Promise.all([
     api('/admin/dashboard/overview'), api('/admin/dashboard/trends'), api('/admin/dashboard/pending-summary')
   ])
-  const max = Math.max(1, ...trends.map((item) => item.appointments))
+  const max = Math.max(1, ...trends.flatMap((item) => [item.appointments, item.visitors || 0]))
   $('#page-content').innerHTML = `
     <div class="stats-grid">
       ${statCard('总用户', overview.users.total, `今日 +${overview.users.today}`, '#eef4ff')}
+      ${statCard('网站访客', overview.visitors?.total, `今日 ${overview.visitors?.today || 0} 人`, '#f0f8eb')}
       ${statCard('预约订单', overview.appointments.total, `今日 +${overview.appointments.today}`, '#fff1f4')}
       ${statCard('服务中', overview.appointments.inService, `已核销 ${overview.appointments.checkedIn}`, '#eaf7f3')}
       ${statCard('社区作品', overview.community.totalPosts, `今日 +${overview.community.todayPosts}`, '#fff5e8')}
     </div>
     <div class="dashboard-grid">
-      <section class="panel"><div class="panel-head"><div><h2>近 7 天预约趋势</h2><p>按创建日期统计</p></div></div>
-        <div class="trend-chart">${trends.map((item) => `<div class="trend-day"><div class="trend-bar" style="height:${Math.max(4, item.appointments / max * 180)}px" title="${item.appointments} 笔"></div><b>${item.appointments}</b><span>${item.date.slice(5)}</span></div>`).join('')}</div>
+      <section class="panel"><div class="panel-head"><div><h2>近 7 天访客与预约趋势</h2><p>同一浏览器每天只计 1 位访客</p></div><div class="trend-legend"><span><i class="is-visitor"></i>访客</span><span><i></i>预约</span></div></div>
+        <div class="trend-chart">${trends.map((item) => `<div class="trend-day"><div class="trend-bars"><div class="trend-bar trend-bar-visitor" style="height:${Math.max(4, (item.visitors || 0) / max * 170)}px" title="${item.visitors || 0} 位访客"></div><div class="trend-bar" style="height:${Math.max(4, item.appointments / max * 170)}px" title="${item.appointments} 笔预约"></div></div><b>${item.visitors || 0} 人</b><span>${item.date.slice(5)} · ${item.appointments} 约</span></div>`).join('')}</div>
       </section>
       <section class="panel"><div class="panel-head"><div><h2>待处理事项</h2><p>需要及时处理的业务</p></div></div>
         <div class="task-list">
@@ -233,8 +234,8 @@ async function renderAppointments(filters = {}) {
       <button class="button" type="submit">查询</button>
     </form>
     <div class="panel-head"><div><h2>预约列表</h2><p>共 ${total} 笔记录</p></div><button id="refresh-appointments" class="button button-ghost">刷新</button></div>
-    <div class="table-wrap"><table class="data-table"><thead><tr><th>预约码</th><th>客户</th><th>日期 / 时间</th><th>人数</th><th>金额</th><th>状态</th><th>操作</th></tr></thead><tbody>
-      ${items.length ? items.map(appointmentRow).join('') : '<tr><td colspan="7" class="empty">暂无预约记录</td></tr>'}
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>预约码</th><th>客户</th><th>预约日期 / 到店时间</th><th>提交时间</th><th>人数</th><th>金额</th><th>状态</th><th>操作</th></tr></thead><tbody>
+      ${items.length ? items.map(appointmentRow).join('') : '<tr><td colspan="8" class="empty">暂无预约记录</td></tr>'}
     </tbody></table></div>`
   $('#appointment-filter').addEventListener('submit', (event) => { event.preventDefault(); renderAppointments(Object.fromEntries(new FormData(event.currentTarget))) })
   $('#refresh-appointments').addEventListener('click', () => renderAppointments(filters))
@@ -252,7 +253,7 @@ function appointmentRow(item) {
   const cancellationReason = item.status === 'cancelled' && item.cancellationReason ? `<small class="cancellation-reason">${esc(item.cancellationReason)}</small>` : ''
   const source = acquisitionSourceText(item.acquisitionSource)
   const marketingConsent = item.marketingEmailConsent ? '<br><small>✓ 已同意营销邮件</small>' : ''
-  return `<tr class="${item.isMember ? 'appointment-member-row' : ''}"><td><strong>${esc(item.code)}</strong>${memberTag}</td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small>${source ? `<br><small>来源：${esc(source)}</small>` : ''}${marketingConsent}</td><td>${esc(item.date)}<br><small>${esc(item.startTime)} - ${esc(item.endTime)}</small></td><td>${item.peopleCount}</td><td>$${Number(item.amount || 0).toFixed(2)}${item.isMember && Number(item.originalAmount || 0) > Number(item.amount || 0) ? `<br><small class="member-saving">原价 $${Number(item.originalAmount).toFixed(2)}</small>` : ''}</td><td><span class="status status-${item.status}">${statusText(item.status)}</span>${cancellationReason}</td><td class="actions">${actions.join('') || '—'}</td></tr>`
+  return `<tr class="${item.isMember ? 'appointment-member-row' : ''}"><td><strong>${esc(item.code)}</strong>${memberTag}</td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small>${source ? `<br><small>来源：${esc(source)}</small>` : ''}${marketingConsent}</td><td>${esc(item.date)}<br><small>${esc(item.startTime)} - ${esc(item.endTime)}</small></td><td>${formatDate(item.createdAt)}</td><td>${item.peopleCount}</td><td>$${Number(item.amount || 0).toFixed(2)}${item.isMember && Number(item.originalAmount || 0) > Number(item.amount || 0) ? `<br><small class="member-saving">原价 $${Number(item.originalAmount).toFixed(2)}</small>` : ''}</td><td><span class="status status-${item.status}">${statusText(item.status)}</span>${cancellationReason}</td><td class="actions">${actions.join('') || '—'}</td></tr>`
 }
 function acquisitionSourceText(value) {
   return ({ xiaohongshu: '小红书', instagram: 'Instagram', google: 'Google / Google Maps', friend: '朋友推荐', other: '其他' })[value] || ''
