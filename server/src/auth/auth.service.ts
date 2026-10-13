@@ -14,13 +14,16 @@ import { createHash, createHmac, randomInt, randomUUID } from 'crypto';
 import type Redis from 'ioredis';
 import { CaptchaService } from '../common/captcha.service';
 import { EmailService } from '../email/email.service';
-import { registrationEmail } from '../email/email.templates';
+import {
+  passwordResetEmail,
+  registrationEmail,
+} from '../email/email.templates';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { hashPassword, verifyPassword } from './password.util';
 import { verifyJwtWithRotation } from './jwt-secrets';
-import { kickKey } from './session-keys';
+import { FORCE_OFFLINE_TTL, kickKey } from './session-keys';
 
 export interface JwtPayload {
   sub: number;
@@ -105,7 +108,9 @@ export class AuthService {
         'NX',
       );
       if (!acquired) {
-        throw new BadRequestException(`验证码发送过于频繁，请 ${cooldown} 秒后再试`);
+        throw new BadRequestException(
+          `验证码发送过于频繁，请 ${cooldown} 秒后再试`,
+        );
       }
 
       const code = String(randomInt(100000, 1000000));
@@ -127,6 +132,102 @@ export class AuthService {
       } catch {
         await this.redis.del(key, cooldownKey).catch(() => undefined);
         throw new ServiceUnavailableException('验证码发送失败，请稍后再试');
+      }
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ServiceUnavailableException
+      ) {
+        throw error;
+      }
+      throw new ServiceUnavailableException('验证码服务暂不可用，请稍后再试');
+    }
+
+    return { sent: true, expiresIn: ttl, retryAfter: cooldown };
+  }
+
+  /**
+   * 发送找回密码验证码。无论邮箱是否已注册都返回相同结构，
+   * 避免通过接口枚举本站账号。
+   */
+  async sendPasswordResetCode(
+    dto: {
+      email: string;
+      captchaToken?: string;
+      captchaId?: string;
+      captchaText?: string;
+    },
+    ip?: string,
+  ) {
+    const email = dto.email.trim().toLowerCase();
+    if (
+      !(await this.captcha.verify(
+        dto.captchaToken,
+        ip,
+        dto.captchaId,
+        dto.captchaText,
+      ))
+    ) {
+      throw new BadRequestException('请完成人机验证');
+    }
+
+    const ttl = Math.max(
+      300,
+      Math.min(
+        1800,
+        this.config.get<number>('EMAIL_CODE_TTL', EMAIL_CODE_TTL_DEFAULT),
+      ),
+    );
+    const cooldown = Math.max(
+      30,
+      Math.min(
+        300,
+        this.config.get<number>(
+          'EMAIL_CODE_COOLDOWN',
+          EMAIL_CODE_COOLDOWN_DEFAULT,
+        ),
+      ),
+    );
+    const key = this.passwordResetCodeKey(email);
+    const cooldownKey = `${key}:cooldown`;
+
+    try {
+      const acquired = await this.redis.set(
+        cooldownKey,
+        '1',
+        'EX',
+        cooldown,
+        'NX',
+      );
+      if (!acquired) {
+        throw new BadRequestException(
+          `验证码发送过于频繁，请 ${cooldown} 秒后再试`,
+        );
+      }
+
+      const code = String(randomInt(100000, 1000000));
+      await this.redis.set(
+        key,
+        JSON.stringify({
+          digest: this.passwordResetCodeDigest(email, code),
+          left: EMAIL_CODE_MAX_ATTEMPTS,
+        }),
+        'EX',
+        ttl,
+      );
+
+      const user = await this.users.findByEmail(email);
+      if (user?.passwordHash) {
+        try {
+          await this.email.send(
+            email,
+            'IDOL BEADS 密码重置验证码',
+            passwordResetEmail(code, Math.ceil(ttl / 60)),
+          );
+        } catch {
+          await this.redis.del(key, cooldownKey).catch(() => undefined);
+          throw new ServiceUnavailableException('验证码发送失败，请稍后再试');
+        }
       }
     } catch (error) {
       if (
@@ -240,6 +341,21 @@ export class AuthService {
       .digest('hex');
   }
 
+  private passwordResetCodeKey(email: string): string {
+    const emailHash = createHash('sha256').update(email).digest('hex');
+    return `password-reset:email-code:${emailHash}`;
+  }
+
+  private passwordResetCodeDigest(email: string, code: string): string {
+    const secret = this.config.get<string>(
+      'EMAIL_CODE_SECRET',
+      this.config.get<string>('JWT_SECRET', 'dev-email-code-secret'),
+    );
+    return createHmac('sha256', secret)
+      .update(`password-reset:${email}:${code}`)
+      .digest('hex');
+  }
+
   /** 原子校验并消费验证码；错误最多尝试 5 次，成功后立即失效。 */
   private async verifyRegistrationCode(
     email: string,
@@ -247,6 +363,48 @@ export class AuthService {
   ): Promise<void> {
     const key = this.registrationCodeKey(email);
     const digest = this.registrationCodeDigest(email, code.trim());
+    try {
+      const result = Number(
+        await this.redis.eval(
+          `
+          local payload = redis.call('GET', KEYS[1])
+          if not payload then return -1 end
+          local data = cjson.decode(payload)
+          if data.digest == ARGV[1] then
+            redis.call('DEL', KEYS[1])
+            return 1
+          end
+          data.left = tonumber(data.left or 1) - 1
+          if data.left <= 0 then
+            redis.call('DEL', KEYS[1])
+          else
+            redis.call('SET', KEYS[1], cjson.encode(data), 'KEEPTTL')
+          end
+          return 0
+          `,
+          1,
+          key,
+          digest,
+        ),
+      );
+      if (result === 1) return;
+      if (result === -1) {
+        throw new BadRequestException('邮箱验证码已过期，请重新获取');
+      }
+      throw new BadRequestException('邮箱验证码不正确');
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new ServiceUnavailableException('验证码服务暂不可用，请稍后再试');
+    }
+  }
+
+  /** 原子校验并消费找回密码验证码；错误最多尝试 5 次。 */
+  private async verifyPasswordResetCode(
+    email: string,
+    code: string,
+  ): Promise<void> {
+    const key = this.passwordResetCodeKey(email);
+    const digest = this.passwordResetCodeDigest(email, code.trim());
     try {
       const result = Number(
         await this.redis.eval(
@@ -340,6 +498,25 @@ export class AuthService {
     }
     await this.users.setPasswordHash(user.id, await hashPassword(newPassword));
     return { sent: true };
+  }
+
+  /** 未登录状态下使用邮箱验证码重置密码，并立即让旧会话失效。 */
+  async resetPassword(email: string, emailCode: string, newPassword: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+    await this.verifyPasswordResetCode(normalizedEmail, emailCode);
+    const user = await this.users.findByEmail(normalizedEmail);
+    if (!user?.passwordHash) {
+      throw new BadRequestException('邮箱验证码不正确或已过期');
+    }
+    if (user.isBanned) throw new ForbiddenException('账号已被禁用');
+
+    await this.users.setPasswordHash(user.id, await hashPassword(newPassword));
+    await this.redis.set(kickKey(user.id), '1', 'EX', FORCE_OFFLINE_TTL);
+    await this.clearLoginFailures(`acct:${normalizedEmail}`);
+    if (user.username) {
+      await this.clearLoginFailures(`acct:${user.username.toLowerCase()}`);
+    }
+    return { reset: true };
   }
 
   /**

@@ -3855,8 +3855,8 @@ footer.site-footer {
     justify-content: center;
     overflow: hidden;
     background:
-        linear-gradient(145deg, rgba(255, 120, 154, .72), rgba(255, 197, 74, .5)),
-        url('/photos/indoor_1.webp') center / cover;
+        linear-gradient(145deg, rgba(190, 92, 116, .48), rgba(138, 100, 67, .28)),
+        url('/photos/hero-collage.jpg') center / cover;
 }
 
 .auth-visual::after {
@@ -3955,6 +3955,20 @@ footer.site-footer {
     font-weight: 900;
 }
 
+.auth-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.auth-label-row a {
+    color: var(--primary-color);
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
 .auth-form input {
     width: 100%;
     min-height: 52px;
@@ -4000,10 +4014,46 @@ footer.site-footer {
 }
 
 .auth-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     min-height: 54px;
     margin-top: 5px;
     font-size: 16px;
+    text-decoration: none;
     box-shadow: 0 10px 24px rgba(255, 133, 161, .24);
+}
+
+.auth-reset-success {
+    padding: 32px 24px;
+    border: 1px solid #f3dce4;
+    border-radius: 22px;
+    background: #fffafb;
+    text-align: center;
+}
+
+.auth-reset-success > span {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #e8f8ef;
+    color: #3faa72;
+    font-size: 30px;
+    font-weight: 900;
+    place-items: center;
+}
+
+.auth-reset-success h2 {
+    margin: 0 0 10px;
+    color: #514448;
+}
+
+.auth-reset-success p {
+    margin: 0 0 22px;
+    color: #8a797f;
+    line-height: 1.7;
 }
 
 .form-error {

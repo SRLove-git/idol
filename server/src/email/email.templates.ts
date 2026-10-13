@@ -107,6 +107,23 @@ export function registrationEmail(
   return { text, html };
 }
 
+export function passwordResetEmail(
+  code: string,
+  expiresInMinutes: number,
+): EmailContent {
+  const text = `IDOL BEADS · 拼豆工作室\n\n我们收到了重置账号密码的请求。\n您的密码重置验证码是：${code}\n验证码 ${expiresInMinutes} 分钟内有效，请勿转发给他人。\n请回到找回密码页面输入验证码并设置新密码。\n若非本人操作，请忽略本邮件，原密码不会被修改。\n\n返回找回密码页面：${WEBSITE}/forgot-password\n新加坡拼豆工作室 · Perler Bead Workshop\n${WEBSITE}\n本邮件由系统自动发送，请勿直接回复。`;
+  const html = layout(
+    `您的密码重置验证码 ${expiresInMinutes} 分钟内有效。`,
+    'ACCOUNT HELP / PASSWORD RESET',
+    `<h1 class="title" style="margin:12px 0;font-size:29px;line-height:1.45;letter-spacing:-0.5px;color:#3d3037">重新回到你的拼豆小天地</h1>
+    <p style="margin:0;font-size:15px;line-height:26px;color:#806c76">我们收到了重置密码的请求。<br>在找回密码页面输入下方验证码，即可设置新密码。</p>
+    ${codeCard(code, '密码重置验证码 · RESET CODE', `${expiresInMinutes} 分钟内有效 · 请勿转发或分享`)}
+    ${button('返回找回密码页面', `${WEBSITE}/forgot-password`)}
+    <p style="margin:20px 0 0;font-size:12px;line-height:22px;color:#917d86">不是你发起的操作？请直接忽略这封邮件，原密码不会被修改。<br>请勿向任何人透露验证码。</p>`,
+  );
+  return { text, html };
+}
+
 export interface BookingEmailDetails {
   code: string;
   date: string;

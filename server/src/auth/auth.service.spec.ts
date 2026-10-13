@@ -89,6 +89,7 @@ function buildRegisterService() {
     findByEmail: jest.fn().mockResolvedValue(null),
     countByDeviceId: jest.fn().mockResolvedValue(0),
     activateGuestAccount: jest.fn(),
+    setPasswordHash: jest.fn(),
     create: jest
       .fn()
       .mockImplementation((data: Record<string, unknown>) =>
@@ -251,6 +252,77 @@ describe('AuthService.register（设备账号数限制）', () => {
         deviceId: 'dev-1',
       }),
     ).rejects.toThrow('注册请求过于频繁');
+  });
+});
+
+describe('AuthService.resetPassword', () => {
+  it('向已注册邮箱发送独立的密码重置验证码', async () => {
+    const m = buildRegisterService();
+    m.users.findByEmail.mockResolvedValue({
+      id: 7,
+      email: 'user@example.com',
+      username: 'user7',
+      passwordHash: 'existing-hash',
+    });
+
+    const result = await m.svc.sendPasswordResetCode({
+      email: 'USER@example.com',
+    });
+
+    expect(result).toEqual({ sent: true, expiresIn: 300, retryAfter: 60 });
+    expect(m.redis.set).toHaveBeenCalledWith(
+      expect.stringMatching(/^password-reset:email-code:[a-f0-9]{64}$/),
+      expect.stringContaining('"digest"'),
+      'EX',
+      300,
+    );
+    expect(m.email.send).toHaveBeenCalledWith(
+      'user@example.com',
+      'IDOL BEADS 密码重置验证码',
+      expect.objectContaining({
+        text: expect.stringContaining('密码重置验证码'),
+        html: expect.stringContaining('/forgot-password'),
+      }),
+    );
+  });
+
+  it('邮箱不存在时返回相同结果且不发送邮件', async () => {
+    const m = buildRegisterService();
+    m.users.findByEmail.mockResolvedValue(null);
+
+    await expect(
+      m.svc.sendPasswordResetCode({ email: 'missing@example.com' }),
+    ).resolves.toEqual({ sent: true, expiresIn: 300, retryAfter: 60 });
+    expect(m.email.send).not.toHaveBeenCalled();
+  });
+
+  it('验证码通过后更新密码并让旧会话失效', async () => {
+    const m = buildRegisterService();
+    m.users.findByEmail.mockResolvedValue({
+      id: 7,
+      email: 'user@example.com',
+      username: 'user7',
+      passwordHash: 'existing-hash',
+      isBanned: false,
+    });
+
+    const result = await m.svc.resetPassword(
+      'USER@example.com',
+      '123456',
+      'new-password',
+    );
+
+    expect(result).toEqual({ reset: true });
+    expect(m.users.setPasswordHash).toHaveBeenCalledWith(
+      7,
+      expect.stringMatching(/^scrypt\$/),
+    );
+    expect(m.redis.set).toHaveBeenCalledWith(
+      'kick:7',
+      '1',
+      'EX',
+      30 * 24 * 3600,
+    );
   });
 });
 

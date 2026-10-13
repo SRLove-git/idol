@@ -26,7 +26,7 @@ const MIME = {
   ".woff2": "font/woff2",
 };
 
-const SPA_ROUTES = new Set(["/", "/booking", "/highlights", "/login", "/register", "/account"]);
+const SPA_ROUTES = new Set(["/", "/booking", "/highlights", "/login", "/register", "/forgot-password", "/account"]);
 
 async function callBackend(pathname, { method = "GET", token, body } = {}) {
   const headers = {};

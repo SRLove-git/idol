@@ -22,6 +22,7 @@ const isBooking = computed(() => route.value === '/booking')
 const isHighlights = computed(() => route.value === '/highlights')
 const isLogin = computed(() => route.value === '/login')
 const isRegister = computed(() => route.value === '/register')
+const isPasswordReset = computed(() => route.value === '/forgot-password')
 const isAccount = computed(() => route.value === '/account')
 
 onMounted(() => loadStore())
@@ -54,7 +55,7 @@ onMounted(() => loadStore())
 
   <HighlightsPage v-else-if="isHighlights" />
 
-  <AuthPage v-else-if="isLogin || isRegister" :mode="isLogin ? 'login' : 'register'" />
+  <AuthPage v-else-if="isLogin || isRegister || isPasswordReset" :mode="isLogin ? 'login' : isPasswordReset ? 'reset' : 'register'" />
   <AccountPage v-else-if="isAccount" />
 
   <main v-else class="page-main">

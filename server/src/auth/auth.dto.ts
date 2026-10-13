@@ -92,6 +92,25 @@ export class SendRegistrationCodeDto {
   captchaText?: string;
 }
 
+/** 获取找回密码邮箱验证码 */
+export class SendPasswordResetCodeDto extends SendRegistrationCodeDto {}
+
+/** 使用邮箱验证码重置密码 */
+export class ResetPasswordDto {
+  @Transform(lowerTrim)
+  @IsEmail({}, { message: '邮箱格式不正确' })
+  email: string;
+
+  @Transform(trim)
+  @Matches(/^\d{6}$/, { message: '邮箱验证码为 6 位数字' })
+  emailCode: string;
+
+  @IsString()
+  @MinLength(6, { message: '密码至少 6 位' })
+  @MaxLength(32, { message: '密码最多 32 位' })
+  newPassword: string;
+}
+
 /** 用户名 / 邮箱 + 密码登录 */
 export class LoginDto {
   @Transform(trim)

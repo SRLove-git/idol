@@ -12,6 +12,8 @@ import {
   LoginDto,
   RefreshDto,
   RegisterDto,
+  ResetPasswordDto,
+  SendPasswordResetCodeDto,
   SendRegistrationCodeDto,
 } from './auth.dto';
 import { CurrentUser } from './current-user.decorator';
@@ -34,6 +36,23 @@ export class AuthController {
     @Body() dto: SendRegistrationCodeDto,
   ) {
     return this.auth.sendRegistrationCode(dto, req.ip);
+  }
+
+  /** 发送找回密码验证码；无论邮箱是否存在都返回相同结果，避免泄露账号信息 */
+  @Post('password-reset-code')
+  @Throttle({ auth: { limit: 5, ttl: 60000, blockDuration: 60000 } })
+  sendPasswordResetCode(
+    @Req() req: Request,
+    @Body() dto: SendPasswordResetCodeDto,
+  ) {
+    return this.auth.sendPasswordResetCode(dto, req.ip);
+  }
+
+  /** 使用邮箱验证码重置密码 */
+  @Post('reset-password')
+  @Throttle({ auth: { limit: 5, ttl: 60000, blockDuration: 300000 } })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.auth.resetPassword(dto.email, dto.emailCode, dto.newPassword);
   }
 
   /** 注册：用户名 + 密码 + 邮箱验证码；游客邮箱账号会原地升级并保留预约 */

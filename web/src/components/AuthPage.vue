@@ -7,12 +7,14 @@ const props = defineProps({
 })
 
 const isLogin = computed(() => props.mode === 'login')
+const isReset = computed(() => props.mode === 'reset')
 const form = reactive({ account: '', username: '', email: '', emailCode: '', password: '' })
 const sending = ref(false)
 const submitting = ref(false)
 const cooldown = ref(0)
 const codeMessageKey = ref('auth_code_valid')
 const errorMessage = ref('')
+const resetComplete = ref(false)
 
 function errorText(data, fallback) {
   if (Array.isArray(data?.message)) return data.message[0] || fallback
@@ -32,7 +34,7 @@ async function sendCode() {
   }
   sending.value = true
   try {
-    const response = await fetch('/api/auth/register-code', {
+    const response = await fetch(isReset.value ? '/api/auth/password-reset-code' : '/api/auth/register-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: form.email.trim() })
@@ -56,15 +58,17 @@ async function submit() {
   errorMessage.value = ''
   submitting.value = true
   try {
-    const endpoint = isLogin.value ? '/auth/login' : '/auth/register'
+    const endpoint = isLogin.value ? '/auth/login' : isReset.value ? '/api/auth/reset-password' : '/auth/register'
     const payload = isLogin.value
       ? { account: form.account.trim(), password: form.password }
-      : {
-          username: form.username.trim(),
-          email: form.email.trim(),
-          emailCode: form.emailCode.trim(),
-          password: form.password
-        }
+      : isReset.value
+        ? { email: form.email.trim(), emailCode: form.emailCode.trim(), newPassword: form.password }
+        : {
+            username: form.username.trim(),
+            email: form.email.trim(),
+            emailCode: form.emailCode.trim(),
+            password: form.password
+          }
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,12 +76,16 @@ async function submit() {
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-      const fallback = t(isLogin.value ? 'auth_login_failed' : 'auth_register_failed')
+      const fallback = t(isLogin.value ? 'auth_login_failed' : isReset.value ? 'auth_reset_failed' : 'auth_register_failed')
       throw new Error(state.lang === 'zh' ? errorText(data, fallback) : fallback)
+    }
+    if (isReset.value) {
+      resetComplete.value = true
+      return
     }
     window.location.href = nextPath()
   } catch (error) {
-    errorMessage.value = error.message || t(isLogin.value ? 'auth_login_failed' : 'auth_register_failed')
+    errorMessage.value = error.message || t(isLogin.value ? 'auth_login_failed' : isReset.value ? 'auth_reset_failed' : 'auth_register_failed')
   } finally {
     submitting.value = false
   }
@@ -99,19 +107,26 @@ async function submit() {
       <div class="auth-card">
         <a class="auth-back" href="/">← {{ t('auth_back_home') }}</a>
         <div class="auth-heading">
-          <span>{{ isLogin ? 'WELCOME BACK' : 'JOIN IDOL BEADS' }}</span>
-          <h1>{{ t(isLogin ? 'auth_login_title' : 'auth_register_title') }}</h1>
-          <p>{{ t(isLogin ? 'auth_login_desc' : 'auth_register_desc') }}</p>
+          <span>{{ isLogin ? 'WELCOME BACK' : isReset ? 'ACCOUNT HELP' : 'JOIN IDOL BEADS' }}</span>
+          <h1>{{ t(isLogin ? 'auth_login_title' : isReset ? 'auth_reset_title' : 'auth_register_title') }}</h1>
+          <p>{{ t(isLogin ? 'auth_login_desc' : isReset ? 'auth_reset_desc' : 'auth_register_desc') }}</p>
         </div>
 
-        <form class="auth-form" @submit.prevent="submit">
+        <div v-if="resetComplete" class="auth-reset-success" role="status">
+          <span>✓</span>
+          <h2>{{ t('auth_reset_success_title') }}</h2>
+          <p>{{ t('auth_reset_success_desc') }}</p>
+          <a class="auth-submit" href="/login">{{ t('auth_back_login') }}</a>
+        </div>
+
+        <form v-else class="auth-form" @submit.prevent="submit">
           <label v-if="isLogin">
             <span>{{ t('auth_account_label') }}</span>
             <input v-model="form.account" autocomplete="username" maxlength="255" :placeholder="t('auth_account_placeholder')" required>
           </label>
 
           <template v-else>
-            <label>
+            <label v-if="!isReset">
               <span>{{ t('auth_username_label') }}</span>
               <input v-model="form.username" autocomplete="username" minlength="2" maxlength="30" pattern="[A-Za-z0-9_]+" :placeholder="t('auth_username_placeholder')" required>
             </label>
@@ -132,21 +147,25 @@ async function submit() {
           </template>
 
           <label>
-            <span>{{ t('auth_password_label') }}</span>
+            <span class="auth-label-row">
+              <span>{{ t(isReset ? 'auth_new_password_label' : 'auth_password_label') }}</span>
+              <a v-if="isLogin" href="/forgot-password">{{ t('auth_forgot_password') }}</a>
+            </span>
             <input v-model="form.password" type="password" :autocomplete="isLogin ? 'current-password' : 'new-password'" minlength="6" maxlength="32" :placeholder="t('auth_password_placeholder')" required>
           </label>
 
           <p v-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
           <button class="auth-submit" type="submit" :disabled="submitting">
-            {{ submitting ? t('auth_wait') : t(isLogin ? 'auth_login_button' : 'auth_register_button') }}
+            {{ submitting ? t('auth_wait') : t(isLogin ? 'auth_login_button' : isReset ? 'auth_reset_button' : 'auth_register_button') }}
           </button>
         </form>
 
-        <p class="auth-switch">
+        <p v-if="!resetComplete && !isReset" class="auth-switch">
           {{ t(isLogin ? 'auth_no_account' : 'auth_has_account') }}
           <a :href="isLogin ? '/register' : '/login'">{{ t(isLogin ? 'auth_register_now' : 'auth_go_login') }}</a>
         </p>
-        <p v-if="state.bookingEnabled" class="auth-booking-note">{{ t('auth_booking_question') }} <a href="/booking">{{ t('auth_booking_direct') }}</a></p>
+        <p v-if="!resetComplete && isReset" class="auth-switch">{{ t('auth_remembered_password') }} <a href="/login">{{ t('auth_go_login') }}</a></p>
+        <p v-if="!resetComplete && state.bookingEnabled" class="auth-booking-note">{{ t('auth_booking_question') }} <a href="/booking">{{ t('auth_booking_direct') }}</a></p>
       </div>
     </section>
   </main>
