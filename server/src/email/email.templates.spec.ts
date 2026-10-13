@@ -1,4 +1,8 @@
-import { bookingConfirmationEmail, registrationEmail } from './email.templates';
+import {
+  bookingConfirmationEmail,
+  marketingCampaignEmail,
+  registrationEmail,
+} from './email.templates';
 
 describe('branded transaction emails', () => {
   it('keeps the same registration code and expiry in both alternatives without adding it to links', () => {
@@ -51,5 +55,23 @@ describe('branded transaction emails', () => {
     expect(email.html).not.toContain('undefined');
     expect(email.text).not.toContain('门店地址');
     expect(email.html).not.toContain('google.com/maps');
+  });
+
+  it('builds a safe branded marketing email with contact and opt-out details', () => {
+    const email = marketingCampaignEmail({
+      preheader: '周末活动预告',
+      heading: '一起拼豆吧 <script>alert(1)</script>',
+      body: '本周末有新图纸。\n欢迎来玩 <img src=x onerror=alert(1)>',
+      ctaLabel: '查看详情',
+      ctaUrl: 'https://idol-sg.com/#pricing',
+    });
+
+    expect(email.html).toContain('周末活动预告');
+    expect(email.html).toContain('一起拼豆吧 &lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(email.html).not.toContain('<script>');
+    expect(email.html).not.toContain('<img src=x');
+    expect(email.html).toContain('href="https://idol-sg.com/#pricing"');
+    expect(email.html).toContain('微信 WeChat：IDOLBeads');
+    expect(email.text).toContain('取消订阅');
   });
 });

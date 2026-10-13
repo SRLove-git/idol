@@ -77,6 +77,41 @@ function layout(preheader: string, category: string, body: string): string {
 </html>`;
 }
 
+export interface MarketingCampaignEmailDetails {
+  preheader?: string;
+  heading: string;
+  body: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+}
+
+/** 管理后台群发使用的品牌营销邮件；正文始终转义，不能注入任意 HTML。 */
+export function marketingCampaignEmail(
+  details: MarketingCampaignEmailDetails,
+): EmailContent {
+  const preheader = details.preheader?.trim() || details.heading;
+  const text = `IDOL BEADS · 拼豆工作室\n\n${details.heading}\n\n${details.body}${
+    details.ctaLabel && details.ctaUrl
+      ? `\n\n${details.ctaLabel}：${details.ctaUrl}`
+      : ''
+  }\n\n联系我们 / Contact us\n微信 WeChat：IDOLBeads\n官网 Website：${WEBSITE}\n\n你收到这封邮件，是因为你曾同意接收 IDOL BEADS 的优惠与活动消息。如需取消订阅，请在小红书联系 IDOL Beads 客服。`;
+  const safeBody = escapeHtml(details.body).replace(/\r?\n/g, '<br>');
+  const cta =
+    details.ctaLabel && details.ctaUrl
+      ? button(details.ctaLabel, details.ctaUrl)
+      : '';
+  const html = layout(
+    preheader,
+    'NEWS FROM IDOL BEADS',
+    `<h1 class="title" style="margin:12px 0;font-size:29px;line-height:1.45;letter-spacing:-0.5px;color:#3d3037">${escapeHtml(details.heading)}</h1>
+    <div style="margin:0;font-size:15px;line-height:27px;color:#6f5a65">${safeBody}</div>
+    ${cta}
+    <div style="margin-top:24px;padding:16px;background:#fff6f9;border-radius:12px;font-size:12px;line-height:22px;color:#806c76"><strong>联系我们 · Contact us</strong><br>微信 WeChat：IDOLBeads<br><a href="${WEBSITE}/wechat.html" style="color:#b24466">一键复制微信号 · Copy WeChat ID</a></div>
+    <p style="margin:20px 0 0;font-size:11px;line-height:20px;color:#927e86">你收到这封邮件，是因为你曾同意接收 IDOL BEADS 的优惠与活动消息。<br>如需取消订阅，请在小红书联系 IDOL Beads 客服。</p>`,
+  );
+  return { text, html };
+}
+
 function codeCard(
   code: string,
   label: string,

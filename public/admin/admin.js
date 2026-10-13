@@ -10,6 +10,7 @@ const pageMeta = {
   seats: ['SEAT MANAGEMENT', '桌位管理'],
   members: ['MEMBERSHIP', '会员管理'],
   users: ['CUSTOMERS', '用户管理'],
+  'marketing-email': ['EMAIL CAMPAIGNS', '群发邮件'],
   security: ['SECURITY', '账号安全']
 }
 
@@ -179,6 +180,7 @@ async function navigate(page) {
     if (page === 'seats') await renderSeats()
     if (page === 'members') await renderMembers()
     if (page === 'users') await renderUsers()
+    if (page === 'marketing-email') await renderMarketingEmail()
     if (page === 'security') renderSecurity()
   } catch (error) { showError(error) }
 }
@@ -823,6 +825,107 @@ async function banUser(button) {
 async function forceOffline(button) {
   if (!await confirmDialog('强制该用户下线？')) return
   try { await api(`/admin/users/${button.dataset.id}/offline`, { method: 'PATCH' }); toast('已强制用户下线') } catch (error) { toast(error.message, true) }
+}
+
+async function renderMarketingEmail() {
+  const [summary, history] = await Promise.all([
+    api('/admin/marketing-email/summary'),
+    api('/admin/marketing-email/campaigns?page=1&pageSize=20')
+  ])
+  const subscribers = Number(summary.subscriberCount || 0)
+  $('#page-content').innerHTML = `
+    <div class="email-admin-stats">
+      ${statCard('可发送订阅用户', subscribers, '仅统计已明确同意且未封禁的用户', '#fff1f4')}
+      ${statCard('历史群发', history.total || 0, '发送结果会保留在下方', '#eef4ff')}
+    </div>
+    <div class="email-admin-grid">
+      <section class="panel">
+        <div class="panel-head"><div><h2>编辑群发邮件</h2><p>系统会分别发送给每位订阅用户，不会公开其他人的邮箱。</p></div></div>
+        <form id="marketing-email-form" class="form-grid email-campaign-form">
+          <label class="field field-wide"><span>邮件主题</span><input name="subject" maxlength="150" required placeholder="例如：周末拼豆小聚，给自己留一点快乐时间"></label>
+          <label class="field field-wide"><span>收件箱预览文字</span><input name="preheader" maxlength="180" placeholder="显示在邮件主题旁边的简短说明（选填）"></label>
+          <label class="field field-wide"><span>邮件大标题</span><input name="heading" maxlength="100" required placeholder="例如：这个周末，一起来拼点喜欢的吧"></label>
+          <label class="field field-wide"><span>正文</span><textarea name="body" maxlength="4000" rows="9" required placeholder="写下活动、优惠或新品内容。可换行，系统会自动使用 IDOL BEADS 品牌排版。"></textarea><small><b id="marketing-body-count">0</b> / 4000 字</small></label>
+          <label class="field"><span>按钮文字</span><input name="ctaLabel" maxlength="50" placeholder="例如：查看活动详情（选填）"></label>
+          <label class="field"><span>按钮链接</span><input name="ctaUrl" type="url" maxlength="500" placeholder="https://idol-sg.com/（选填）"></label>
+          <label class="email-consent-confirm field-wide"><input name="consentConfirmed" type="checkbox" required><span>我确认本邮件只发送给已明确同意接收营销邮件的用户。</span></label>
+          <div class="form-actions field-wide"><button class="button" type="submit"${subscribers ? '' : ' disabled'}>确认内容并发送给 ${subscribers} 人</button></div>
+        </form>
+      </section>
+      <section class="panel email-preview-panel">
+        <div class="panel-head"><div><h2>邮件预览</h2><p>实际邮件会同时带有 Logo、联系方式和退订说明。</p></div></div>
+        <div id="marketing-email-preview" class="email-preview-card"></div>
+      </section>
+    </div>
+    <section class="panel email-history-panel">
+      <div class="panel-head"><div><h2>发送历史</h2><p>最近 20 次群发结果</p></div></div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>发送时间</th><th>主题</th><th>状态</th><th>收件人数</th><th>成功</th><th>失败</th></tr></thead><tbody>
+        ${history.items?.length ? history.items.map(marketingCampaignRow).join('') : '<tr><td colspan="6" class="empty">还没有群发记录</td></tr>'}
+      </tbody></table></div>
+    </section>`
+  const form = $('#marketing-email-form')
+  form.addEventListener('input', () => updateMarketingEmailPreview(form))
+  form.addEventListener('submit', (event) => sendMarketingEmail(event, subscribers))
+  updateMarketingEmailPreview(form)
+}
+
+function marketingCampaignRow(item) {
+  const status = ({ sending: '发送中', completed: '发送完成', partial: '部分失败', failed: '发送失败' })[item.status] || item.status
+  const statusClass = item.status === 'completed' ? 'status-active' : item.status === 'sending' ? 'status-pending' : 'status-cancelled'
+  return `<tr><td>${formatDate(item.createdAt)}</td><td><strong>${esc(item.subject)}</strong></td><td><span class="status ${statusClass}">${esc(status)}</span></td><td>${Number(item.recipientCount || 0)}</td><td>${Number(item.sentCount || 0)}</td><td>${Number(item.failedCount || 0)}</td></tr>`
+}
+
+function updateMarketingEmailPreview(form) {
+  const data = Object.fromEntries(new FormData(form))
+  const body = esc(data.body || '这里会显示邮件正文。').replace(/\r?\n/g, '<br>')
+  const hasButton = data.ctaLabel && data.ctaUrl
+  $('#marketing-body-count').textContent = String((data.body || '').length)
+  $('#marketing-email-preview').innerHTML = `
+    <div class="email-preview-stripe"></div>
+    <header><img src="/photos/idol-logo.png" alt=""><div><strong>IDOL BEADS</strong><small>与快乐同行 · 拼豆工作室</small></div></header>
+    <main><small>NEWS FROM IDOL BEADS</small><h3>${esc(data.heading || '邮件大标题')}</h3><p>${body}</p>${hasButton ? `<a href="${esc(data.ctaUrl)}" target="_blank" rel="noopener">${esc(data.ctaLabel)} →</a>` : ''}</main>
+    <footer><strong>联系我们 · Contact us</strong><br>微信 WeChat：IDOLBeads<br><span>仅向已同意订阅的用户发送，可随时联系客服取消订阅。</span></footer>`
+}
+
+async function sendMarketingEmail(event, subscribers) {
+  event.preventDefault()
+  const form = event.currentTarget
+  const data = Object.fromEntries(new FormData(form))
+  if (!data.consentConfirmed) return toast('请先确认营销邮件订阅范围', true)
+  if ((data.ctaLabel && !data.ctaUrl) || (!data.ctaLabel && data.ctaUrl)) return toast('按钮文字和按钮链接需要同时填写', true)
+  const approved = await confirmDialog(`确认将“${data.subject}”发送给 ${subscribers} 位已订阅用户？发送后无法撤回。`)
+  if (!approved) return
+  const button = $('button[type="submit"]', form)
+  button.disabled = true
+  button.textContent = '正在逐封发送…'
+  try {
+    const requestKey = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+      const value = Math.floor(Math.random() * 16)
+      return (char === 'x' ? value : (value & 0x3) | 0x8).toString(16)
+    })
+    const result = await api('/admin/marketing-email/campaigns', {
+      method: 'POST',
+      body: {
+        requestKey,
+        subject: data.subject,
+        preheader: data.preheader,
+        heading: data.heading,
+        body: data.body,
+        ctaLabel: data.ctaLabel,
+        ctaUrl: data.ctaUrl,
+        confirmation: 'SEND'
+      }
+    })
+    const message = result.failedCount
+      ? `发送完成：成功 ${result.sentCount} 封，失败 ${result.failedCount} 封`
+      : `已成功发送 ${result.sentCount} 封邮件`
+    toast(message, Boolean(result.failedCount))
+    await renderMarketingEmail()
+  } catch (error) {
+    toast(error.message, true)
+    button.disabled = false
+    button.textContent = `确认内容并发送给 ${subscribers} 人`
+  }
 }
 
 function renderSecurity() {
