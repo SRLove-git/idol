@@ -48,8 +48,7 @@ const REVIEW_DEFAULTS = [
 ]
 
 const MEDIA_DEFAULTS = {
-  logo: '/photos/idol-logo.png',
-  heroBackgrounds: ['/photos/hero-studio-1.jpg', '/photos/hero-studio-2.jpg'],
+  logo: '/photos/idol-logo.png', heroBackground: '/photos/hero-studio.jpg',
   banners: ['/photos/banner-studio-room.jpg', '/photos/banner-studio-story.jpg'],
   featureIcons: [1, 2, 3, 4].map((n) => `/photos/feat-icon-${n}.png`),
   featuredHighlights: ['/photos/xhs-studio.jpg', '/photos/xhs-character-wall.jpg', '/photos/xhs-display-wall.jpg']
@@ -364,12 +363,6 @@ async function renderContent() {
   if (!store) { $('#page-content').innerHTML = '<div class="panel empty">暂无门店，请先创建门店</div>'; return }
   const content = copySiteContent(store.siteContent)
   const media = { ...MEDIA_DEFAULTS, galleryImages: GALLERY_DEFAULTS, ...(content.media || {}) }
-  if (!Array.isArray(media.heroBackgrounds) || !media.heroBackgrounds.length || !content.media?.heroBackgrounds) {
-    const legacy = content.media?.heroBackground
-    media.heroBackgrounds = typeof legacy === 'string' && !['', '/photos/hero-studio.jpg', '/photos/indoor_1.webp', '/photos/hero-collage.jpg'].includes(legacy)
-      ? [legacy]
-      : MEDIA_DEFAULTS.heroBackgrounds
-  }
   const links = { ...LINK_DEFAULTS, ...(content.links || {}) }
   const reviews = Array.isArray(content.reviews) && content.reviews.length ? content.reviews : REVIEW_DEFAULTS
   state.siteContent = content
@@ -397,8 +390,8 @@ async function renderContent() {
       <div class="panel-head"><div><h2>图片与作品库</h2><p>左侧查看图片，右侧修改地址或替换上传；多图可添加、删除与调整顺序</p></div></div>
       <div class="media-editor-list media-single-list">
         ${mediaEditor('站点 Logo', 'logo', media.logo)}
+        ${mediaEditor('首屏背景图', 'heroBackground', media.heroBackground)}
       </div>
-      ${mediaCollection('首屏轮播背景', 'heroBackgrounds', media.heroBackgrounds, '按从上到下的顺序轮播展示；仅保留一张时显示静态背景')}
       ${mediaCollection('活动轮播图', 'banners', media.banners, '按从上到下的顺序轮播展示')}
       ${mediaCollection('特色图标', 'featureIcons', media.featureIcons, '建议保留 4 张')}
       ${mediaCollection('首页拼豆精选', 'featuredHighlights', media.featuredHighlights, '建议保留 3 张')}
@@ -430,7 +423,7 @@ async function saveSiteContent(event) {
   content.media = {
     ...(content.media || {}),
     logo: data.get('logo').trim(),
-    heroBackgrounds: data.getAll('heroBackgrounds').map((value) => value.trim()).filter(Boolean),
+    heroBackground: data.get('heroBackground').trim(),
     banners: data.getAll('banners').map((value) => value.trim()).filter(Boolean),
     featureIcons: data.getAll('featureIcons').map((value) => value.trim()).filter(Boolean),
     featuredHighlights: data.getAll('featuredHighlights').map((value) => value.trim()).filter(Boolean)
