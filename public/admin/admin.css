@@ -176,24 +176,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shad
 .compact-config .mini-toggle { margin-left: auto; white-space: nowrap; }
 .inline-create { display: flex; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 .inline-create input, .inline-create select { min-width: 0; }
-.seat-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.seat-management-panel, .seat-create-panel { margin-top: 16px; }
-.seat-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 14px; }
-.seat-admin-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 15px; padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: #fafbfc; }
-.seat-admin-preview { position: relative; display: flex; min-height: 112px; aspect-ratio: 1; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; color: #28704b; background: linear-gradient(145deg, #f2fbf6, #e5f7ed); border: 2px solid #a9dec0; border-radius: 13px; }
-.seat-admin-preview > span { position: absolute; top: 8px; left: 8px; padding: 3px 6px; border-radius: 999px; background: rgba(255,255,255,.82); font-size: 9px; font-weight: 900; }
-.seat-admin-preview strong { font-size: 25px; line-height: 1; }
-.seat-admin-preview small { font-size: 11px; font-weight: 800; opacity: .76; }
-.seat-admin-card.is-disabled .seat-admin-preview { color: #8b8184; background: repeating-linear-gradient(135deg, #f3f1f2, #f3f1f2 8px, #e9e5e6 8px, #e9e5e6 16px); border-color: #d5ced0; }
-.seat-admin-controls { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 9px; align-content: start; }
-.seat-admin-controls .field { gap: 4px; }
-.seat-admin-controls input, .seat-admin-controls select { min-height: 36px; padding: 7px 9px; }
-.seat-admin-toggle { grid-column: 1 / -1; margin-top: 2px; }
-.seat-admin-actions { grid-column: 1 / -1; display: flex; gap: 7px; }
-.seat-admin-actions .button { flex: 1; }
-.seat-admin-actions .button-ghost { color: var(--red); }
-.seat-create-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(150px, .5fr) auto; gap: 12px; align-items: end; }
-.seat-create-form .button { min-height: 42px; }
 .plan-card { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
 .plan-card header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .plan-card h3 { margin: 0; }
@@ -265,8 +247,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shad
   .content-savebar { bottom: 8px; align-items: stretch; flex-direction: column; }
   .compact-config { align-items: stretch; flex-wrap: wrap; }
   .compact-config .mini-toggle { margin-left: 0; }
-  .seat-stats { grid-template-columns: 1fr; }
-  .seat-create-form { grid-template-columns: 1fr; }
   .email-admin-stats, .email-campaign-form { grid-template-columns: 1fr; }
 }
-@media (max-width: 480px) { .login-card { padding: 28px 22px; } .stats-grid { grid-template-columns: 1fr; } .stat-card { padding: 18px; } .panel { padding: 16px; } .plan-card .form-grid { grid-template-columns: 1fr; } .seat-admin-grid { grid-template-columns: 1fr; } .seat-admin-card { grid-template-columns: 92px minmax(0, 1fr); padding: 11px; } .seat-admin-preview { min-height: 92px; } .seat-admin-controls { grid-template-columns: 1fr; } .seat-admin-controls .field, .seat-admin-toggle, .seat-admin-actions { grid-column: 1; } }
+@media (max-width: 480px) { .login-card { padding: 28px 22px; } .stats-grid { grid-template-columns: 1fr; } .stat-card { padding: 18px; } .panel { padding: 16px; } .plan-card .form-grid { grid-template-columns: 1fr; } }

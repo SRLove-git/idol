@@ -7,7 +7,6 @@ const pageMeta = {
   appointments: ['RESERVATIONS', '预约管理'],
   content: ['WEBSITE CONTENT', '官网内容'],
   pricing: ['STORE & PRICING', '门店与价格'],
-  seats: ['SEAT MANAGEMENT', '桌位管理'],
   members: ['MEMBERSHIP', '会员管理'],
   users: ['CUSTOMERS', '用户管理'],
   'marketing-email': ['EMAIL CAMPAIGNS', '群发邮件'],
@@ -177,7 +176,6 @@ async function navigate(page) {
     if (page === 'appointments') await renderAppointments()
     if (page === 'content') await renderContent()
     if (page === 'pricing') await renderPricing()
-    if (page === 'seats') await renderSeats()
     if (page === 'members') await renderMembers()
     if (page === 'users') await renderUsers()
     if (page === 'marketing-email') await renderMarketingEmail()
@@ -575,78 +573,17 @@ async function renderPricing() {
       <details class="create-config"><summary>+ 新增时长套餐</summary>${packageEditor({ storeId: store.id, enabled: true, sortOrder: (store.packages || []).length + 1 }, true)}</details>
     </section>
 
-    <div class="section-grid config-section">
-      <section class="panel"><div class="panel-head"><div><h2>桌位配置</h2><p>容量可选 1 / 2 / 4 人，桌号自动生成</p></div></div>
-        <div class="compact-config-list">${(store.tables || []).sort((a, b) => a.id - b.id).map(tableEditor).join('') || '<div class="empty">暂无桌位</div>'}</div>
-        <form id="table-create-form" class="inline-create" data-store-id="${store.id}"><select name="capacity"><option value="1">1 人桌</option><option value="2">2 人桌</option><option value="4">4 人桌</option></select><button class="button" type="submit">+新增桌位</button></form>
-      </section>
-      <section class="panel"><div class="panel-head"><div><h2>可约时段</h2><p>用于 App 与预约接口的门店时段</p></div></div>
-        <div class="compact-config-list">${(store.slots || []).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slotEditor).join('') || '<div class="empty">暂无时段</div>'}</div>
-        <form id="slot-create-form" class="inline-create" data-store-id="${store.id}"><input name="startTime" type="time" required><input name="endTime" type="time" required><button class="button" type="submit">+新增时段</button></form>
-      </section>
-    </div>`
+    <section class="panel config-section"><div class="panel-head"><div><h2>可约时段</h2><p>用于 App 与预约接口的门店时段</p></div></div>
+      <div class="compact-config-list">${(store.slots || []).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slotEditor).join('') || '<div class="empty">暂无时段</div>'}</div>
+      <form id="slot-create-form" class="inline-create" data-store-id="${store.id}"><input name="startTime" type="time" required><input name="endTime" type="time" required><button class="button" type="submit">+新增时段</button></form>
+    </section>`
   $('#store-form').addEventListener('submit', saveStore)
   $('#price-form').addEventListener('submit', savePrices)
   $$('.package-form').forEach((form) => form.addEventListener('submit', savePackage))
   $$('[data-delete-package]').forEach((button) => button.addEventListener('click', () => deleteConfig('packages', button.dataset.deletePackage, '删除这个时长套餐？')))
-  $$('.table-form').forEach((form) => form.addEventListener('submit', saveTable))
-  $$('[data-delete-table]').forEach((button) => button.addEventListener('click', () => deleteConfig('tables', button.dataset.deleteTable, '删除这个桌位？')))
-  $('#table-create-form').addEventListener('submit', createTable)
   $$('.slot-form').forEach((form) => form.addEventListener('submit', saveSlot))
   $$('[data-delete-slot]').forEach((button) => button.addEventListener('click', () => deleteConfig('slots', button.dataset.deleteSlot, '删除这个可约时段？')))
   $('#slot-create-form').addEventListener('submit', createSlot)
-}
-
-function seatAdminEditor(item) {
-  return `<form class="seat-admin-card table-form${item.enabled ? '' : ' is-disabled'}" data-id="${item.id}">
-    <div class="seat-admin-preview">
-      <span>${item.enabled ? '前台可选' : '已停用'}</span>
-      <strong>${esc(item.name)}</strong>
-      <small>${item.capacity} 人桌</small>
-    </div>
-    <div class="seat-admin-controls">
-      <label class="field"><span>桌位名称</span><input name="name" value="${esc(item.name)}" maxlength="50" required></label>
-      <label class="field"><span>容纳人数</span><select name="capacity">${[1,2,4].map((n) => `<option value="${n}"${item.capacity === n ? ' selected' : ''}>${n} 人</option>`).join('')}</select></label>
-      <label class="mini-toggle seat-admin-toggle"><input name="enabled" type="checkbox" ${item.enabled ? 'checked' : ''}><span>允许前台预约</span></label>
-      <div class="seat-admin-actions"><button class="button" type="submit">保存</button><button class="button button-ghost" type="button" data-delete-table="${item.id}" data-table-name="${esc(item.name)}">删除</button></div>
-    </div>
-  </form>`
-}
-
-async function renderSeats() {
-  const [stores, bookingStatus] = await Promise.all([
-    api('/admin/stores'),
-    api('/appointments/status')
-  ])
-  state.stores = stores
-  const store = stores[0]
-  if (!store) { $('#page-content').innerHTML = '<div class="panel empty">暂无门店，请先创建门店</div>'; return }
-  const tables = [...(store.tables || [])].sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }))
-  const enabledTables = tables.filter((item) => item.enabled)
-  const totalCapacity = enabledTables.reduce((sum, item) => sum + Number(item.capacity || 0), 0)
-
-  $('#page-content').innerHTML = `
-    <div class="stats-grid seat-stats">
-      ${statCard('桌位总数', tables.length, `启用 ${enabledTables.length} 个`, '#fff1f4')}
-      ${statCard('可预约座位', totalCapacity, '按已启用桌位容量统计', '#eaf7f3')}
-      ${statCard('线上预约', bookingStatus.enabled ? '已开放' : '已关闭', bookingStatus.enabled ? '顾客可选择桌位' : '当前不会产生新预约', bookingStatus.enabled ? '#eaf7f3' : '#f1f3f5')}
-    </div>
-    <section class="panel seat-management-panel">
-      <div class="panel-head"><div><h2>桌位布局</h2><p>每个方块对应前台的一个桌位；停用后立即从可选列表隐藏</p></div><span class="status ${bookingStatus.enabled ? 'status-active' : 'status-expired'}">预约${bookingStatus.enabled ? '开放中' : '已关闭'}</span></div>
-      <div class="seat-admin-grid">${tables.length ? tables.map(seatAdminEditor).join('') : '<div class="empty">暂无桌位，请先创建</div>'}</div>
-    </section>
-    <section class="panel seat-create-panel">
-      <div class="panel-head"><div><h2>新增桌位</h2><p>名称留空时按容量自动生成：A=1 人、B=2 人、C=4 人</p></div></div>
-      <form id="table-create-form" class="seat-create-form" data-store-id="${store.id}">
-        <label class="field"><span>桌位名称（可选）</span><input name="name" maxlength="50" placeholder="例如 VIP1；留空则自动生成"></label>
-        <label class="field"><span>容纳人数</span><select name="capacity"><option value="1">1 人桌</option><option value="2">2 人桌</option><option value="4">4 人桌</option></select></label>
-        <button class="button" type="submit">+ 新增桌位</button>
-      </form>
-    </section>`
-
-  $$('.table-form').forEach((form) => form.addEventListener('submit', saveTable))
-  $$('[data-delete-table]').forEach((button) => button.addEventListener('click', () => deleteConfig('tables', button.dataset.deleteTable, `删除桌位 ${button.dataset.tableName || ''}？已有预约中的桌位记录仍会保留。`)))
-  $('#table-create-form').addEventListener('submit', createTable)
 }
 
 function field(label, name, value, type = 'text', step = '') {
@@ -704,32 +641,6 @@ async function savePackage(event) {
   } catch (error) { toast(error.message, true) }
 }
 
-function tableEditor(item) {
-  return `<form class="compact-config table-form" data-id="${item.id}"><strong>${esc(item.name)}</strong><select name="capacity">${[1,2,4].map((n) => `<option value="${n}"${item.capacity === n ? ' selected' : ''}>${n} 人</option>`).join('')}</select><label class="mini-toggle"><input name="enabled" type="checkbox" ${item.enabled ? 'checked' : ''}><span>启用</span></label><button class="button button-small" type="submit">保存</button><button class="button button-small button-ghost" type="button" data-delete-table="${item.id}">删除</button></form>`
-}
-
-async function saveTable(event) {
-  event.preventDefault()
-  const form = event.currentTarget
-  try {
-    const body = { capacity: Number(form.elements.capacity.value), enabled: form.elements.enabled.checked }
-    if (form.elements.name) body.name = form.elements.name.value.trim()
-    await api(`/admin/stores/tables/${form.dataset.id}`, { method: 'PATCH', body })
-    toast('桌位已更新'); await (state.page === 'seats' ? renderSeats() : renderPricing())
-  } catch (error) { toast(error.message, true) }
-}
-
-async function createTable(event) {
-  event.preventDefault()
-  const form = event.currentTarget
-  try {
-    const body = { capacity: Number(form.elements.capacity.value), enabled: true }
-    if (form.elements.name?.value.trim()) body.name = form.elements.name.value.trim()
-    await api(`/admin/stores/${form.dataset.storeId}/tables`, { method: 'POST', body })
-    toast('桌位已创建'); await (state.page === 'seats' ? renderSeats() : renderPricing())
-  } catch (error) { toast(error.message, true) }
-}
-
 function slotEditor(item) {
   return `<form class="compact-config slot-form" data-id="${item.id}"><input name="startTime" type="time" value="${esc(item.startTime)}" required><span>至</span><input name="endTime" type="time" value="${esc(item.endTime)}" required><label class="mini-toggle"><input name="enabled" type="checkbox" ${item.enabled ? 'checked' : ''}><span>启用</span></label><button class="button button-small" type="submit">保存</button><button class="button button-small button-ghost" type="button" data-delete-slot="${item.id}">删除</button></form>`
 }
@@ -756,7 +667,7 @@ async function deleteConfig(type, id, message) {
   if (!await confirmDialog(message)) return
   try {
     await api(`/admin/stores/${type}/${id}`, { method: 'DELETE' })
-    toast('已删除'); await (type === 'tables' && state.page === 'seats' ? renderSeats() : renderPricing())
+    toast('已删除'); await renderPricing()
   } catch (error) { toast(error.message, true) }
 }
 
