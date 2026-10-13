@@ -124,8 +124,20 @@ describe('AuthService.register（设备账号数限制）', () => {
     expect(m.email.send).toHaveBeenCalledWith(
       'user@example.com',
       'IDOL BEADS 注册验证码',
-      expect.stringMatching(/\d{6}/),
+      expect.objectContaining({
+        text: expect.stringMatching(/\d{6}/),
+        html: expect.stringContaining('cid:idol-beads-logo'),
+      }),
     );
+    const content = m.email.send.mock.calls[0][2] as {
+      text: string;
+      html: string;
+    };
+    const code = content.text.match(/\b\d{6}\b/)?.[0];
+    expect(code).toBeDefined();
+    expect(content.html).toContain(code);
+    expect(content.text).toContain('5 分钟内有效');
+    expect(content.html).toContain('5 分钟内有效');
     expect(m.redis.set).toHaveBeenCalledWith(
       expect.stringMatching(/^register:email-code:[a-f0-9]{64}$/),
       expect.stringContaining('"digest"'),

@@ -901,7 +901,7 @@ describe('AppointmentsService', () => {
   });
 
   describe('adminConfirm', () => {
-    it('pending → booked：确认后才可到店核销', async () => {
+    it('pending → booked：确认后才可到店核销，邮件使用实际门店地址', async () => {
       const m = buildService();
       m.appointments.findOneBy.mockResolvedValue({
         id: 1,
@@ -911,8 +911,16 @@ describe('AppointmentsService', () => {
         startTime: '10:00',
         endTime: '11:00',
         peopleCount: 2,
+        type: 'store',
+        storeId: 9,
         storeName: 'IDOL BEADS',
         code: 'ABC123',
+        tables: [{ name: 'A1' }, { name: 'A2' }],
+        packageName: '6 小时拼豆套餐',
+      });
+      m.stores.findOneBy.mockResolvedValue({
+        id: 9,
+        address: '12 Test Street, Singapore 123456',
       });
       m.users.findById.mockResolvedValue({ email: 'guest@example.com' });
       m.appointments.save.mockImplementation((x: unknown) =>
@@ -922,15 +930,147 @@ describe('AppointmentsService', () => {
       const result = await m.svc.adminConfirm(1);
 
       expect(result.status).toBe('booked');
+      expect(m.stores.findOneBy).toHaveBeenCalledWith({ id: 9 });
+      expect(m.activities.findOneBy).not.toHaveBeenCalled();
       expect(m.email.send).toHaveBeenCalledWith(
         'guest@example.com',
-        expect.stringMatching(/预约确认[\s\S]*Booking Confirmed/),
-        expect.stringMatching(
-          /ABC123[\s\S]*Your booking is confirmed[\s\S]*Booking code: ABC123/,
-        ),
-        expect.stringMatching(
-          /idol-logo\.png[\s\S]*Your booking is confirmed[\s\S]*Booking code[\s\S]*Join our bead community/,
-        ),
+        expect.stringContaining('预约确认'),
+        expect.objectContaining({
+          text: expect.stringContaining('ABC123'),
+          html: expect.stringContaining('ABC123'),
+        }),
+      );
+      const content = m.email.send.mock.calls[0][2] as {
+        text: string;
+        html: string;
+      };
+      for (const body of [content.text, content.html]) {
+        expect(body).toContain('A1、A2');
+        expect(body).toContain('6 小时拼豆套餐');
+        expect(body).toContain(dateStr(1));
+        expect(body).toContain('10:00');
+        expect(body).toContain('11:00');
+        expect(body).toContain('12 Test Street, Singapore 123456');
+      }
+      expect(content.html).toContain('cid:idol-beads-logo');
+      expect(m.email.send.mock.calls[0][1]).toContain('Booking Confirmed');
+      expect(content.text).toMatch(
+        /Your booking is confirmed[\s\S]*Booking code: ABC123/,
+      );
+      expect(content.html).toMatch(
+        /Your booking is confirmed[\s\S]*Booking code[\s\S]*Join our bead community/,
+      );
+      for (const body of [content.text, content.html]) {
+        expect(body).toContain('最多保留 30 分钟');
+        expect(body).toContain('up to 30 minutes');
+        expect(body).toContain('/wechat.html');
+        expect(body).not.toContain('邮箱和手机号');
+      }
+    });
+
+    it('活动预约邮件使用活动地址，不使用门店地址', async () => {
+      const m = buildService();
+      m.appointments.findOneBy.mockResolvedValue({
+        id: 1,
+        userId: 7,
+        status: 'pending',
+        type: 'activity',
+        activityId: 5,
+        storeId: 9,
+        date: dateStr(1),
+        startTime: '10:00',
+        endTime: '11:00',
+        peopleCount: 1,
+        storeName: '拼豆体验活动',
+        code: 'ABC123',
+      });
+      m.activities.findOneBy.mockResolvedValue({
+        id: 5,
+        address: '25 Event Road, Singapore 654321',
+      });
+      m.users.findById.mockResolvedValue({ email: 'guest@example.com' });
+      m.appointments.save.mockImplementation((x: unknown) =>
+        Promise.resolve(x),
+      );
+
+      const result = await m.svc.adminConfirm(1);
+
+      expect(result.status).toBe('booked');
+      expect(m.activities.findOneBy).toHaveBeenCalledWith({ id: 5 });
+      expect(m.stores.findOneBy).not.toHaveBeenCalled();
+      expect(m.email.send).toHaveBeenCalledWith(
+        'guest@example.com',
+        expect.stringContaining('预约确认'),
+        expect.objectContaining({
+          text: expect.stringContaining('25 Event Road, Singapore 654321'),
+          html: expect.stringContaining('25 Event Road, Singapore 654321'),
+        }),
+      );
+    });
+
+    it('地址读取失败时仍发送确认邮件并保留已确认状态', async () => {
+      const m = buildService();
+      m.appointments.findOneBy.mockResolvedValue({
+        id: 1,
+        userId: 7,
+        status: 'pending',
+        type: 'store',
+        storeId: 9,
+        date: dateStr(1),
+        startTime: '10:00',
+        endTime: '11:00',
+        peopleCount: 1,
+        storeName: 'IDOL BEADS',
+        code: 'ABC123',
+      });
+      m.stores.findOneBy.mockRejectedValue(new Error('address lookup failed'));
+      m.users.findById.mockResolvedValue({ email: 'guest@example.com' });
+      m.appointments.save.mockImplementation((x: unknown) =>
+        Promise.resolve(x),
+      );
+
+      const result = await m.svc.adminConfirm(1);
+
+      expect(result.status).toBe('booked');
+      expect(m.email.send).toHaveBeenCalledTimes(1);
+      const content = m.email.send.mock.calls[0][2] as {
+        text: string;
+        html: string;
+      };
+      expect(content.text).toContain('ABC123');
+      expect(content.html).not.toContain('google.com/maps');
+    });
+
+    it('旧预约缺少桌位明细时使用原桌位名，邮件失败不撤销确认', async () => {
+      const m = buildService();
+      m.appointments.findOneBy.mockResolvedValue({
+        id: 1,
+        userId: 7,
+        status: 'pending',
+        date: dateStr(1),
+        startTime: '10:00',
+        endTime: '11:00',
+        peopleCount: 1,
+        storeName: 'IDOL BEADS',
+        tableName: 'B1',
+        code: 'ABC123',
+      });
+      m.users.findById.mockResolvedValue({ email: 'guest@example.com' });
+      m.appointments.save.mockImplementation((x: unknown) =>
+        Promise.resolve(x),
+      );
+      m.email.send.mockRejectedValue(new Error('SMTP unavailable'));
+
+      const result = await m.svc.adminConfirm(1);
+
+      expect(result.status).toBe('booked');
+      expect(m.email.send).toHaveBeenCalledWith(
+        'guest@example.com',
+        expect.stringContaining('预约确认'),
+        expect.objectContaining({
+          text: expect.stringContaining('B1'),
+          html: expect.stringContaining('B1'),
+        }),
       );
     });
 
@@ -945,6 +1085,7 @@ describe('AppointmentsService', () => {
       await expect(m.svc.adminConfirm(1)).rejects.toThrow(
         '仅待确认状态的预约可确认',
       );
+      expect(m.email.send).not.toHaveBeenCalled();
     });
 
     it('预约日期已过不可确认', async () => {
@@ -958,6 +1099,7 @@ describe('AppointmentsService', () => {
       await expect(m.svc.adminConfirm(1)).rejects.toThrow(
         '预约日期已过，无法确认',
       );
+      expect(m.email.send).not.toHaveBeenCalled();
     });
   });
 

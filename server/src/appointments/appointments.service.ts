@@ -34,6 +34,7 @@ import { Activity } from '../activities/activity.entity';
 import { ActivitySession } from '../activities/activity-session.entity';
 import { ChatGateway } from '../chat/chat.gateway';
 import { EmailService } from '../email/email.service';
+import { bookingConfirmationEmail } from '../email/email.templates';
 import { Coupon, UserCoupon } from '../members/coupon.entity';
 import { Membership } from '../members/membership.entity';
 import { Store } from '../stores/store.entity';
@@ -1383,33 +1384,49 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     const saved = await this.appointments.save(appt);
     this.broadcastAppointment(saved);
     await this.invalidateAvailability(saved.storeId, saved.date);
-    const [user, store] = await Promise.all([
-      this.users.findById(saved.userId),
-      saved.storeId ? this.stores.findOneBy({ id: saved.storeId }) : null,
-    ]);
+    const user = await this.users.findById(saved.userId);
     if (user?.email) {
-      const text = `您的预约已确认。\n预约码：${saved.code}\n日期：${saved.date}\n时间：${saved.startTime}-${saved.endTime}\n人数：${saved.peopleCount} 人\n门店：${saved.storeName}\n请妥善保存预约码，到店时出示。\n时间或人数如有变化，请提前前往小红书联系 IDOL Beads 客服。预约时段最多保留 30 分钟。\n\nYour booking is confirmed.\nBooking code: ${saved.code}\nDate: ${saved.date}\nTime: ${saved.startTime}-${saved.endTime}\nGuests: ${saved.peopleCount}\nStudio: ${saved.storeName}\nPlease keep your booking code and show it when you arrive. If your arrival time or party size changes, contact IDOL Beads on Xiaohongshu in advance. We can hold your slot for up to 30 minutes.${this.appointmentEmailContactText(store)}`;
+      let storeAddress: string | undefined;
+      let store: Store | null = null;
+      try {
+        if (saved.type === 'activity') {
+          if (saved.activityId != null) {
+            const activity = await this.activities.findOneBy({
+              id: saved.activityId,
+            });
+            storeAddress = activity?.address;
+          }
+        } else if (saved.storeId != null) {
+          store = await this.stores.findOneBy({ id: saved.storeId });
+          storeAddress = store?.address;
+        }
+      } catch (error) {
+        this.logger.warn(
+          `预约确认邮件地址读取失败：${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      const tableNames =
+        saved.tables?.map((table) => table.name).filter(Boolean) ?? [];
       await this.email
         .send(
           user.email,
           `IDOL BEADS 预约确认 / Booking Confirmed · ${saved.date}`,
-          text,
-          buildAppointmentEmailHtml({
-            heading: '预约已确认',
-            headingEn: 'Your booking is confirmed',
-            intro: '我们已为你保留好时间，到店时请出示下方预约码。',
-            introEn:
-              'Your time slot is reserved. Please show the booking code below when you arrive.',
-            appointment: saved,
-            visitNotice:
-              '时间或人数如有变化，请提前前往小红书联系 IDOL Beads 客服。预约时段最多保留 30 分钟。',
-            visitNoticeEn:
-              'If your arrival time or party size changes, contact IDOL Beads on Xiaohongshu in advance. We can hold your slot for up to 30 minutes.',
-            address: store?.address,
+          bookingConfirmationEmail({
+            code: saved.code,
+            date: saved.date,
+            startTime: saved.startTime,
+            endTime: saved.endTime,
+            peopleCount: saved.peopleCount,
+            storeName: saved.storeName,
+            tableNames: tableNames.length
+              ? tableNames
+              : saved.tableName
+                ? [saved.tableName]
+                : [],
+            packageName: saved.packageName,
+            storeAddress,
             phone: store?.phone,
             ...this.appointmentEmailLinks(store),
-            actionLabel: '查看 IDOL BEADS',
-            actionLabelEn: 'View IDOL BEADS',
           }),
         )
         .catch((error: Error) => {

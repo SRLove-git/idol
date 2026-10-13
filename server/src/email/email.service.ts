@@ -1,14 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { createTransport, type Transporter } from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import type { EmailContent } from './email.types';
 
 /** 邮件发送抽象：生产接入 SMTP 邮件服务，开发用 DevEmailService 打印日志 */
 export abstract class EmailService {
   abstract send(
     to: string,
     subject: string,
-    content: string,
+    content: string | EmailContent,
     html?: string,
   ): Promise<void>;
 }
@@ -20,13 +23,12 @@ export class DevEmailService extends EmailService {
   send(
     to: string,
     subject: string,
-    content: string,
+    content: string | EmailContent,
     html?: string,
   ): Promise<void> {
     // 开发环境验证码直接打印到服务端日志，便于本地联调
-    this.logger.log(
-      `[DevEmail] 发送至 ${to}：${subject} / ${content}${html ? ' / 已生成 HTML 邮件' : ''}`,
-    );
+    const text = typeof content === 'string' ? content : content.text;
+    this.logger.log(`[DevEmail] 发送至 ${to}：${subject} / ${text}`);
     return Promise.resolve();
   }
 }
@@ -53,7 +55,7 @@ export class SmtpEmailService extends EmailService {
     const pass = config.get<string>('SMTP_PASS', '');
     this.from = config.get<string>(
       'SMTP_FROM',
-      'DIY手作工坊 <no-reply@example.com>',
+      'IDOL BEADS <no-reply@mail.idol-sg.com>',
     );
     this.transporter = createTransport({
       host,
@@ -69,16 +71,33 @@ export class SmtpEmailService extends EmailService {
   async send(
     to: string,
     subject: string,
-    content: string,
+    content: string | EmailContent,
     html?: string,
   ): Promise<void> {
     try {
+      const body =
+        typeof content === 'string'
+          ? { text: content, html }
+          : {
+              text: content.text,
+              html: content.html,
+              attachments: [
+                {
+                  filename: 'idol-beads-logo.png',
+                  content: await readFile(
+                    join(process.cwd(), 'assets/email/idol-logo.png'),
+                  ),
+                  contentType: 'image/png',
+                  contentDisposition: 'inline' as const,
+                  cid: 'idol-beads-logo',
+                },
+              ],
+            };
       await this.transporter.sendMail({
         from: this.from,
         to,
         subject,
-        text: content,
-        html,
+        ...body,
       });
       this.logger.log(`[SMTP] 已发送至 ${to}：${subject}`);
     } catch (e) {

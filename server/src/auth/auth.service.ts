@@ -14,6 +14,7 @@ import { createHash, createHmac, randomInt, randomUUID } from 'crypto';
 import type Redis from 'ioredis';
 import { CaptchaService } from '../common/captcha.service';
 import { EmailService } from '../email/email.service';
+import { registrationEmail } from '../email/email.templates';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
@@ -121,7 +122,7 @@ export class AuthService {
         await this.email.send(
           email,
           'IDOL BEADS 注册验证码',
-          `您的注册验证码是：${code}\n\n验证码 ${Math.ceil(ttl / 60)} 分钟内有效，请勿转发给他人。若非本人操作，请忽略本邮件。`,
+          registrationEmail(code, Math.ceil(ttl / 60)),
         );
       } catch {
         await this.redis.del(key, cooldownKey).catch(() => undefined);
