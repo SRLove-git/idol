@@ -6,6 +6,7 @@ export const state = reactive({
   lang: savedLanguage === 'en' ? 'en' : 'zh',
   store: null,
   wechat: false,
+  bookingStatusLoaded: false,
   bookingEnabled: false,
   bookingAccepting: false
 })
@@ -88,6 +89,7 @@ export const translations = {
     td_wed_thu: '周三 - 周四',
     td_fri_sun: '周五 - 周日',
     booking_title: '预约体验',
+    booking_loading: '正在加载预约信息…',
     booking_test_notice: '我们还在认真准备中，暂时不能预约哦。',
     booking_test_notice_title: '⚠️ 我们还在认真准备中',
     booking_test_notice_desc: '当前页面仅开放流程测试，暂时还不能正式预约。谢谢你的理解，期待很快在店里见到你！',
@@ -274,7 +276,7 @@ export const translations = {
     account_logout: '退出登录',
     member_expired: '会员已到期',
     member_join_title: '加入 IDOL BEADS 会员',
-    member_number: '会员号',
+    member_number: '会员编号',
     member_valid_until: '有效期至',
     member_intro: '开通会员可享会员价与专属权益，到店付款后由门店确认开通。',
     member_benefit_price: '预约自动使用会员价',
@@ -380,6 +382,7 @@ export const translations = {
     td_wed_thu: 'Wed - Thu',
     td_fri_sun: 'Fri - Sun',
     booking_title: 'Book a Session',
+    booking_loading: 'Loading booking information…',
     booking_test_notice: 'We’re still getting everything ready, so bookings are not available just yet.',
     booking_test_notice_title: '⚠️ We’re getting everything ready',
     booking_test_notice_desc: 'This page is open for testing only, so official bookings are not available just yet. Thanks for your patience—we can’t wait to welcome you soon!',
@@ -566,7 +569,7 @@ export const translations = {
     account_logout: 'Log Out',
     member_expired: 'Membership Expired',
     member_join_title: 'Join IDOL BEADS Membership',
-    member_number: 'Member No.',
+    member_number: 'Member ID',
     member_valid_until: 'Valid until',
     member_intro: 'Enjoy member pricing and exclusive perks. Pay in store and our team will activate your membership.',
     member_benefit_price: 'Member pricing applied automatically',
@@ -632,21 +635,34 @@ export function addMinutes(hhmm, mins) {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
 }
 
-export async function loadStore() {
+let storeLoadPromise = null
+
+export function loadStore() {
+  if (storeLoadPromise) return storeLoadPromise
+  storeLoadPromise = loadStoreData()
+  return storeLoadPromise
+}
+
+async function loadStoreData() {
   const [storeResult, statusResult] = await Promise.allSettled([
     fetch('/api/stores/1'),
     fetch('/api/appointments/status')
   ])
   if (storeResult.status === 'fulfilled' && storeResult.value.ok) {
-    state.store = await storeResult.value.json()
+    try {
+      state.store = await storeResult.value.json()
+    } catch { /* 门店内容解析失败不应阻断预约状态就绪 */ }
   }
-  if (statusResult.status === 'fulfilled' && statusResult.value.ok) {
+  try {
+    if (statusResult.status !== 'fulfilled' || !statusResult.value.ok) throw new Error('Booking status unavailable')
     const status = await statusResult.value.json()
     state.bookingEnabled = status.enabled === true
     state.bookingAccepting = status.accepting === true
-  } else {
+  } catch {
     state.bookingEnabled = false
     state.bookingAccepting = false
+  } finally {
+    state.bookingStatusLoaded = true
   }
   if (state.store?.name) {
     const configuredTitle = state.store.siteContent?.meta?.title

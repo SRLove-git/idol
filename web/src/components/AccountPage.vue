@@ -217,9 +217,11 @@ onMounted(loadAccount)
           <h2>{{ user.nickname || user.username }}</h2>
           <p>@{{ user.username }}</p>
           <a :href="`mailto:${user.email}`">{{ user.email }}</a>
-          <span class="profile-member-pill" :class="{ 'is-active': membershipActive }">
-            {{ membershipActive ? `★ ${localizedMemberName(membership.levelName)}` : t('account_standard_user') }}
-          </span>
+          <div v-if="membershipActive" class="profile-member-badge" aria-label="会员标牌">
+            <span class="profile-member-badge-icon">★</span>
+            <span><strong>{{ localizedMemberName(membership.levelName) }}</strong><small>{{ membership.memberNo }}</small></span>
+          </div>
+          <span v-else class="profile-member-pill">{{ t('account_standard_user') }}</span>
           <div class="profile-actions">
             <a v-if="state.bookingEnabled" class="btn btn-primary" href="/booking">{{ t('account_book_again') }}</a>
             <button type="button" @click="logout">{{ t('account_logout') }}</button>
@@ -235,7 +237,11 @@ onMounted(loadAccount)
                 <p v-if="membershipActive">{{ t('member_number') }} {{ membership.memberNo }} · {{ t('member_valid_until') }} {{ formatMemberDate(membership.expireAt) }}</p>
                 <p v-else>{{ t('member_intro') }}</p>
               </div>
-              <div class="member-state-mark">{{ membershipActive ? 'ACTIVE' : 'MEMBER' }}</div>
+              <div v-if="membershipActive" class="member-state-badge">
+                <span>✦</span>
+                <div><small>IDOL BEADS</small><strong>VIP MEMBER</strong><em>{{ membership.memberNo }}</em></div>
+              </div>
+              <div v-else class="member-state-mark">MEMBER</div>
             </div>
 
             <div v-if="membershipActive" class="active-member-benefits">

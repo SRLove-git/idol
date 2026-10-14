@@ -671,24 +671,107 @@ async function deleteConfig(type, id, message) {
   } catch (error) { toast(error.message, true) }
 }
 
-async function renderMembers() {
+async function renderMembers(keyword = '', memberStatus = 'all') {
+  const memberParams = new URLSearchParams({ page: '1' })
+  if (keyword) memberParams.set('keyword', keyword)
+  if (memberStatus !== 'all') memberParams.set('status', memberStatus)
   const [plans, ordersData, membershipsData] = await Promise.all([
-    api('/admin/members/plans'), api('/admin/members/orders?page=1'), api('/admin/members?page=1')
+    api('/admin/members/plans'), api('/admin/members/orders?page=1'), api(`/admin/members?${memberParams}`)
   ])
   const [orders, orderTotal] = ordersData
-  const [memberships, memberTotal] = membershipsData
+  const [memberships, memberTotal, memberStats = { total: memberTotal, active: 0, expired: 0 }] = membershipsData
   $('#page-content').innerHTML = `
-    <div class="panel-head"><div><h2>会员套餐</h2><p>管理官网及 App 中的开通套餐</p></div></div>
+    <div class="member-admin-summary">
+      <article><span>全部会员</span><strong>${memberStats.total}</strong><small>统一编号管理</small></article>
+      <article class="is-active"><span>有效会员</span><strong>${memberStats.active}</strong><small>当前享受会员权益</small></article>
+      <article class="is-expired"><span>已到期</span><strong>${memberStats.expired}</strong><small>可联系续费</small></article>
+    </div>
+    <section class="panel member-management-panel">
+      <div class="panel-head"><div><h2>统一会员管理</h2><p>按会员编号、用户名、昵称或邮箱快速查找与维护</p></div></div>
+      <form id="member-filter" class="toolbar">
+        <input class="grow" name="keyword" value="${esc(keyword)}" placeholder="搜索会员编号、姓名、用户名或邮箱">
+        <select name="status"><option value="all" ${memberStatus === 'all' ? 'selected' : ''}>全部状态</option><option value="active" ${memberStatus === 'active' ? 'selected' : ''}>有效会员</option><option value="expired" ${memberStatus === 'expired' ? 'selected' : ''}>已到期</option></select>
+        <button class="button" type="submit">搜索</button>
+        ${keyword || memberStatus !== 'all' ? '<button class="button button-ghost" id="member-filter-reset" type="button">清除</button>' : ''}
+      </form>
+      <details class="create-member-card">
+        <summary>＋ 手动开通会员</summary>
+        <form id="member-create" class="form-grid">
+          ${field('用户名', 'username', '')}${field('会员等级', 'levelName', '手作会员')}${field('有效期至', 'expireAt', '', 'date')}
+          <div class="form-actions field-wide"><button class="button button-gold" type="submit">开通并生成会员编号</button></div>
+        </form>
+      </details>
+      <div class="table-wrap"><table class="data-table member-table"><thead><tr><th>会员编号</th><th>客户</th><th>状态</th><th>会员等级</th><th>有效期至</th><th>操作</th></tr></thead><tbody>${memberships.length ? memberships.map(memberManagementRow).join('') : '<tr><td colspan="6" class="empty">未找到会员</td></tr>'}</tbody></table></div>
+      <p class="member-table-note">当前筛选共 ${memberTotal} 人 · 每位会员的编号由系统自动生成且唯一</p>
+    </section>
+    <div class="panel-head member-plan-heading"><div><h2>会员套餐</h2><p>管理官网及 App 中的开通套餐</p></div></div>
     <div class="section-grid">${plans.map(planCard).join('')}</div>
     <section class="panel" style="margin-top:16px"><div class="panel-head"><div><h2>开通申请</h2><p>共 ${orderTotal} 笔，待门店收款确认</p></div></div>
       <div class="table-wrap"><table class="data-table"><thead><tr><th>客户</th><th>套餐</th><th>金额</th><th>申请时间</th><th>状态</th><th>操作</th></tr></thead><tbody>${orders.length ? orders.map(memberOrderRow).join('') : '<tr><td colspan="6" class="empty">暂无开通申请</td></tr>'}</tbody></table></div>
-    </section>
-    <section class="panel" style="margin-top:16px"><div class="panel-head"><div><h2>已开通会员</h2><p>共 ${memberTotal} 人</p></div></div>
-      <div class="table-wrap"><table class="data-table"><thead><tr><th>会员号</th><th>客户</th><th>等级</th><th>到期时间</th></tr></thead><tbody>${memberships.length ? memberships.map((item) => `<tr><td>${esc(item.memberNo)}</td><td>${esc(item.userNickname || `用户 #${item.userId}`)}<br><small>${esc(item.userEmail || '')}</small></td><td>${esc(item.levelName)}</td><td>${formatDate(item.expireAt)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">暂无会员</td></tr>'}</tbody></table></div>
     </section>`
+  $('#member-filter').addEventListener('submit', (event) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    renderMembers(String(form.get('keyword') || '').trim(), String(form.get('status') || 'all'))
+  })
+  $('#member-filter-reset')?.addEventListener('click', () => renderMembers())
+  $('#member-create').addEventListener('submit', createMembership)
+  $$('[data-member-save]').forEach((button) => button.addEventListener('click', () => saveMembership(button)))
+  $$('[data-member-delete]').forEach((button) => button.addEventListener('click', () => deleteMembership(button)))
   $$('.plan-form').forEach((form) => form.addEventListener('submit', savePlan))
   $$('[data-plan-toggle]').forEach((button) => button.addEventListener('click', () => togglePlan(button)))
   $$('[data-member-action]').forEach((button) => button.addEventListener('click', () => memberOrderAction(button)))
+}
+
+function memberDateValue(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function memberManagementRow(item) {
+  const active = item.status === 'active'
+  return `<tr data-member-row="${item.id}">
+    <td><span class="admin-member-no"><i>★</i><strong>${esc(item.memberNo)}</strong></span><small>用户 ID #${item.userId}</small></td>
+    <td><strong>${esc(item.userNickname || item.userName || `用户 #${item.userId}`)}</strong><br><small>@${esc(item.userName || '—')} · ${esc(item.userEmail || '—')}</small></td>
+    <td><span class="status ${active ? 'status-active' : 'status-expired'}">${active ? '有效' : '已到期'}</span></td>
+    <td><input class="member-inline-input" name="levelName" value="${esc(item.levelName)}" maxlength="30" aria-label="会员等级"></td>
+    <td><input class="member-inline-input" name="expireAt" type="date" value="${memberDateValue(item.expireAt)}" aria-label="会员有效期"></td>
+    <td class="actions"><button class="button button-small button-gold" data-member-save data-id="${item.id}">保存</button><button class="button button-small button-ghost" data-member-delete data-id="${item.id}" data-member-no="${esc(item.memberNo)}">移除资格</button></td>
+  </tr>`
+}
+
+async function createMembership(event) {
+  event.preventDefault()
+  const form = event.currentTarget
+  const body = formObject(form)
+  if (body.expireAt) body.expireAt = `${body.expireAt}T23:59:59`
+  try {
+    const result = await api('/admin/members', { method: 'POST', body })
+    toast(`会员已开通，编号 ${result.memberNo}`)
+    await renderMembers(result.memberNo)
+  } catch (error) { toast(error.message, true) }
+}
+
+async function saveMembership(button) {
+  const row = button.closest('[data-member-row]')
+  const expireDate = $('[name="expireAt"]', row).value
+  const body = { levelName: $('[name="levelName"]', row).value.trim(), expireAt: expireDate ? `${expireDate}T23:59:59` : '' }
+  try {
+    await api(`/admin/members/${button.dataset.id}`, { method: 'PATCH', body })
+    toast('会员资料已保存')
+    await renderMembers()
+  } catch (error) { toast(error.message, true) }
+}
+
+async function deleteMembership(button) {
+  if (!await confirmDialog(`确认移除会员 ${button.dataset.memberNo} 的会员资格？用户账号不会被删除。`)) return
+  try {
+    await api(`/admin/members/${button.dataset.id}`, { method: 'DELETE' })
+    toast('会员资格已移除')
+    await renderMembers()
+  } catch (error) { toast(error.message, true) }
 }
 
 function planCard(plan) {

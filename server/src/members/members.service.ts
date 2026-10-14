@@ -10,6 +10,7 @@ import {
   EntityManager,
   FindOptionsWhere,
   In,
+  LessThanOrEqual,
   Like,
   MoreThan,
   Repository,
@@ -421,18 +422,41 @@ export class MembersService implements OnModuleInit {
   }
 
   /** 管理端：会员列表（分页，可按用户ID/用户名/邮箱/昵称/会员编号搜索），附带用户显示名 */
-  async listMemberships(page = 1, keyword?: string) {
+  async listMemberships(page = 1, keyword?: string, status?: string) {
     const kw = (keyword ?? '').trim();
     const where: any[] = [];
+    const now = new Date();
+    const expiryFilter =
+      status === 'active'
+        ? MoreThan(now)
+        : status === 'expired'
+          ? LessThanOrEqual(now)
+          : undefined;
     if (kw) {
-      where.push({ userId: Number(kw) || 0 }, { memberNo: Like(`%${kw}%`) });
+      where.push(
+        {
+          userId: Number(kw) || 0,
+          ...(expiryFilter && { expireAt: expiryFilter }),
+        },
+        {
+          memberNo: Like(`%${kw}%`),
+          ...(expiryFilter && { expireAt: expiryFilter }),
+        },
+      );
       const matched = await this.users.findByKeyword(kw);
       if (matched.length) {
-        where.push({ userId: In(matched.map((u) => u.id)) });
+        where.push({
+          userId: In(matched.map((u) => u.id)),
+          ...(expiryFilter && { expireAt: expiryFilter }),
+        });
       }
     }
     const [items, total] = await this.memberships.findAndCount({
-      where: where.length ? where : {},
+      where: where.length
+        ? where
+        : expiryFilter
+          ? { expireAt: expiryFilter }
+          : {},
       order: { updatedAt: 'DESC' },
       skip: (page - 1) * 20,
       take: 20,
@@ -443,15 +467,23 @@ export class MembersService implements OnModuleInit {
         u,
       ]),
     );
+    const [allTotal, activeTotal] = await Promise.all([
+      this.memberships.count(),
+      this.memberships.count({ where: { expireAt: MoreThan(now) } }),
+    ]);
     return [
       items.map((i) => {
         const u = userMap.get(i.userId);
         return {
           ...i,
-          userName: u?.username || u?.nickname || `用户 #${i.userId}`,
+          status: i.expireAt > now ? 'active' : 'expired',
+          userName: u?.username || `user-${i.userId}`,
+          userNickname: u?.nickname || u?.username || `用户 #${i.userId}`,
+          userEmail: u?.email || '',
         };
       }),
       total,
+      { total: allTotal, active: activeTotal, expired: allTotal - activeTotal },
     ];
   }
 

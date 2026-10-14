@@ -180,6 +180,27 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shad
 .plan-card header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .plan-card h3 { margin: 0; }
 .plan-card .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.member-admin-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+.member-admin-summary article { position: relative; overflow: hidden; padding: 20px; border: 1px solid #e5d7af; border-radius: 17px; background: linear-gradient(145deg, #2a2418, #10100e); box-shadow: 0 12px 30px rgba(36,28,12,.12); color: #f4d881; }
+.member-admin-summary article::after { position: absolute; right: -18px; bottom: -28px; width: 85px; height: 85px; border: 1px solid rgba(245,216,129,.18); border-radius: 50%; content: ""; }
+.member-admin-summary span, .member-admin-summary small { display: block; color: #c9ae62; font-size: 11px; }
+.member-admin-summary strong { display: block; margin: 6px 0 4px; color: #fff3c4; font-size: 30px; }
+.member-admin-summary article.is-active { background: linear-gradient(145deg, #2e2919, #17140d); }
+.member-admin-summary article.is-expired { border-color: #e4dfe0; background: linear-gradient(145deg, #5f5658, #292426); }
+.member-admin-summary article.is-expired span, .member-admin-summary article.is-expired small { color: #d8cccf; }
+.member-management-panel { margin-bottom: 24px; }
+.create-member-card { margin: 0 0 17px; border: 1px dashed #d7bc73; border-radius: 13px; background: #fffcf3; }
+.create-member-card summary { padding: 13px 15px; color: #80611a; font-size: 13px; font-weight: 800; cursor: pointer; }
+.create-member-card form { padding: 4px 15px 16px; }
+.button-gold { background: linear-gradient(145deg, #d3a63d, #8e6818); color: #fff; }
+.member-table { min-width: 980px; }
+.member-table td { vertical-align: middle; }
+.admin-member-no { display: flex; align-items: center; gap: 8px; width: max-content; margin-bottom: 5px; padding: 7px 10px; border: 1px solid #cda74c; border-radius: 11px; background: linear-gradient(145deg, #2c2517, #0d0c0a); color: #f5d982; box-shadow: 0 5px 12px rgba(42,31,9,.14); }
+.admin-member-no i { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 8px; background: #e4bd5a; color: #1e180b; font-size: 10px; font-style: normal; }
+.admin-member-no strong { font-size: 12px; letter-spacing: .07em; }
+.member-inline-input { min-width: 132px; min-height: 35px; padding: 7px 9px; font-size: 12px; }
+.member-table-note { margin: 12px 2px 0; color: var(--muted); font-size: 11px; }
+.member-plan-heading { margin-top: 8px; }
 .email-admin-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 16px; margin-bottom: 16px; }
 .email-admin-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr); gap: 16px; align-items: start; }
 .email-campaign-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -248,5 +269,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shad
   .compact-config { align-items: stretch; flex-wrap: wrap; }
   .compact-config .mini-toggle { margin-left: 0; }
   .email-admin-stats, .email-campaign-form { grid-template-columns: 1fr; }
+  .member-admin-summary { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) { .login-card { padding: 28px 22px; } .stats-grid { grid-template-columns: 1fr; } .stat-card { padding: 18px; } .panel { padding: 16px; } .plan-card .form-grid { grid-template-columns: 1fr; } }

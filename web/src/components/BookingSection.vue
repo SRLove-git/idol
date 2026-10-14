@@ -432,17 +432,23 @@ watch(() => state.lang, buildDates)
         <img src="/photos/booking-title.png" alt="Booking" class="title-icon">
       </h2>
       <p class="booking-success-condition">{{ t('booking_success_condition') }}</p>
-      <div v-if="state.bookingEnabled" class="booking-test-notice" role="alert">
+      <div v-if="!state.bookingStatusLoaded" class="booking-status-loading" role="status" aria-live="polite">
+        <span>{{ t('booking_loading') }}</span>
+        <div class="booking-status-loading-card" aria-hidden="true">
+          <i></i><i></i><i></i>
+        </div>
+      </div>
+      <div v-else-if="state.bookingEnabled" class="booking-test-notice" role="alert">
         <strong>{{ t('booking_test_notice_title') }}</strong>
         <span>{{ t('booking_test_notice_desc') }}</span>
       </div>
-      <div v-if="!state.bookingEnabled" class="booking-closed-card" role="status">
+      <div v-else class="booking-closed-card" role="status">
         <span>{{ t('booking_test_notice') }}</span>
         <h3>{{ t('booking_closed_title') }}</h3>
         <p>{{ t('booking_closed_desc') }}</p>
         <a class="btn btn-secondary" href="/">{{ t('highlights_back_home') }}</a>
       </div>
-      <div v-else-if="!success" class="booking-app">
+      <div v-if="state.bookingStatusLoaded && state.bookingEnabled && !success" class="booking-app">
         <div class="booking-header">
           <div class="studio-mini-card">
             <img :src="logo" alt="Studio" class="studio-thumb">
@@ -570,6 +576,7 @@ watch(() => state.lang, buildDates)
             <span class="booking-member-icon">{{ memberActive ? '★' : '✓' }}</span>
             <div>
               <strong>{{ membershipLabel }}</strong>
+              <b v-if="memberActive" class="booking-member-number">{{ state.lang === 'zh' ? '会员编号' : 'MEMBER ID' }} · {{ membership.memberNo }}</b>
               <small>{{ memberActive ? (state.lang === 'zh' ? '本次预约将自动使用会员价，后台会显示会员标记。' : 'Member pricing will be applied and staff will see your member badge.') : (state.lang === 'zh' ? '开通会员后可享会员价。' : 'Activate membership to receive member pricing.') }}</small>
             </div>
           </div>

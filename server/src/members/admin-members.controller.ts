@@ -38,8 +38,9 @@ export class AdminMembersController {
   @Get() memberships(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('keyword') keyword?: string,
+    @Query('status') status?: string,
   ) {
-    return this.members.listMemberships(page, keyword?.trim());
+    return this.members.listMemberships(page, keyword?.trim(), status);
   }
   @Post()
   @Audit('membership.create', 'membership')

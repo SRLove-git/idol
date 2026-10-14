@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
         </a>
         <span class="page-kicker">{{ t('highlights_page_kicker') }}</span>
         <h1>{{ t('highlights_page_title') }}</h1>
-        <p>{{ t('highlights_page_desc') }}</p>
+        <p class="highlights-page-desc">{{ t('highlights_page_desc') }}</p>
       </div>
     </section>
 
