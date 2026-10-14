@@ -7,6 +7,7 @@
     --box-shadow: 0 4px 15px rgba(255, 133, 161, 0.1);
     --btn-active: #ff85a1;
     --btn-inactive: #f8f8f8;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 * {
@@ -4539,54 +4540,83 @@ footer.site-footer {
     letter-spacing: .12em;
 }
 
-.member-state-badge {
+.member-light-sign {
     position: relative;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 205px;
-    padding: 14px 17px;
-    overflow: hidden;
-    border: 1px solid #d8ae50;
-    border-radius: 20px;
-    background: radial-gradient(circle at 90% 0, rgba(255, 221, 123, .17), transparent 34%), linear-gradient(145deg, #302817, #0b0a08 66%);
-    box-shadow: 0 14px 30px rgba(42, 31, 9, .22), inset 0 1px rgba(255,255,255,.14);
-    color: #efd078;
+    isolation: isolate;
+    width: min(100%, 720px);
+    margin: 22px auto 0;
+    filter: drop-shadow(0 16px 18px rgba(126, 78, 61, .18));
+    transform: translateZ(0);
+    transition: transform 220ms var(--ease-out), filter 220ms ease;
 }
 
-.member-state-badge::before,
-.member-state-badge::after {
+.member-light-sign img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.member-light-sign::after {
     position: absolute;
-    top: -9px;
-    width: 25px;
-    height: 25px;
-    border: 1px solid #d8ae50;
-    border-radius: 8px 16px 8px 16px;
-    background: #16120b;
-    content: "";
-    transform: rotate(45deg);
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .82) 50%, transparent 65%);
+    content: '';
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-72%);
+    transition: transform 280ms var(--ease-out), opacity 160ms ease;
+    -webkit-mask: url('/photos/member-light-sign-v7.png') center / contain no-repeat;
+    mask: url('/photos/member-light-sign-v7.png') center / contain no-repeat;
 }
 
-.member-state-badge::before { left: 16px; }
-.member-state-badge::after { right: 16px; }
-
-.member-state-badge > span {
-    display: grid;
-    width: 42px;
-    height: 42px;
-    flex: 0 0 42px;
-    place-items: center;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #ffe7a0, #b87c1d);
-    color: #1d1609;
-    font-size: 21px;
-    letter-spacing: 0;
+.member-light-sign strong {
+    position: absolute;
+    left: 50%;
+    bottom: 29.5%;
+    z-index: 1;
+    color: #ffe8a4;
+    font-size: clamp(14px, 2vw, 22px);
+    font-weight: 900;
+    letter-spacing: .16em;
+    text-shadow: 0 0 5px rgba(255, 232, 164, .9), 0 0 12px rgba(244, 166, 161, .42);
+    transform: translateX(-50%);
+    transition: color 180ms ease, text-shadow 180ms ease, transform 180ms var(--ease-out);
+    white-space: nowrap;
 }
 
-.member-state-badge div { display: grid; gap: 1px; }
-.member-state-badge small { color: #bd9947; font-size: 8px; font-weight: 900; letter-spacing: .18em; }
-.member-state-badge strong { color: #fff1bd; font-size: 14px; letter-spacing: .08em; }
-.member-state-badge em { color: #d6b65f; font-size: 10px; font-style: normal; font-weight: 800; letter-spacing: .1em; }
+@media (hover: hover) and (pointer: fine) {
+    .member-light-sign:hover {
+        filter: drop-shadow(0 20px 24px rgba(126, 78, 61, .22)) drop-shadow(0 0 10px rgba(244, 166, 161, .24));
+        transform: translateY(-3px) scale(1.008);
+    }
+
+    .member-light-sign:hover::after {
+        opacity: .82;
+        transform: translateX(72%);
+    }
+
+    .member-light-sign:hover strong {
+        color: #fff4c8;
+        text-shadow: 0 0 6px rgba(255, 244, 200, 1), 0 0 16px rgba(244, 166, 161, .58);
+        transform: translateX(-50%) scale(1.025);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .member-light-sign,
+    .member-light-sign strong {
+        transition-duration: 120ms;
+    }
+
+    .member-light-sign::after {
+        display: none;
+    }
+
+    .member-light-sign:hover {
+        transform: none;
+    }
+}
 
 .active-member-benefits {
     display: flex;
@@ -5252,10 +5282,7 @@ footer.site-footer {
         flex-direction: column;
     }
 
-    .member-state-badge {
-        width: 100%;
-        min-width: 0;
-    }
+    .member-light-sign { margin-top: 18px; }
 
     .member-state-mark {
         display: none;

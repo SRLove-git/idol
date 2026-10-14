@@ -81,7 +81,9 @@ services:
       # 测试期可展示预约页，但拦截所有新预约提交。
       BOOKING_SUBMISSION_ENABLED: ${BOOKING_SUBMISSION_ENABLED:-false}
       DB_MIGRATIONS_RUN: "true"
-      TRUST_PROXY: "false"
+      # API 由 Caddy -> frontend -> backend 两层代理转发；后端需读取透传的真实访客 IP，
+      # 否则所有用户会共用 frontend 容器 IP 的认证限流配额。
+      TRUST_PROXY: "true"
       UPLOAD_DIR: /app/uploads
       UPLOAD_PROVIDER: local
       # 审核演示种子：自动创建 reviewdemo 账号 + IDOL BEADS 门店（幂等）

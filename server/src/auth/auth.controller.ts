@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { BotGuard } from '../common/bot.guard';
 import { requestFingerprint } from '../common/security.util';
@@ -116,6 +116,7 @@ export class AuthController {
 
   /** 当前登录用户 */
   @Get('me')
+  @SkipThrottle({ auth: true })
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: AuthUser) {
     return this.users.findSafeById(user.id);

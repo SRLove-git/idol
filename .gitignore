@@ -15,6 +15,13 @@ public/photos/*
 !public/photos/banner-floor-1.png
 !public/photos/banner-floor-2.png
 !public/photos/hero-studio.jpg
+!public/photos/member-light-sign-v1.png
+!public/photos/member-light-sign-v2.png
+!public/photos/member-light-sign-v3.png
+!public/photos/member-light-sign-v4.png
+!public/photos/member-light-sign-v5.png
+!public/photos/member-light-sign-v6.png
+!public/photos/member-light-sign-v7.png
 
 # 密钥 / 本地环境（绝不提交；模板用 *.env.example）
 .env

@@ -28,8 +28,29 @@ const MIME = {
 
 const SPA_ROUTES = new Set(["/", "/booking", "/highlights", "/login", "/register", "/forgot-password", "/account"]);
 
-async function callBackend(pathname, { method = "GET", token, body } = {}) {
+function forwardedHeaders(req) {
+  const incoming = Array.isArray(req.headers["x-forwarded-for"])
+    ? req.headers["x-forwarded-for"].join(", ")
+    : req.headers["x-forwarded-for"];
+  const remoteAddress = req.socket.remoteAddress;
+  const forwardedFor = [incoming, remoteAddress].filter(Boolean).join(", ");
+  const forwardedProto = req.headers["x-forwarded-proto"] || (req.socket.encrypted ? "https" : "http");
   const headers = {};
+  if (forwardedFor) headers["x-forwarded-for"] = forwardedFor;
+  if (forwardedProto) headers["x-forwarded-proto"] = forwardedProto;
+  if (req.headers.host) headers["x-forwarded-host"] = req.headers.host;
+  return headers;
+}
+
+function isSecureRequest(req) {
+  const proto = Array.isArray(req.headers["x-forwarded-proto"])
+    ? req.headers["x-forwarded-proto"][0]
+    : req.headers["x-forwarded-proto"];
+  return req.socket.encrypted || proto?.split(",")[0].trim().toLowerCase() === "https";
+}
+
+async function callBackend(pathname, { method = "GET", token, body, request } = {}) {
+  const headers = request ? forwardedHeaders(request) : {};
   if (token) headers.authorization = `Bearer ${token}`;
   if (body !== undefined) headers["content-type"] = "application/json";
   const response = await fetch(`${BACKEND}/api${pathname}`, {
@@ -49,7 +70,7 @@ async function callBackend(pathname, { method = "GET", token, body } = {}) {
 
 /** 透传 multipart 上传与后端静态资源，不对二进制内容做 JSON 转换。 */
 async function proxyRaw(req, res, target, token) {
-  const headers = {};
+  const headers = forwardedHeaders(req);
   if (req.headers["content-type"]) headers["content-type"] = req.headers["content-type"];
   if (token) headers.authorization = `Bearer ${token}`;
   const options = { method: req.method, headers };
@@ -88,17 +109,19 @@ function tokenFrom(req) {
   return parseCookies(req)[TOKEN_COOKIE] || null;
 }
 
-function setToken(res, token) {
+function setToken(req, res, token) {
+  const secure = isSecureRequest(req) ? "; Secure" : "";
   res.setHeader(
     "Set-Cookie",
-    `${TOKEN_COOKIE}=${encodeURIComponent(token)}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`,
+    `${TOKEN_COOKIE}=${encodeURIComponent(token)}; HttpOnly${secure}; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`,
   );
 }
 
-function clearToken(res) {
+function clearToken(req, res) {
+  const secure = isSecureRequest(req) ? "; Secure" : "";
   res.setHeader(
     "Set-Cookie",
-    `${TOKEN_COOKIE}=; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=0`,
+    `${TOKEN_COOKIE}=; HttpOnly${secure}; Path=/; SameSite=Lax; Max-Age=0`,
   );
 }
 
@@ -197,6 +220,7 @@ const server = http.createServer(async (req, res) => {
       const body = await parseBody(req);
       const result = await callBackend("/auth/login", {
         method: "POST",
+        request: req,
         body: {
           account: body.account,
           password: body.password,
@@ -206,7 +230,7 @@ const server = http.createServer(async (req, res) => {
         },
       });
       if (result.status === 200 || result.status === 201) {
-        setToken(res, result.data.accessToken);
+        setToken(req, res, result.data.accessToken);
         if (req.headers["content-type"]?.includes("application/json")) {
           sendJson(res, 200, { userId: result.data.userId });
         } else {
@@ -226,6 +250,7 @@ const server = http.createServer(async (req, res) => {
       const body = await parseBody(req);
       const result = await callBackend("/auth/register", {
         method: "POST",
+        request: req,
         body: {
           username: body.username,
           email: body.email,
@@ -234,7 +259,7 @@ const server = http.createServer(async (req, res) => {
         },
       });
       if (result.status === 200 || result.status === 201) {
-        setToken(res, result.data.accessToken);
+        setToken(req, res, result.data.accessToken);
         if (req.headers["content-type"]?.includes("application/json")) {
           sendJson(res, 200, { userId: result.data.userId });
         } else {
@@ -247,7 +272,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "POST" || req.method === "GET") && pathname === "/auth/logout") {
-      clearToken(res);
+      clearToken(req, res);
       if (req.method === "POST") sendJson(res, 200, { loggedOut: true });
       else redirect(res, "/");
       return;
@@ -261,7 +286,7 @@ const server = http.createServer(async (req, res) => {
       }
       let body;
       if (req.method !== "GET" && req.method !== "HEAD") body = await parseBody(req);
-      const result = await callBackend(apiPath, { method: req.method, token, body });
+      const result = await callBackend(apiPath, { method: req.method, token, body, request: req });
       sendJson(res, result.status, result.data);
       return;
     }

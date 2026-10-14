@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { getCurrentUser } from '../auth-session.js'
 import { state, t } from '../store.js'
 
 const loading = ref(true)
@@ -93,13 +94,9 @@ async function purchaseMembership(plan) {
 
 async function loadAccount() {
   try {
-    const meResponse = await fetch('/api/auth/me')
-    // 未登录、登录态过期或认证接口被限流时都进入游客查询模式，
-    // 避免把认证响应直接显示成“账号信息加载失败”。
-    if (!meResponse.ok) {
-      return
-    }
-    user.value = await meResponse.json()
+    user.value = await getCurrentUser()
+    // 只有明确未登录或登录态过期时进入游客查询模式。
+    if (!user.value) return
 
     const [appointmentResponse] = await Promise.all([
       fetch('/api/appointments?page=1&pageSize=50'),
@@ -237,11 +234,12 @@ onMounted(loadAccount)
                 <p v-if="membershipActive">{{ t('member_number') }} {{ membership.memberNo }} · {{ t('member_valid_until') }} {{ formatMemberDate(membership.expireAt) }}</p>
                 <p v-else>{{ t('member_intro') }}</p>
               </div>
-              <div v-if="membershipActive" class="member-state-badge">
-                <span>✦</span>
-                <div><small>IDOL BEADS</small><strong>VIP MEMBER</strong><em>{{ membership.memberNo }}</em></div>
-              </div>
-              <div v-else class="member-state-mark">MEMBER</div>
+              <div v-if="!membershipActive" class="member-state-mark">MEMBER</div>
+            </div>
+
+            <div v-if="membershipActive" class="member-light-sign" aria-label="会员灯牌">
+              <img :src="'/photos/member-light-sign-v7.png'" alt="马卡龙黑金配色的标准圆角 IDOL BEADS VIP MEMBER 会员标识">
+              <strong>{{ membership.memberNo }}</strong>
             </div>
 
             <div v-if="membershipActive" class="active-member-benefits">

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { getCurrentUser } from '../auth-session.js'
 import { defaultSiteMedia, siteMedia, state, t } from '../store.js'
 
 const menuOpen = ref(false)
@@ -9,8 +10,7 @@ const logo = computed(() => siteMedia('logo', defaultSiteMedia.logo))
 
 onMounted(async () => {
   try {
-    const meResponse = await fetch('/api/auth/me')
-    loggedIn.value = meResponse.ok
+    loggedIn.value = Boolean(await getCurrentUser())
     if (loggedIn.value) {
       const memberResponse = await fetch('/api/members/me')
       if (memberResponse.ok) memberActive.value = (await memberResponse.json()).status === 'active'
