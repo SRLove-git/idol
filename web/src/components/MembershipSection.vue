@@ -1,5 +1,6 @@
 <script setup>
 import { t } from '../store.js'
+import MemberLightSign from './MemberLightSign.vue'
 
 const rules = ['member_rule_1', 'member_rule_2', 'member_rule_3']
 </script>
@@ -12,6 +13,7 @@ const rules = ['member_rule_1', 'member_rule_2', 'member_rule_3']
           <span>{{ t('member_title') }}</span>
           <img src="/photos/member-icon-5.png" alt="" class="membership-title-icon">
         </h2>
+        <MemberLightSign class="membership-home-sign" member-no="IDOL MEMBER" />
         <div class="membership-items">
           <div v-for="(rule, i) in rules" :key="rule" class="membership-item">
             <div class="membership-icon">

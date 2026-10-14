@@ -4496,6 +4496,11 @@ footer.site-footer {
     filter: drop-shadow(0 10px 12px rgba(126, 78, 61, .16));
 }
 
+.member-light-sign.membership-home-sign {
+    width: min(100%, 680px);
+    margin: 12px auto 40px;
+}
+
 .member-light-sign.is-compact strong {
     font-size: clamp(8px, 1vw, 11px);
     letter-spacing: .12em;
