@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { getCurrentUser } from '../auth-session.js'
 import { state, t } from '../store.js'
+import MemberLightSign from './MemberLightSign.vue'
 
 const loading = ref(true)
 const errorMessage = ref('')
@@ -214,10 +215,7 @@ onMounted(loadAccount)
           <h2>{{ user.nickname || user.username }}</h2>
           <p>@{{ user.username }}</p>
           <a :href="`mailto:${user.email}`">{{ user.email }}</a>
-          <div v-if="membershipActive" class="profile-member-badge" aria-label="会员标牌">
-            <span class="profile-member-badge-icon">★</span>
-            <span><strong>{{ localizedMemberName(membership.levelName) }}</strong><small>{{ membership.memberNo }}</small></span>
-          </div>
+          <MemberLightSign v-if="membershipActive" :member-no="membership.memberNo" compact />
           <span v-else class="profile-member-pill">{{ t('account_standard_user') }}</span>
           <div class="profile-actions">
             <a v-if="state.bookingEnabled" class="btn btn-primary" href="/booking">{{ t('account_book_again') }}</a>
@@ -237,10 +235,7 @@ onMounted(loadAccount)
               <div v-if="!membershipActive" class="member-state-mark">MEMBER</div>
             </div>
 
-            <div v-if="membershipActive" class="member-light-sign" aria-label="会员灯牌">
-              <img :src="'/photos/member-light-sign-v7.png'" alt="马卡龙黑金配色的标准圆角 IDOL BEADS VIP MEMBER 会员标识">
-              <strong>{{ membership.memberNo }}</strong>
-            </div>
+            <MemberLightSign v-if="membershipActive" :member-no="membership.memberNo" />
 
             <div v-if="membershipActive" class="active-member-benefits">
               <span>✓ {{ t('member_benefit_price') }}</span>
