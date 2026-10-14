@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { defaultSiteMedia, siteMedia, state, t, addMinutes, loadStore, fetchAvailability, createAppointment } from '../store.js'
+import MemberLightSign from './MemberLightSign.vue'
 
 defineProps({
   standalone: { type: Boolean, default: false }
@@ -572,12 +573,18 @@ watch(() => state.lang, buildDates)
         </div>
 
         <div class="booking-body booking-details">
-          <div v-if="accountUser" class="booking-member-notice" :class="{ 'is-active': memberActive }">
-            <span class="booking-member-icon">{{ memberActive ? '★' : '✓' }}</span>
+          <div v-if="accountUser && memberActive" class="booking-member-card">
+            <MemberLightSign :member-no="membership.memberNo" />
+            <div class="booking-member-card-copy">
+              <strong>{{ membershipLabel }}</strong>
+              <small>{{ state.lang === 'zh' ? '本次预约将自动使用会员价，后台会显示会员标记。' : 'Member pricing will be applied and staff will see your member badge.' }}</small>
+            </div>
+          </div>
+          <div v-else-if="accountUser" class="booking-member-notice">
+            <span class="booking-member-icon">✓</span>
             <div>
               <strong>{{ membershipLabel }}</strong>
-              <b v-if="memberActive" class="booking-member-number">{{ state.lang === 'zh' ? '会员编号' : 'MEMBER ID' }} · {{ membership.memberNo }}</b>
-              <small>{{ memberActive ? (state.lang === 'zh' ? '本次预约将自动使用会员价，后台会显示会员标记。' : 'Member pricing will be applied and staff will see your member badge.') : (state.lang === 'zh' ? '开通会员后可享会员价。' : 'Activate membership to receive member pricing.') }}</small>
+              <small>{{ state.lang === 'zh' ? '开通会员后可享会员价。' : 'Activate membership to receive member pricing.' }}</small>
             </div>
           </div>
           <div class="section-label personal-info-label"><span class="icon">👤</span> <span>{{ t('label_personal_info') }}</span></div>

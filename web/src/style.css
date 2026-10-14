@@ -4786,15 +4786,37 @@ footer.site-footer {
     color: #65736b;
 }
 
-.booking-member-notice.is-active {
-    align-items: center;
-    min-height: 92px;
-    padding: 17px 19px;
+.booking-member-card {
+    margin-bottom: 18px;
+    padding: 14px;
     overflow: hidden;
-    border-color: #d5ab49;
-    background: radial-gradient(circle at 92% 0, rgba(255, 222, 127, .16), transparent 30%), linear-gradient(145deg, #302817, #0c0b09 68%);
-    box-shadow: 0 14px 30px rgba(42, 31, 9, .18), inset 0 1px rgba(255,255,255,.13);
-    color: #f2d477;
+    border: 1px solid rgba(216, 161, 43, .42);
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(255, 252, 234, .96), rgba(255, 247, 215, .72));
+    box-shadow: 0 14px 34px rgba(91, 65, 10, .1);
+}
+
+.booking-member-card .member-light-sign {
+    width: min(100%, 540px);
+    margin: 0 auto;
+}
+
+.booking-member-card-copy {
+    display: grid;
+    gap: 4px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.booking-member-card-copy strong {
+    color: #6d5111;
+    font-size: 14px;
+}
+
+.booking-member-card-copy small {
+    color: #8d7847;
+    font-size: 11px;
+    line-height: 1.5;
 }
 
 .booking-member-icon {
@@ -4809,18 +4831,6 @@ footer.site-footer {
     font-weight: 900;
 }
 
-.booking-member-notice.is-active .booking-member-icon {
-    width: 48px;
-    height: 48px;
-    flex-basis: 48px;
-    border: 1px solid #ffe29a;
-    border-radius: 16px;
-    background: linear-gradient(145deg, #ffe59a, #b97f1f);
-    box-shadow: inset 0 1px #fff3c2;
-    color: #1b1509;
-    font-size: 20px;
-}
-
 .booking-member-notice div {
     display: grid;
     gap: 3px;
@@ -4830,23 +4840,10 @@ footer.site-footer {
     font-size: 13px;
 }
 
-.booking-member-notice.is-active strong {
-    color: #fff0b6;
-    font-size: 16px;
-}
-
-.booking-member-number {
-    color: #d8b75d;
-    font-size: 11px;
-    letter-spacing: .08em;
-}
-
 .booking-member-notice small {
     font-size: 11px;
     line-height: 1.5;
 }
-
-.booking-member-notice.is-active small { color: #cbb775; }
 
 .profile-actions {
     display: grid;
