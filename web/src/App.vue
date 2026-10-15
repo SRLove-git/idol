@@ -47,7 +47,7 @@ onMounted(() => loadStore())
       <div class="container">
         <span class="page-kicker">{{ !state.bookingStatusLoaded || state.bookingEnabled ? 'BOOK YOUR SESSION' : 'OPENING SOON' }}</span>
         <h1>{{ !state.bookingStatusLoaded || state.bookingEnabled ? t('booking_page_title') : t('booking_closed_title') }}</h1>
-        <p>{{ !state.bookingStatusLoaded || state.bookingEnabled ? t('booking_page_desc') : t('booking_closed_desc') }}</p>
+        <p>{{ t(!state.bookingStatusLoaded ? 'booking_page_desc' : !state.bookingEnabled ? 'booking_closed_desc' : state.bookingAccepting ? 'booking_page_desc' : 'booking_page_preview_desc') }}</p>
       </div>
     </section>
     <BookingSection :standalone="true" />

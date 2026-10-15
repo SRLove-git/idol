@@ -220,9 +220,7 @@ async function refreshAvailability() {
   } catch {
     if (requestId === availabilityRequestId) {
       availability.value = []
-      availabilityError.value = state.lang === 'zh'
-        ? '桌位状态加载失败，请稍后重试'
-        : 'Could not load seat availability. Please try again.'
+      availabilityError.value = t('booking_availability_error')
     }
   } finally {
     if (requestId === availabilityRequestId) {
@@ -432,18 +430,18 @@ watch(() => state.lang, buildDates)
         <span>{{ t('booking_title') }}</span>
         <img src="/photos/booking-title.png" alt="Booking" class="title-icon">
       </h2>
-      <p class="booking-success-condition">{{ t('booking_success_condition') }}</p>
+      <p v-if="state.bookingStatusLoaded && state.bookingEnabled" class="booking-success-condition">{{ t(state.bookingAccepting ? 'booking_success_condition' : 'booking_page_preview_desc') }}</p>
       <div v-if="!state.bookingStatusLoaded" class="booking-status-loading" role="status" aria-live="polite">
         <span>{{ t('booking_loading') }}</span>
         <div class="booking-status-loading-card" aria-hidden="true">
           <i></i><i></i><i></i>
         </div>
       </div>
-      <div v-else-if="state.bookingEnabled" class="booking-test-notice" role="alert">
+      <div v-else-if="state.bookingEnabled && !state.bookingAccepting" class="booking-test-notice" role="alert">
         <strong>{{ t('booking_test_notice_title') }}</strong>
         <span>{{ t('booking_test_notice_desc') }}</span>
       </div>
-      <div v-else class="booking-closed-card" role="status">
+      <div v-else-if="!state.bookingEnabled" class="booking-closed-card" role="status">
         <span>{{ t('booking_test_notice') }}</span>
         <h3>{{ t('booking_closed_title') }}</h3>
         <p>{{ t('booking_closed_desc') }}</p>
@@ -577,14 +575,14 @@ watch(() => state.lang, buildDates)
             <MemberLightSign :member-no="membership.memberNo" />
             <div class="booking-member-card-copy">
               <strong>{{ membershipLabel }}</strong>
-              <small>{{ state.lang === 'zh' ? '本次预约将自动使用会员价，后台会显示会员标记。' : 'Member pricing will be applied and staff will see your member badge.' }}</small>
+              <small>{{ t('booking_member_price_note') }}</small>
             </div>
           </div>
           <div v-else-if="accountUser" class="booking-member-notice">
             <span class="booking-member-icon">✓</span>
             <div>
               <strong>{{ membershipLabel }}</strong>
-              <small>{{ state.lang === 'zh' ? '开通会员后可享会员价。' : 'Activate membership to receive member pricing.' }}</small>
+              <small>{{ t('booking_membership_invite') }}</small>
             </div>
           </div>
           <div class="section-label personal-info-label"><span class="icon">👤</span> <span>{{ t('label_personal_info') }}</span></div>
