@@ -1,4 +1,5 @@
 import { reactive, watch } from 'vue'
+import { siteImage } from './site-images.js'
 
 const savedLanguage = typeof window !== 'undefined' ? window.localStorage.getItem('idol-language') : null
 
@@ -616,7 +617,11 @@ export function t(key) {
 
 export function siteMedia(key, fallback = null) {
   const value = state.store?.siteContent?.media?.[key]
-  return value == null || value === '' ? fallback : value
+  const media = value == null || value === '' ? fallback : value
+  if (['logo', 'heroBackground', 'banners', 'featuredHighlights'].includes(key)) {
+    return Array.isArray(media) ? media.map(siteImage) : siteImage(media)
+  }
+  return media
 }
 
 export function siteLink(key, fallback = '') {

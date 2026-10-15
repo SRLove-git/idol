@@ -4605,8 +4605,8 @@ footer.site-footer {
     pointer-events: none;
     transform: translateX(-72%);
     transition: transform 280ms var(--ease-out), opacity 160ms ease;
-    -webkit-mask: url('/photos/member-light-sign-v7.png') center / contain no-repeat;
-    mask: url('/photos/member-light-sign-v7.png') center / contain no-repeat;
+    -webkit-mask: var(--member-sign-image) center / contain no-repeat;
+    mask: var(--member-sign-image) center / contain no-repeat;
 }
 
 .member-light-sign strong {

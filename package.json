@@ -6,6 +6,7 @@
   "description": "拼豆系统「预约订座 / 拼豆预约」前端克隆",
   "scripts": {
     "dev": "node server.mjs",
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "test:static": "node --test server-static.test.mjs"
   }
 }

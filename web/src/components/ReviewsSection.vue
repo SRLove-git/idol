@@ -1,12 +1,13 @@
 <script setup>
 import { computed } from 'vue'
 import { defaultReviews, state, t } from '../store.js'
+import { siteImage } from '../site-images.js'
 
 const reviews = computed(() => {
   const configured = state.store?.siteContent?.reviews
   const source = Array.isArray(configured) && configured.length ? configured : defaultReviews
   return source.map((item) => ({
-    image: item.image,
+    image: siteImage(item.image),
     alt: state.lang === 'zh' ? item.altZh : item.altEn,
     quote: state.lang === 'zh' ? item.quoteZh : item.quoteEn
   }))

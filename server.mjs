@@ -174,15 +174,38 @@ function resolveFile(pathname) {
   }
 }
 
-function serveFile(res, filePath) {
+function serveFile(req, res, filePath) {
   const ext = path.extname(filePath);
-  const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
-  if (filePath.endsWith("index.html")) {
-    headers["Cache-Control"] = "no-cache";
-  } else if (/\.[a-f0-9]{8}\.(css|js)$/i.test(filePath)) {
+  const stat = fs.statSync(filePath);
+  const etag = `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
+  const relativePath = path.relative(PUBLIC, filePath).split(path.sep).join('/');
+  const headers = {
+    "Content-Type": MIME[ext] || "application/octet-stream",
+    "Cache-Control": "no-cache",
+    "ETag": etag,
+    "Last-Modified": stat.mtime.toUTCString(),
+  };
+  if (/^assets\/[^/]+-[\w-]{8,}\.(css|js)$/.test(relativePath)
+      || /^photos\/optimized\/[^/]+-[a-f0-9]{12}\.webp$/.test(relativePath)) {
     headers["Cache-Control"] = "public, max-age=31536000, immutable";
+  } else if (/\.(png|jpe?g|webp|gif|svg|ico|woff2?)$/i.test(filePath)) {
+    headers["Cache-Control"] = "public, max-age=3600";
   }
+  const ifNoneMatch = req.headers['if-none-match'];
+  const unchanged = ifNoneMatch
+    ? ifNoneMatch.split(',').some((value) => value.trim() === '*' || value.trim().replace(/^W\//, '') === etag.replace(/^W\//, ''))
+    : req.headers['if-modified-since'] && Math.floor(stat.mtimeMs / 1000) <= Date.parse(req.headers['if-modified-since']) / 1000;
+  if ((req.method === 'GET' || req.method === 'HEAD') && unchanged) {
+    res.writeHead(304, headers);
+    res.end();
+    return;
+  }
+  headers['Content-Length'] = stat.size;
   res.writeHead(200, headers);
+  if (req.method === 'HEAD') {
+    res.end();
+    return;
+  }
   fs.createReadStream(filePath).pipe(res);
 }
 
@@ -299,12 +322,12 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/admin") pathname = "/admin/index.html";
     const filePath = resolveFile(pathname);
     if (filePath) {
-      serveFile(res, filePath);
+      serveFile(req, res, filePath);
       return;
     }
 
     if (SPA_ROUTES.has(pathname)) {
-      serveFile(res, path.join(PUBLIC, "index.html"));
+      serveFile(req, res, path.join(PUBLIC, "index.html"));
       return;
     }
 
