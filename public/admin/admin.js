@@ -730,10 +730,19 @@ function memberDateValue(value) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+function adminMemberLightSign(memberNo) {
+  const safeMemberNo = esc(memberNo)
+  return `<span class="admin-member-light-sign" aria-label="会员编号 ${safeMemberNo}">
+    <img src="/photos/member-light-sign-v7.png" alt="">
+    <span class="admin-member-light-chase" aria-hidden="true"><i class="is-top"></i><i class="is-right"></i><i class="is-bottom"></i><i class="is-left"></i></span>
+    <strong>${safeMemberNo}</strong>
+  </span>`
+}
+
 function memberManagementRow(item) {
   const active = item.status === 'active'
   return `<tr data-member-row="${item.id}">
-    <td><span class="admin-member-no"><i>★</i><strong>${esc(item.memberNo)}</strong></span><small>用户 ID #${item.userId}</small></td>
+    <td>${adminMemberLightSign(item.memberNo)}<small>用户 ID #${item.userId}</small></td>
     <td><strong>${esc(item.userNickname || item.userName || `用户 #${item.userId}`)}</strong><br><small>@${esc(item.userName || '—')} · ${esc(item.userEmail || '—')}</small></td>
     <td><span class="status ${active ? 'status-active' : 'status-expired'}">${active ? '有效' : '已到期'}</span></td>
     <td><input class="member-inline-input" name="levelName" value="${esc(item.levelName)}" maxlength="30" aria-label="会员等级"></td>
