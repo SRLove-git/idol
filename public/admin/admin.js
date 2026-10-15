@@ -20,7 +20,7 @@ const CONTENT_DEFAULTS = {
     feat1_title: '专业烫印', feat1_desc: '店内使用全自动烫画机和手持烫画机，提供 30 多种特殊烫。工作人员会帮你完成最后的烫步骤，尽力做好作品。', feat2_title: '免费工具', feat2_desc: '店内工具齐全，全尺寸双九华长钉板，配备弯/直头镊子、多规格道豆铲、立豆盘、挖豆勺。还有市面上有口皆碑的单针、双针（60 针、70 针、80 针、陶瓷针），以及生煎包自动下豆笔。', feat3_title: 'DIY 成品', feat3_desc: '成品可做钥匙扣、冰箱贴、卡包、护照夹、扇子，并提供轴承、支架等配件。', feat4_title: '小红书集赞赢会员', feat4_desc: '在小红书发布本店作品、体验或探店内容，带上话题 #IDOL Beads #新加坡拼豆 并 @IDOL Beads。集满 30/60/100 及以上赞，分别赠送 1/2/3 个月会员资格。仅限本店顾客、公开笔记，每个账号每月限参与 1 次，集赞达标后截图给店员核对，活动最终解释权归本店所有。',
     highlights_title: '拼豆精选', highlights_page_title: '拼豆作品集', highlights_page_desc: '从萌趣小物到人气角色，在这里找到你的下一个拼豆灵感。', highlights_book_title: '找到想做的款式了吗？', highlights_book_desc: '到店挑选图纸和颜色，亲手完成你的专属作品。', highlights_book_button: '预约拼豆体验',
     pricing_title: '价位表', pricing_card_title: '价位表 · Pricing', pricing_note_title: '备注 · Note', pricing_note_membership: '会员 Membership: $19.90 SGD/月 (month)，$149 SGD/年 (year)。', pricing_note_benefits: '会员福利 Member benefits: 每件作品可获赠 1 份 DIY 饰品，不限作品数量；到店消费享 8 折优惠。', pricing_note_group: '多人同行 Group rate: 两人及以上同行，非会员按多人同行价；同行里有会员，该会员按会员价计算。', pricing_note_weekend: '周末及节假日 Weekends & public holidays: 所有价格加收 10% 服务费。',
-    booking_title: '预约体验', booking_closed_title: '预约暂未开放', booking_closed_desc: '门店正在筹备中，线上预约开放后我们会第一时间更新。感谢你的理解与耐心等待。', studio_location: '牛车水解压手工好去处 · 适合放空与朋友小聚', footer_hours_note: '全年无休，公共假期正常营业'
+    booking_title: '预约体验', booking_closed_title: '预约暂未开放', booking_closed_desc: '门店正在筹备中，线上预约开放后我们会第一时间更新。感谢你的理解与耐心等待。', studio_location: 'IDOL BEADS，与快乐同行', footer_hours_note: '全年无休，公共假期正常营业'
   },
   en: {
     hero_desc: 'Perler Bead Workshop', hero_slogan: 'IDOL BEADS, joy every step of the way', cta_booking: 'Book Now', cta_pricing: 'View Pricing',
@@ -28,7 +28,7 @@ const CONTENT_DEFAULTS = {
     feat1_title: 'Professional Ironing', feat1_desc: 'We use both automatic and handheld heat presses, with over 30 special ironing finishes available. Our team will complete the final ironing steps and do their best to finish your creation beautifully.', feat2_title: 'Free Tools', feat2_desc: 'Our complete tool selection includes full-size Shuangjiuhua long-peg boards, angled and straight tweezers, bead scoops in multiple sizes, upright bead trays and bead spoons. Popular tools include single-needle and dual-needle pens (60, 70, 80 and ceramic needles), plus Shengjianbao automatic bead dispensers.', feat3_title: 'DIY Finished Pieces', feat3_desc: 'Turn your creation into a keyring, fridge magnet, card holder, passport holder or fan, with bearings, stands and other accessories also available.', feat4_title: 'RedNote Likes for Membership', feat4_desc: 'Post your creation, studio experience or store visit on RedNote with #IDOL Beads, #SingaporePerlerBeads and @IDOL Beads. Earn 30, 60, or 100+ likes to receive 1, 2, or 3 months of membership. Open to IDOL Beads customers with public posts; one redemption per account each month. Show a screenshot to our team once your likes reach the target. Final interpretation of the promotion rests with the studio.',
     highlights_title: 'Perler Bead Highlights', highlights_page_title: 'Bead Creations Gallery', highlights_page_desc: 'From adorable miniatures to beloved characters, find inspiration for your next bead creation.', highlights_book_title: 'Found something you would love to make?', highlights_book_desc: 'Choose your pattern and colors in store, then bring your own creation to life.', highlights_book_button: 'Book a Beading Session',
     pricing_title: 'Pricing', pricing_card_title: 'Pricing', pricing_note_title: 'Notes', pricing_note_membership: 'Membership: S$19.90/month or S$149/year.', pricing_note_benefits: 'Member benefits: One free DIY accessory with every piece, plus 20% off in-store purchases.', pricing_note_group: 'Group rate: For 2 or more guests, non-members pay the group rate and members pay the member rate.', pricing_note_weekend: 'Weekends & public holidays: A 10% service charge applies to all prices.',
-    booking_title: 'Book a Session', booking_closed_title: 'Online Booking Coming Soon', booking_closed_desc: 'We are getting the studio ready. Online booking will open soon—thank you for your patience.', studio_location: 'A relaxing Chinatown craft spot · Perfect for unwinding and meeting friends', footer_hours_note: 'Open daily, including public holidays'
+    booking_title: 'Book a Session', booking_closed_title: 'Online Booking Coming Soon', booking_closed_desc: 'We are getting the studio ready. Online booking will open soon—thank you for your patience.', studio_location: 'IDOL BEADS, joy every step of the way', footer_hours_note: 'Open daily, including public holidays'
   }
 }
 
@@ -733,7 +733,7 @@ function memberDateValue(value) {
 function adminMemberLightSign(memberNo) {
   const safeMemberNo = esc(memberNo)
   return `<span class="admin-member-light-sign" aria-label="会员编号 ${safeMemberNo}">
-    <img src="/photos/member-light-sign-v7.png" alt="">
+    <img src="/photos/member-light-sign-v8.png" alt="">
     <span class="admin-member-light-chase" aria-hidden="true"><i class="is-top"></i><i class="is-right"></i><i class="is-bottom"></i><i class="is-left"></i></span>
     <strong>${safeMemberNo}</strong>
   </span>`

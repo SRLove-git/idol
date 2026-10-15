@@ -573,10 +573,6 @@ watch(() => state.lang, buildDates)
         <div class="booking-body booking-details">
           <div v-if="accountUser && memberActive" class="booking-member-card">
             <MemberLightSign :member-no="membership.memberNo" />
-            <div class="booking-member-card-copy">
-              <strong>{{ membershipLabel }}</strong>
-              <small>{{ t('booking_member_price_note') }}</small>
-            </div>
           </div>
           <div v-else-if="accountUser" class="booking-member-notice">
             <span class="booking-member-icon">✓</span>
@@ -666,8 +662,6 @@ watch(() => state.lang, buildDates)
             <div><dt>{{ t('booking_review_time') }}</dt><dd>{{ selectedTimeLabel }}</dd></div>
             <div><dt>{{ t('booking_review_duration') }}</dt><dd>{{ selectedDurationLabel }}</dd></div>
             <div><dt>{{ t('booking_review_people') }}</dt><dd>{{ selected.people }} {{ t(selected.people === 1 ? 'unit_person_one' : 'unit_person') }}</dd></div>
-            <div class="is-important"><dt>{{ t('booking_review_tables') }}</dt><dd>{{ t('booking_table_auto') }}</dd></div>
-            <div v-if="accountUser"><dt>{{ state.lang === 'zh' ? '会员身份' : 'Membership' }}</dt><dd>{{ membershipLabel }}</dd></div>
             <div><dt>{{ t('booking_review_contact') }}</dt><dd>{{ form.name.trim() }} · {{ formattedPhone }}<br>{{ form.email.trim().toLowerCase() }}</dd></div>
             <div v-if="form.source"><dt>{{ t('booking_review_source') }}</dt><dd>{{ selectedSourceLabel }}</dd></div>
             <div v-if="form.marketingEmailConsent"><dt>{{ t('booking_review_marketing') }}</dt><dd>{{ t('booking_review_marketing_yes') }}</dd></div>
@@ -685,7 +679,7 @@ watch(() => state.lang, buildDates)
 
       <div v-if="state.bookingEnabled && success" class="success-message">
         <h3>{{ t('success_title') }}</h3>
-        <p>{{ t('success_desc') }}</p>
+        <p v-if="t('success_desc')">{{ t('success_desc') }}</p>
         <div v-if="bookingResult?.code" class="booking-code">
           <span>{{ t('booking_code_label') }}</span>
           <strong>{{ bookingResult.code }}</strong>
@@ -697,7 +691,7 @@ watch(() => state.lang, buildDates)
       </div>
       <div v-if="successNotice" class="booking-success-toast" role="status" aria-live="polite">
         <span>✓</span>
-        <div><strong>{{ t('success_title') }}</strong><small>{{ t('success_desc') }}</small></div>
+        <div><strong>{{ t('success_title') }}</strong><small v-if="t('success_desc')">{{ t('success_desc') }}</small></div>
       </div>
       <div v-if="state.bookingEnabled && errorMsg" class="error-message">
         <h3>{{ t('error_title') }}</h3>

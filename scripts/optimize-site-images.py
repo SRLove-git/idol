@@ -16,7 +16,7 @@ sources = {
     'idol-logo.png': 192,
     'banner-studio-brand-1.jpg': 1600,
     'banner-studio-brand-2.jpg': 1600,
-    'member-light-sign-v7.png': 1600,
+    'member-light-sign-v8.png': 1600,
     'xhs-studio.jpg': 720,
     'xhs-character-wall.jpg': 720,
     'xhs-display-wall.jpg': 720,

@@ -1,7 +1,7 @@
 <script setup>
 import { siteImage } from '../site-images.js'
 
-const signImage = siteImage('/photos/member-light-sign-v7.png')
+const signImage = siteImage('/photos/member-light-sign-v8.png')
 
 defineProps({
   memberNo: { type: String, required: true },

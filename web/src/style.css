@@ -1912,6 +1912,13 @@ th {
     margin: 20px auto;
 }
 
+.success-message h3 {
+    margin: 0;
+    color: #4d4247;
+    font-size: clamp(24px, 3vw, 32px);
+    line-height: 1.45;
+}
+
 /* Footer */
 footer {
     background: white;
@@ -4849,24 +4856,6 @@ footer.site-footer {
 .booking-member-card .member-light-sign {
     width: min(100%, 540px);
     margin: 0 auto;
-}
-
-.booking-member-card-copy {
-    display: grid;
-    gap: 4px;
-    margin-top: 10px;
-    text-align: center;
-}
-
-.booking-member-card-copy strong {
-    color: #6d5111;
-    font-size: 14px;
-}
-
-.booking-member-card-copy small {
-    color: #8d7847;
-    font-size: 11px;
-    line-height: 1.5;
 }
 
 .booking-member-icon {
