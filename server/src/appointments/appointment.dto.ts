@@ -12,6 +12,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 /** 管理员拒绝或取消预约时填写的通知原因。 */
 export class AdminCancelAppointmentDto {
@@ -97,6 +98,7 @@ export class CreateAppointmentDto {
   note?: string;
 
   /** 顾客最初认识品牌的渠道（可选）。 */
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsOptional()
   @IsIn(['xiaohongshu', 'instagram', 'google', 'friend', 'other'], {
     message: '请选择有效的了解渠道',

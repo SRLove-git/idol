@@ -384,10 +384,10 @@ async function submit() {
       payMethod: 'wechat',
       guestName: form.name.trim(),
       guestEmail: form.email.trim().toLowerCase(),
-      acquisitionSource: form.source,
       marketingEmailConsent: form.marketingEmailConsent,
       note: [form.notes, `电话 ${formattedPhone.value}`].filter(Boolean).join(' | ')
     }
+    if (form.source) dto.acquisitionSource = form.source
     if (bookingType === 'hourly') {
       dto.startTime = selected.startTime
       dto.durationHours = durationHours
