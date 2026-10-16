@@ -4540,8 +4540,11 @@ footer.site-footer {
 .member-light-sign {
     position: relative;
     isolation: isolate;
+    aspect-ratio: 4.08 / 1;
+    overflow: hidden;
     width: min(100%, 720px);
     margin: 22px auto 0;
+    border-radius: 8% / 30%;
     filter: drop-shadow(0 16px 18px rgba(126, 78, 61, .18));
     transform: translateZ(0);
     transition: transform 220ms var(--ease-out), filter 220ms ease;
@@ -4564,9 +4567,13 @@ footer.site-footer {
 }
 
 .member-light-sign img {
+    position: absolute;
+    top: -25%;
+    left: -2.3%;
     display: block;
-    width: 100%;
+    width: 104.7%;
     height: auto;
+    max-width: none;
 }
 
 .member-light-chase {
@@ -4594,8 +4601,8 @@ footer.site-footer {
 }
 
 .member-light-chase .is-top {
-    top: 14.5%;
-    left: 8%;
+    top: 1.7%;
+    left: 4%;
     animation: member-light-chase-top 6.4s linear infinite;
 }
 
@@ -4607,20 +4614,20 @@ footer.site-footer {
 }
 
 .member-light-chase .is-right {
-    top: 20%;
-    right: 2.8%;
+    top: 5%;
+    right: .7%;
     animation: member-light-chase-right 6.4s linear infinite;
 }
 
 .member-light-chase .is-bottom {
-    right: 8%;
-    bottom: 14.5%;
+    right: 4%;
+    bottom: 1.7%;
     animation: member-light-chase-bottom 6.4s linear infinite;
 }
 
 .member-light-chase .is-left {
-    bottom: 20%;
-    left: 2.8%;
+    bottom: 5%;
+    left: .7%;
     animation: member-light-chase-left 6.4s linear infinite;
 }
 
@@ -4662,15 +4669,21 @@ footer.site-footer {
     pointer-events: none;
     transform: translateX(-72%);
     transition: transform 280ms var(--ease-out), opacity 160ms ease;
-    -webkit-mask: var(--member-sign-image) center / contain no-repeat;
-    mask: var(--member-sign-image) center / contain no-repeat;
+    border-radius: inherit;
 }
 
 .member-light-sign strong {
     position: absolute;
     left: 62%;
-    top: 67.5%;
+    top: 75%;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 31%;
+    height: 14%;
+    border-radius: 999px;
+    background: #151515;
     color: #ffe8a4;
     font-size: clamp(14px, 2vw, 22px);
     font-weight: 900;
@@ -4847,10 +4860,10 @@ footer.site-footer {
     margin-bottom: 18px;
     padding: 14px;
     overflow: hidden;
-    border: 1px solid rgba(216, 161, 43, .42);
+    border: 1px solid rgba(234, 214, 220, .78);
     border-radius: 18px;
-    background: linear-gradient(145deg, rgba(255, 252, 234, .96), rgba(255, 247, 215, .72));
-    box-shadow: 0 14px 34px rgba(91, 65, 10, .1);
+    background: linear-gradient(145deg, rgba(255, 255, 255, .96), rgba(255, 247, 250, .74));
+    box-shadow: 0 14px 34px rgba(126, 78, 61, .07), inset 0 1px 0 rgba(255, 255, 255, .9);
 }
 
 .booking-member-card .member-light-sign {
