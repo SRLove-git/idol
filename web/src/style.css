@@ -4487,6 +4487,7 @@ footer.site-footer {
 }
 
 .member-center-card {
+    position: relative;
     padding: 28px;
     overflow: hidden;
     border: 1px solid #f1e4e8;
@@ -4496,8 +4497,23 @@ footer.site-footer {
 }
 
 .member-center-card.is-active {
-    border-color: #efd98e;
-    background: linear-gradient(145deg, #fffdf3, #fff4cb);
+    border-color: rgba(231, 205, 151, .72);
+    background:
+        radial-gradient(circle at 100% 0, rgba(255, 225, 181, .26), transparent 36%),
+        linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(255, 248, 244, .94));
+    box-shadow: 0 18px 46px rgba(94, 59, 69, .08), inset 0 1px 0 rgba(255, 255, 255, .92);
+}
+
+.member-center-card.is-active::after {
+    position: absolute;
+    top: -76px;
+    right: -70px;
+    width: 190px;
+    height: 190px;
+    border: 1px solid rgba(225, 190, 119, .18);
+    border-radius: 50%;
+    content: '';
+    pointer-events: none;
 }
 
 .member-center-head {
@@ -4525,6 +4541,11 @@ footer.site-footer {
     color: #88777c;
     font-size: 13px;
     line-height: 1.6;
+}
+
+.member-center-card > .member-light-sign {
+    width: min(88%, 600px);
+    margin-top: 28px;
 }
 
 .member-state-mark {
