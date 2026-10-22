@@ -24,6 +24,7 @@ public/photos/*
 !public/photos/member-light-sign-v7.png
 !public/photos/member-light-sign-v8.png
 !public/photos/member-light-sign-v9.jpg
+!public/photos/member-light-sign-v10.jpg
 
 # 密钥 / 本地环境（绝不提交；模板用 *.env.example）
 .env

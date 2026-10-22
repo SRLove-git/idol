@@ -733,7 +733,7 @@ function memberDateValue(value) {
 function adminMemberLightSign(memberNo) {
   const safeMemberNo = esc(memberNo)
   return `<span class="admin-member-light-sign" aria-label="会员编号 ${safeMemberNo}">
-    <img src="/photos/member-light-sign-v9.jpg" alt="">
+    <img src="https://thinkorigin.oss-ap-southeast-1.aliyuncs.com/site/idol-beads/member-light-sign-v10-38ae2b3b1871.webp" alt="">
     <span class="admin-member-light-chase" aria-hidden="true"><i class="is-top"></i><i class="is-right"></i><i class="is-bottom"></i><i class="is-left"></i></span>
     <strong>${safeMemberNo}</strong>
   </span>`

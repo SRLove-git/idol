@@ -195,9 +195,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shad
 .button-gold { background: linear-gradient(145deg, #d3a63d, #8e6818); color: #fff; }
 .member-table { min-width: 1120px; }
 .member-table td { vertical-align: middle; }
-.admin-member-light-sign { position: relative; isolation: isolate; display: block; overflow: hidden; width: 270px; aspect-ratio: 4.08/1; margin-bottom: 7px; border-radius: 8%/30%; filter: drop-shadow(0 8px 9px rgba(94,62,15,.18)); transform: translateZ(0); }
-.admin-member-light-sign img { position: absolute; top: -25%; left: -2.3%; display: block; width: 104.7%; max-width: none; height: auto; }
-.admin-member-light-sign > strong { position: absolute; left: 62%; top: 75%; z-index: 1; display: flex; align-items: center; justify-content: center; width: 31%; height: 14%; border-radius: 999px; background: #151515; color: #ffe8a4; font-size: 10px; font-weight: 900; letter-spacing: .14em; text-shadow: 0 0 4px rgba(255,232,164,.9), 0 0 8px rgba(244,166,161,.4); transform: translate(-50%,-50%); white-space: nowrap; }
+.admin-member-light-sign { position: relative; isolation: isolate; display: block; overflow: hidden; width: 270px; aspect-ratio: 3.925/1; margin-bottom: 7px; border-radius: 8%/30%; filter: drop-shadow(0 8px 9px rgba(94,62,15,.18)); transform: translateZ(0); }
+.admin-member-light-sign img { position: absolute; inset: 0; display: block; width: 100%; max-width: none; height: 100%; object-fit: cover; }
+.admin-member-light-sign > strong { position: absolute; left: 59%; top: 80%; z-index: 1; display: flex; align-items: center; justify-content: center; width: 42%; height: 20%; border-radius: 999px; background: #151515; color: #ffe8a4; font-size: 10px; font-weight: 900; letter-spacing: .14em; text-shadow: 0 0 4px rgba(255,232,164,.9), 0 0 8px rgba(244,166,161,.4); transform: translate(-50%,-50%); white-space: nowrap; }
 .admin-member-light-chase { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
 .admin-member-light-chase i { position: absolute; display: block; border-radius: 999px; background: linear-gradient(90deg,transparent,#ffd45f 26%,#fff8cf 50%,#ffd45f 74%,transparent); box-shadow: 0 0 4px rgba(255,225,121,.9),0 0 9px rgba(255,184,39,.72); opacity: 0; will-change: transform,opacity; }
 .admin-member-light-chase .is-top, .admin-member-light-chase .is-bottom { width: 14%; height: 1.2%; }
