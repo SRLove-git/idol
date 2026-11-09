@@ -1,6 +1,7 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { loadStore, state, t } from './store.js'
+import { initSiteMotion } from './site-motion.js'
 import SiteHeader from './components/SiteHeader.vue'
 import HeroSection from './components/HeroSection.vue'
 import PromoCarousel from './components/PromoCarousel.vue'
@@ -25,7 +26,15 @@ const isRegister = computed(() => route.value === '/register')
 const isPasswordReset = computed(() => route.value === '/forgot-password')
 const isAccount = computed(() => route.value === '/account')
 
-onMounted(() => loadStore())
+let stopSiteMotion = () => {}
+
+onMounted(async () => {
+  loadStore()
+  await nextTick()
+  stopSiteMotion = initSiteMotion()
+})
+
+onBeforeUnmount(() => stopSiteMotion())
 </script>
 
 <template>

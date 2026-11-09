@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { defaultSiteMedia, siteMedia, state, t, addMinutes, loadStore, fetchAvailability, createAppointment } from '../store.js'
 import MemberLightSign from './MemberLightSign.vue'
 
@@ -35,6 +35,9 @@ const membership = ref(null)
 const success = ref(false)
 const bookingResult = ref(null)
 const errorMsg = ref('')
+const mobileStep = ref(1)
+const mobileStepDirection = ref('forward')
+const bookingAppRef = ref(null)
 let availabilityRequestId = 0
 const logo = computed(() => siteMedia('logo', defaultSiteMedia.logo))
 const BOOKING_WINDOW_DAYS = 14
@@ -57,6 +60,16 @@ const sourceOptions = computed(() => [
 ])
 const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
+function businessHoursForDate(date) {
+  if (!date) return state.store?.businessHours || '10:00-20:00'
+  const [year, month, day] = date.split('-').map(Number)
+  const weekday = new Date(year, month - 1, day).getDay()
+  if (weekday === 0 || weekday === 6) {
+    return state.store?.weekendBusinessHours || state.store?.businessHours || '10:00-21:00'
+  }
+  return state.store?.businessHours || '10:00-20:00'
+}
+
 const storeTables = computed(() =>
   [...(state.store?.tables || [])]
     .filter((table) => table.enabled !== false)
@@ -65,7 +78,7 @@ const storeTables = computed(() =>
 
 const bookingWindow = computed(() => {
   if (!selected.date) return null
-  const [open = '10:00', close = '21:00'] = (state.store?.businessHours || '10:00-21:00').split('-')
+  const [open = '10:00', close = '20:00'] = businessHoursForDate(selected.date).split('-')
   if (selected.bookingType === 'all_day') return { startTime: open, endTime: close }
   if (!selected.startTime) return null
   return {
@@ -78,7 +91,7 @@ const totalTableCapacity = computed(() =>
   storeTables.value.reduce((total, table) => total + Number(table.capacity || 0), 0)
 )
 const maxDurationHours = computed(() => {
-  const [open = '10:00', close = '21:00'] = (state.store?.businessHours || '10:00-21:00').split('-')
+  const [open = '10:00', close = '20:00'] = businessHoursForDate(selected.date).split('-')
   const toMinutes = (value) => {
     const [h, m] = value.split(':').map(Number)
     return h * 60 + m
@@ -133,6 +146,11 @@ const formattedPhone = computed(() => form.phone.trim())
 const selectedSourceLabel = computed(() =>
   sourceOptions.value.find((item) => item.value === form.source)?.label || ''
 )
+const scheduleComplete = computed(() => {
+  if (!selected.date || availabilityLoading.value || availabilityError.value) return false
+  if (selected.bookingType !== 'all_day' && !selected.startTime) return false
+  return windowHasCapacity(bookingWindow.value)
+})
 
 async function loadAccountMembership() {
   try {
@@ -179,7 +197,7 @@ function buildTimeSlots() {
     selected.startTime = ''
     return
   }
-  const [open = '10:00', close = '21:00'] = (state.store?.businessHours || '10:00-21:00').split('-')
+  const [open = '10:00', close = '20:00'] = businessHoursForDate(selected.date).split('-')
   const toMinutes = (value) => {
     const [h, m] = value.split(':').map(Number)
     return h * 60 + m
@@ -306,16 +324,8 @@ function windowHasCapacity(window) {
     .reduce((total, table) => total + Number(table.capacity || 0), 0) >= selected.people
 }
 
-function validateBooking() {
+function validateSchedule() {
   validationMsg.value = ''
-  if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
-    validationMsg.value = t('booking_validation_personal')
-    return false
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) {
-    validationMsg.value = t('booking_validation_email')
-    return false
-  }
   if (selected.bookingType !== 'all_day' && !selected.startTime) {
     validationMsg.value = t('booking_validation_time')
     return false
@@ -326,6 +336,44 @@ function validateBooking() {
     return false
   }
   return true
+}
+
+function validateBooking() {
+  if (!validateSchedule()) return false
+  if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
+    validationMsg.value = t('booking_validation_personal')
+    return false
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) {
+    validationMsg.value = t('booking_validation_email')
+    return false
+  }
+  return true
+}
+
+function scrollBookingIntoView() {
+  nextTick(() => {
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    bookingAppRef.value?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  })
+}
+
+function goToMobileStep(step) {
+  if (step === 2 && !validateSchedule()) return
+  if (step === 3 && !validateBooking()) return
+  validationMsg.value = ''
+  mobileStepDirection.value = step >= mobileStep.value ? 'forward' : 'back'
+  mobileStep.value = step
+  scrollBookingIntoView()
+}
+
+function reviewMobileBooking() {
+  errorMsg.value = ''
+  if (!state.bookingAccepting) {
+    submissionBlocked.value = true
+    return
+  }
+  goToMobileStep(3)
 }
 
 function reviewBooking() {
@@ -367,7 +415,7 @@ async function submit() {
 
     const avail = await fetchAvailability(selected.date)
     availability.value = Array.isArray(avail) ? avail : (avail.items || [])
-    const hours = (store?.businessHours || '10:00-21:00').split('-')
+    const hours = businessHoursForDate(selected.date).split('-')
     const startTime = bookingType === 'all_day' ? hours[0] : selected.startTime
     const endTime = bookingType === 'all_day' ? hours[1] : addMinutes(selected.startTime, durationHours * 60)
 
@@ -447,7 +495,12 @@ watch(() => state.lang, buildDates)
         <p>{{ t('booking_closed_desc') }}</p>
         <a class="btn btn-secondary" href="/">{{ t('highlights_back_home') }}</a>
       </div>
-      <div v-if="state.bookingStatusLoaded && state.bookingEnabled && !success" class="booking-app">
+      <div
+        v-if="state.bookingStatusLoaded && state.bookingEnabled && !success"
+        ref="bookingAppRef"
+        class="booking-app"
+        :class="[`mobile-step-${mobileStep}`, `mobile-step-${mobileStepDirection}`]"
+      >
         <div class="booking-header">
           <div class="studio-mini-card">
             <img :src="logo" alt="Studio" class="studio-thumb">
@@ -456,6 +509,30 @@ watch(() => state.lang, buildDates)
               <p>{{ t('studio_location') }}</p>
             </div>
           </div>
+        </div>
+
+        <nav class="mobile-booking-flow" :aria-label="t('booking_mobile_progress')">
+          <button
+            v-for="step in 3"
+            :key="step"
+            type="button"
+            :class="{ active: mobileStep === step, done: mobileStep > step }"
+            :aria-current="mobileStep === step ? 'step' : undefined"
+            @click="step < mobileStep ? goToMobileStep(step) : null"
+          >
+            <span>{{ mobileStep > step ? '✓' : step }}</span>
+            <small>{{ t(`booking_mobile_step_${step}`) }}</small>
+          </button>
+        </nav>
+
+        <div v-if="mobileStep > 1" class="mobile-booking-summary">
+          <div>
+            <span>{{ selected.date }}</span>
+            <span>{{ selectedDurationLabel }}</span>
+            <span>{{ selected.people }} {{ t(selected.people === 1 ? 'unit_person_one' : 'unit_person') }}</span>
+            <span>{{ selectedTimeLabel }}</span>
+          </div>
+          <button type="button" @click="goToMobileStep(1)">{{ t('booking_mobile_edit') }}</button>
         </div>
 
         <div class="booking-body booking-schedule">
@@ -568,6 +645,15 @@ watch(() => state.lang, buildDates)
             <strong>{{ t('booking_table_auto') }}</strong>
             <small>{{ t('booking_pending_email_tip') }}</small>
           </div>
+          <div class="mobile-booking-actions">
+            <p v-if="validationMsg" class="booking-validation-error" role="alert">{{ validationMsg }}</p>
+            <button
+              type="button"
+              class="btn btn-submit"
+              :disabled="!scheduleComplete"
+              @click="goToMobileStep(2)"
+            >{{ t('booking_mobile_next_contact') }}</button>
+          </div>
         </div>
 
         <div class="booking-body booking-details">
@@ -611,9 +697,41 @@ watch(() => state.lang, buildDates)
           </div>
         </div>
 
+        <div class="mobile-booking-review">
+          <span class="booking-confirm-kicker">BOOKING REVIEW</span>
+          <h3>{{ t('booking_review_title') }}</h3>
+          <p class="booking-confirm-tip">{{ t('booking_review_tip') }}</p>
+          <dl class="booking-confirm-list">
+            <div><dt>{{ t('booking_review_date') }}</dt><dd>{{ selected.date }}</dd></div>
+            <div><dt>{{ t('booking_review_time') }}</dt><dd>{{ selectedTimeLabel }}</dd></div>
+            <div><dt>{{ t('booking_review_duration') }}</dt><dd>{{ selectedDurationLabel }}</dd></div>
+            <div><dt>{{ t('booking_review_people') }}</dt><dd>{{ selected.people }} {{ t(selected.people === 1 ? 'unit_person_one' : 'unit_person') }}</dd></div>
+            <div><dt>{{ t('booking_review_contact') }}</dt><dd>{{ form.name.trim() }} · {{ formattedPhone }}<br>{{ form.email.trim().toLowerCase() }}</dd></div>
+            <div v-if="form.source"><dt>{{ t('booking_review_source') }}</dt><dd>{{ selectedSourceLabel }}</dd></div>
+            <div v-if="form.marketingEmailConsent"><dt>{{ t('booking_review_marketing') }}</dt><dd>{{ t('booking_review_marketing_yes') }}</dd></div>
+          </dl>
+          <p v-if="validationMsg" class="booking-validation-error" role="alert">{{ validationMsg }}</p>
+          <div class="booking-confirm-actions">
+            <button type="button" class="btn btn-secondary" :disabled="submitting" @click="goToMobileStep(2)">
+              {{ t('booking_review_cancel') }}
+            </button>
+            <button type="button" class="btn btn-primary" :disabled="submitting" @click="submit">
+              {{ submitting ? t('btn_submitting') : t('booking_review_submit') }}
+            </button>
+          </div>
+        </div>
+
         <div class="booking-footer">
           <p v-if="validationMsg" class="booking-validation-error" role="alert">{{ validationMsg }}</p>
-          <button type="button" class="btn btn-submit" :disabled="submitting" @click="reviewBooking">
+          <div class="mobile-booking-footer-actions">
+            <button type="button" class="btn btn-secondary mobile-booking-back" @click="goToMobileStep(1)">
+              {{ t('booking_review_cancel') }}
+            </button>
+            <button type="button" class="btn btn-submit mobile-booking-review-button" :disabled="submitting" @click="reviewMobileBooking">
+              {{ t('btn_review_booking') }}
+            </button>
+          </div>
+          <button type="button" class="btn btn-submit desktop-booking-review" :disabled="submitting" @click="reviewBooking">
             {{ t('btn_review_booking') }}
           </button>
         </div>

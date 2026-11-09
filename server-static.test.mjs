@@ -12,8 +12,10 @@ test('static responses cache versioned assets and revalidate mutable files', asy
   t.after(() => rm(root, { recursive: true, force: true }));
   await copyFile(new URL('./server.mjs', import.meta.url), path.join(root, 'server.mjs'));
   const fixtures = {
-    'index.html': '<main>Home</main>',
+    'index.html': '<head><meta name="x-seo-boundary" content="start"><title>Template</title><meta name="x-seo-boundary" content="end"></head><main>Home</main>',
     'admin/index.html': '<main>Admin</main>',
+    'robots.txt': 'User-agent: *\nSitemap: https://idol-sg.com/sitemap.xml\n',
+    'sitemap.xml': '<?xml version="1.0"?><urlset><url><loc>https://idol-sg.com/</loc></url></urlset>',
     'assets/index-BdXpwnM6.js': 'console.log("versioned")',
     'assets/index-DUEJV2kl.css': 'body{margin:0}',
     'admin/admin.js': 'console.log("mutable")',
@@ -57,6 +59,32 @@ test('static responses cache versioned assets and revalidate mutable files', asy
       assert.equal(response.headers.get('cache-control'), 'no-cache');
       await response.arrayBuffer();
     }
+  });
+  await t.test('public routes receive unique indexable SEO and private routes are noindex', async () => {
+    const home = await get('/');
+    const homeHtml = await home.text();
+    assert.match(homeHtml, /IDOL BEADS 新加坡拼豆工作室/);
+    assert.match(homeHtml, /rel="canonical" href="https:\/\/idol-sg\.com\/"/);
+    assert.match(homeHtml, /application\/ld\+json/);
+    assert.match(homeHtml, /"closes":"20:00"/);
+    assert.match(homeHtml, /"closes":"21:00"/);
+
+    const booking = await get('/booking');
+    const bookingHtml = await booking.text();
+    assert.match(bookingHtml, /预约拼豆体验 \| IDOL BEADS Singapore/);
+    assert.match(bookingHtml, /href="https:\/\/idol-sg\.com\/booking"/);
+
+    const account = await get('/account');
+    assert.equal(account.headers.get('x-robots-tag'), 'noindex, nofollow');
+    assert.match(await account.text(), /name="robots" content="noindex, nofollow"/);
+  });
+  await t.test('crawler discovery files are served', async () => {
+    const robots = await get('/robots.txt');
+    assert.match(robots.headers.get('content-type'), /^text\/plain/);
+    assert.match(await robots.text(), /Sitemap: https:\/\/idol-sg\.com\/sitemap\.xml/);
+    const sitemap = await get('/sitemap.xml');
+    assert.match(sitemap.headers.get('content-type'), /^application\/xml/);
+    assert.match(await sitemap.text(), /<loc>https:\/\/idol-sg\.com\/<\/loc>/);
   });
   await t.test('image validators return 304 and changed content returns a new body', async () => {
     const original = await get('/photos/hero.jpg');

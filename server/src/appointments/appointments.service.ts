@@ -267,12 +267,22 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     return new Date(`${appt.date}T${appt.endTime}:00`);
   }
 
-  /** 解析营业时间 "09:00-21:00" → {start, end}，解析失败回退 09:00-22:00 */
-  private businessHoursRange(store: Store): { start: string; end: string } {
-    const m = (store.businessHours || '').match(
+  /** 按日期解析营业时间；周六、周日使用周末时段。 */
+  private businessHoursRange(
+    store: Store,
+    date?: string,
+  ): { start: string; end: string } {
+    const weekday = date
+      ? new Date(`${date}T00:00:00Z`).getUTCDay()
+      : new Date().getDay();
+    const configured =
+      weekday === 0 || weekday === 6
+        ? store.weekendBusinessHours || store.businessHours
+        : store.businessHours;
+    const m = (configured || '').match(
       /((?:[01]\d|2[0-3]):[0-5]\d)\s*-\s*((?:[01]\d|2[0-3]):[0-5]\d)/,
     );
-    return m ? { start: m[1], end: m[2] } : { start: '09:00', end: '22:00' };
+    return m ? { start: m[1], end: m[2] } : { start: '10:00', end: '20:00' };
   }
 
   private minutes(time: string): number {
@@ -558,7 +568,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
 
     // 预约方式：按小时（1 小时起）/ 套餐 / 全天不限时
     const bookingType = dto.bookingType ?? 'hourly';
-    const range = this.businessHoursRange(store);
+    const range = this.businessHoursRange(store, dto.date);
     const openMin = this.minutes(range.start);
     const closeMin = Math.min(this.minutes(range.end), 24 * 60 - 1);
 
@@ -1639,7 +1649,7 @@ export class AppointmentsService implements OnModuleInit, OnModuleDestroy {
     const date = this.todayStr();
     const nowMin = now.getHours() * 60 + now.getMinutes();
     const startTime = this.formatMinutes(nowMin);
-    const range = this.businessHoursRange(store);
+    const range = this.businessHoursRange(store, date);
     const closeMin = Math.min(this.minutes(range.end), 24 * 60 - 1);
     const bookingType = dto.bookingType ?? 'hourly';
 

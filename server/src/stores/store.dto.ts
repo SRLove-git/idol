@@ -97,6 +97,11 @@ export class CreateStoreDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(50)
+  weekendBusinessHours?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(20)
   phone?: string;
 

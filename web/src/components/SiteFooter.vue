@@ -56,7 +56,8 @@ const routes = computed(() => [
         <section class="footer-column">
           <h3 class="footer-title">{{ t('footer_hours_title') }}</h3>
           <div class="footer-hours">
-            <p>{{ state.store?.businessHours }}</p>
+            <p>{{ t('footer_weekday_hours') }} · {{ state.store?.businessHours || '10:00-20:00' }}</p>
+            <p>{{ t('footer_weekend_hours') }} · {{ state.store?.weekendBusinessHours || '10:00-21:00' }}</p>
             <p>{{ t('footer_hours_note') }}</p>
           </div>
         </section>

@@ -135,8 +135,13 @@ export class Store {
   @Column({ default: 0 })
   weekendSurchargePercent: number;
 
-  @Column({ length: 50, default: '09:00-21:00' })
+  /** 周一至周五营业时间 */
+  @Column({ length: 50, default: '10:00-20:00' })
   businessHours: string;
+
+  /** 周六、周日营业时间 */
+  @Column({ length: 50, default: '10:00-21:00' })
+  weekendBusinessHours: string;
 
   @Column({ length: 20, default: '' })
   phone: string;

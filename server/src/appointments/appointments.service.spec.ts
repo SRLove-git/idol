@@ -1315,7 +1315,8 @@ describe('AppointmentsService', () => {
       m.stores.findOneBy.mockResolvedValue({
         id: 1,
         name: '门店A',
-        businessHours: '10:00-21:00',
+        businessHours: '10:00-20:00',
+        weekendBusinessHours: '10:00-21:00',
         price: 9.9,
         memberPrice: 8,
         groupPrice: 9,
@@ -1383,6 +1384,33 @@ describe('AppointmentsService', () => {
       // 单人门市 9.9 × 1.1 = 10.89
       expect(result.amount).toBe(10.89);
       expect(result.originalAmount).toBe(10.89);
+    });
+
+    it('工作日 20:00 闭店，不接受跨过闭店时间的预约', async () => {
+      const m = setup({});
+
+      await expect(
+        m.svc.create(7, {
+          ...baseDto,
+          date: nextRegularDate(),
+          startTime: '20:00',
+          durationHours: 1,
+        }),
+      ).rejects.toThrow('预约时段需在营业时间（10:00-20:00）内');
+    });
+
+    it('周末营业至 21:00，允许预约 20:00–21:00', async () => {
+      const m = setup({});
+
+      const result = (await m.svc.create(7, {
+        ...baseDto,
+        date: nextWeekendDate(),
+        startTime: '20:00',
+        durationHours: 1,
+      })) as { startTime: string; endTime: string };
+
+      expect(result.startTime).toBe('20:00');
+      expect(result.endTime).toBe('21:00');
     });
 
     it('套餐：多人按套餐同行价，会员按套餐会员价', async () => {

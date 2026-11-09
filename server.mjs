@@ -9,9 +9,14 @@ const PORT = Number(process.env.PORT) || 4173;
 const HOST = process.env.HOST || "127.0.0.1";
 const BACKEND = process.env.BACKEND_URL || "http://127.0.0.1:3000";
 const TOKEN_COOKIE = "idol_token";
+const SITE_ORIGIN = (process.env.PUBLIC_SITE_URL || "https://idol-sg.com").replace(/\/+$/, "");
+const SEO_IMAGE_PATH = "/photos/banner-studio-brand-1.jpg";
+const SEO_IMAGE = `${SITE_ORIGIN}${SEO_IMAGE_PATH}`;
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
@@ -27,6 +32,149 @@ const MIME = {
 };
 
 const SPA_ROUTES = new Set(["/", "/booking", "/highlights", "/login", "/register", "/forgot-password", "/account"]);
+const SEO_PAGES = {
+  "/": {
+    title: "IDOL BEADS 新加坡拼豆工作室 | Perler Bead Workshop Singapore",
+    description: "IDOL BEADS 是位于新加坡牛车水的 DIY 拼豆工作室。提供丰富图案、专业烫印、免费工具与会员优惠，欢迎一个人放松创作或与朋友一起体验。",
+    ogDescription: "位于新加坡牛车水的 DIY 拼豆工作室，提供丰富图案、专业烫印、免费工具与会员优惠。",
+    pageType: "WebPage",
+    index: true,
+  },
+  "/booking": {
+    title: "预约拼豆体验 | IDOL BEADS Singapore",
+    description: "预约 IDOL BEADS 新加坡牛车水拼豆体验。选择日期、时长和人数，提交联系方式后等待商家邮件确认。",
+    ogDescription: "选择日期、时长和人数，预约 IDOL BEADS 新加坡牛车水拼豆体验。",
+    pageType: "WebPage",
+    index: true,
+  },
+  "/highlights": {
+    title: "拼豆作品与创作灵感 | IDOL BEADS Singapore",
+    description: "浏览 IDOL BEADS 拼豆作品集，从萌趣小物到人气角色，寻找下一次 DIY 拼豆创作灵感。",
+    ogDescription: "浏览 IDOL BEADS 拼豆作品集，寻找下一次 DIY 拼豆创作灵感。",
+    pageType: "CollectionPage",
+    index: true,
+  },
+  "/login": { title: "登录 | IDOL BEADS", description: "登录 IDOL BEADS 账号。", pageType: "WebPage", index: false },
+  "/register": { title: "注册 | IDOL BEADS", description: "创建 IDOL BEADS 账号。", pageType: "WebPage", index: false },
+  "/forgot-password": { title: "找回密码 | IDOL BEADS", description: "重置 IDOL BEADS 账号密码。", pageType: "WebPage", index: false },
+  "/account": { title: "我的账号与预约 | IDOL BEADS", description: "查看 IDOL BEADS 预约与会员信息。", pageType: "WebPage", index: false },
+};
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function structuredData(pathname, seo) {
+  const canonical = `${SITE_ORIGIN}${pathname === "/" ? "/" : pathname}`;
+  const graph = [
+    {
+      "@type": "LocalBusiness",
+      "@id": `${SITE_ORIGIN}/#business`,
+      name: "IDOL BEADS",
+      url: `${SITE_ORIGIN}/`,
+      image: SEO_IMAGE,
+      description: "DIY 拼豆工作室与 Perler bead workshop",
+      priceRange: "$",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "18A Sago Street",
+        postalCode: "059017",
+        addressLocality: "Singapore",
+        addressCountry: "SG",
+      },
+      openingHoursSpecification: [
+        {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          opens: "10:00",
+          closes: "20:00",
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: ["Saturday", "Sunday"],
+          opens: "10:00",
+          closes: "21:00",
+        },
+      ],
+      sameAs: [
+        "https://www.instagram.com/idol_beads",
+        "https://www.xiaohongshu.com/user/profile/650d5c8e00000000120075e5",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_ORIGIN}/#website`,
+      url: `${SITE_ORIGIN}/`,
+      name: "IDOL BEADS",
+      inLanguage: ["zh-CN", "en"],
+    },
+    {
+      "@type": seo.pageType,
+      "@id": `${canonical}#webpage`,
+      url: canonical,
+      name: seo.title,
+      description: seo.description,
+      isPartOf: { "@id": `${SITE_ORIGIN}/#website` },
+      about: { "@id": `${SITE_ORIGIN}/#business` },
+      inLanguage: ["zh-CN", "en"],
+    },
+  ];
+  return JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replaceAll("<", "\\u003c");
+}
+
+function seoHead(pathname, store) {
+  const baseSeo = SEO_PAGES[pathname] || SEO_PAGES["/"];
+  const configuredMeta = pathname === "/" && store?.siteContent?.meta && typeof store.siteContent.meta === "object"
+    ? store.siteContent.meta
+    : null;
+  const seo = {
+    ...baseSeo,
+    title: typeof configuredMeta?.title === "string" && configuredMeta.title.trim()
+      ? configuredMeta.title.trim()
+      : baseSeo.title,
+    description: typeof configuredMeta?.description === "string" && configuredMeta.description.trim()
+      ? configuredMeta.description.trim()
+      : baseSeo.description,
+  };
+  const canonical = `${SITE_ORIGIN}${pathname === "/" ? "/" : pathname}`;
+  const robots = seo.index
+    ? "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    : "noindex, nofollow";
+  const title = escapeHtml(seo.title);
+  const description = escapeHtml(seo.description);
+  const ogDescription = escapeHtml(seo.ogDescription || seo.description);
+  return `  <meta name="x-seo-boundary" content="start">
+  <title>${title}</title>
+  <meta name="description" content="${description}">
+  <meta name="robots" content="${robots}">
+  <link rel="canonical" href="${escapeHtml(canonical)}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IDOL BEADS">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${ogDescription}">
+  <meta property="og:url" content="${escapeHtml(canonical)}">
+  <meta property="og:image" content="${escapeHtml(SEO_IMAGE)}">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1585">
+  <meta property="og:image:height" content="992">
+  <meta property="og:image:alt" content="IDOL BEADS 新加坡牛车水拼豆工作室">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${title}">
+  <meta name="twitter:description" content="${ogDescription}">
+  <meta name="twitter:image" content="${escapeHtml(SEO_IMAGE)}">
+  <script type="application/ld+json" id="seo-structured-data">${structuredData(pathname, seo)}</script>
+  <meta name="x-seo-boundary" content="end">`;
+}
+
+function renderSeoPage(html, pathname, store) {
+  const boundary = /<meta name="x-seo-boundary" content="start">[\s\S]*?<meta name="x-seo-boundary" content="end">/i;
+  return boundary.test(html) ? html.replace(boundary, seoHead(pathname, store)) : html;
+}
 
 function forwardedHeaders(req) {
   const incoming = Array.isArray(req.headers["x-forwarded-for"])
@@ -66,6 +214,23 @@ async function callBackend(pathname, { method = "GET", token, body, request } = 
     data = text;
   }
   return { status: response.status, data };
+}
+
+let seoStoreCache = { expiresAt: 0, value: null };
+
+async function loadSeoStore(request) {
+  if (Date.now() < seoStoreCache.expiresAt) return seoStoreCache.value;
+  try {
+    const result = await callBackend("/stores/1", { request });
+    if (result.status >= 200 && result.status < 300 && result.data && typeof result.data === "object") {
+      seoStoreCache = { expiresAt: Date.now() + 60_000, value: result.data };
+      return result.data;
+    }
+  } catch {
+    // SEO 后台数据不可用时继续使用内置内容，不能阻断官网页面。
+  }
+  seoStoreCache = { expiresAt: Date.now() + 10_000, value: seoStoreCache.value };
+  return seoStoreCache.value;
 }
 
 /** 透传 multipart 上传与后端静态资源，不对二进制内容做 JSON 转换。 */
@@ -185,6 +350,9 @@ function serveFile(req, res, filePath) {
     "ETag": etag,
     "Last-Modified": stat.mtime.toUTCString(),
   };
+  if (relativePath === "admin/index.html" || relativePath === "wechat.html") {
+    headers["X-Robots-Tag"] = "noindex, nofollow";
+  }
   if (/^assets\/[^/]+-[\w-]{8,}\.(css|js)$/.test(relativePath)
       || /^photos\/optimized\/[^/]+-[a-f0-9]{12}\.webp$/.test(relativePath)) {
     headers["Cache-Control"] = "public, max-age=31536000, immutable";
@@ -207,6 +375,23 @@ function serveFile(req, res, filePath) {
     return;
   }
   fs.createReadStream(filePath).pipe(res);
+}
+
+async function serveSpa(req, res, pathname) {
+  const indexPath = path.join(PUBLIC, "index.html");
+  const store = await loadSeoStore(req);
+  const html = renderSeoPage(fs.readFileSync(indexPath, "utf8"), pathname, store);
+  const body = Buffer.from(html);
+  const seo = SEO_PAGES[pathname] || SEO_PAGES["/"];
+  const headers = {
+    "Content-Type": "text/html; charset=utf-8",
+    "Content-Length": body.length,
+    "Cache-Control": "no-cache",
+  };
+  if (!seo.index) headers["X-Robots-Tag"] = "noindex, nofollow";
+  res.writeHead(200, headers);
+  if (req.method === "HEAD") res.end();
+  else res.end(body);
 }
 
 function safeNext(value, fallback = "/account") {
@@ -327,7 +512,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (SPA_ROUTES.has(pathname)) {
-      serveFile(req, res, path.join(PUBLIC, "index.html"));
+      await serveSpa(req, res, pathname);
       return;
     }
 

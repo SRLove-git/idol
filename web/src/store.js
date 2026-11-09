@@ -138,6 +138,12 @@ export const translations = {
     btn_confirm: '确认预约',
     btn_submitting: '提交中...',
     btn_review_booking: '核对一下预约',
+    booking_mobile_progress: '预约进度',
+    booking_mobile_step_1: '选择预约',
+    booking_mobile_step_2: '联系方式',
+    booking_mobile_step_3: '确认提交',
+    booking_mobile_next_contact: '下一步：填写联系方式',
+    booking_mobile_edit: '修改',
     booking_review_title: '再看一眼预约信息',
     booking_review_tip: '请确认预约信息。',
     booking_review_date: '日期',
@@ -185,6 +191,8 @@ export const translations = {
     footer_location_title: '店铺地址',
     footer_social_title: '社交媒体',
     footer_hours_title: '营业时间',
+    footer_weekday_hours: '周一至周五',
+    footer_weekend_hours: '周六至周日',
     footer_hours_note: '全年无休，公共假期正常营业',
     footer_directions_title: '如何找到我们',
     footer_directions_address: '18A Sago Street, Singapore 059017 · 门店位于二楼，请从临街楼梯上楼。',
@@ -433,6 +441,12 @@ export const translations = {
     btn_confirm: 'Confirm',
     btn_submitting: 'Submitting...',
     btn_review_booking: 'Check My Details',
+    booking_mobile_progress: 'Booking progress',
+    booking_mobile_step_1: 'Session',
+    booking_mobile_step_2: 'Contact',
+    booking_mobile_step_3: 'Review',
+    booking_mobile_next_contact: 'Next: Contact Details',
+    booking_mobile_edit: 'Edit',
     booking_review_title: 'One last little check',
     booking_review_tip: 'Please confirm your booking details.',
     booking_review_date: 'Date',
@@ -480,6 +494,8 @@ export const translations = {
     footer_location_title: 'Our Location',
     footer_social_title: 'Social Media',
     footer_hours_title: 'Opening Hours',
+    footer_weekday_hours: 'Monday–Friday',
+    footer_weekend_hours: 'Saturday–Sunday',
     footer_hours_note: 'Open daily, including public holidays',
     footer_directions_title: 'How to Find Us',
     footer_directions_address: '18A Sago Street, Singapore 059017 · We are on level 2; take the street-facing stairs.',
@@ -646,6 +662,45 @@ export function addMinutes(hhmm, mins) {
 
 let storeLoadPromise = null
 
+const routeSeo = {
+  '/': {
+    title: 'IDOL BEADS 新加坡拼豆工作室 | Perler Bead Workshop Singapore',
+    description: 'IDOL BEADS 是位于新加坡牛车水的 DIY 拼豆工作室。提供丰富图案、专业烫印、免费工具与会员优惠，欢迎一个人放松创作或与朋友一起体验。'
+  },
+  '/booking': {
+    title: '预约拼豆体验 | IDOL BEADS Singapore',
+    description: '预约 IDOL BEADS 新加坡牛车水拼豆体验。选择日期、时长和人数，提交联系方式后等待商家邮件确认。'
+  },
+  '/highlights': {
+    title: '拼豆作品与创作灵感 | IDOL BEADS Singapore',
+    description: '浏览 IDOL BEADS 拼豆作品集，从萌趣小物到人气角色，寻找下一次 DIY 拼豆创作灵感。'
+  }
+}
+
+function setMetaContent(selector, content) {
+  const element = document.head.querySelector(selector)
+  if (element && content) element.setAttribute('content', content)
+}
+
+function applyDocumentSeo() {
+  const pathname = window.location.pathname.replace(/\/+$/, '') || '/'
+  const fallback = routeSeo[pathname] || routeSeo['/']
+  const configuredTitle = pathname === '/' ? state.store?.siteContent?.meta?.title?.trim() : ''
+  const configuredDescription = pathname === '/' ? state.store?.siteContent?.meta?.description?.trim() : ''
+  const title = configuredTitle || fallback.title
+  const description = configuredDescription || fallback.description
+  const canonical = `https://idol-sg.com${pathname === '/' ? '/' : pathname}`
+  document.title = title
+  setMetaContent('meta[name="description"]', description)
+  setMetaContent('meta[property="og:title"]', title)
+  setMetaContent('meta[property="og:description"]', description)
+  setMetaContent('meta[property="og:url"]', canonical)
+  setMetaContent('meta[name="twitter:title"]', title)
+  setMetaContent('meta[name="twitter:description"]', description)
+  const canonicalLink = document.head.querySelector('link[rel="canonical"]')
+  if (canonicalLink) canonicalLink.setAttribute('href', canonical)
+}
+
 export function loadStore() {
   if (storeLoadPromise) return storeLoadPromise
   storeLoadPromise = loadStoreData()
@@ -673,20 +728,7 @@ async function loadStoreData() {
   } finally {
     state.bookingStatusLoaded = true
   }
-  if (state.store?.name) {
-    const configuredTitle = state.store.siteContent?.meta?.title
-    document.title = configuredTitle || `${state.store.name} | DIY Bead Workshop`
-    const description = state.store.siteContent?.meta?.description
-    if (description) {
-      let meta = document.querySelector('meta[name="description"]')
-      if (!meta) {
-        meta = document.createElement('meta')
-        meta.name = 'description'
-        document.head.appendChild(meta)
-      }
-      meta.content = description
-    }
-  }
+  applyDocumentSeo()
   return state.store
 }
 

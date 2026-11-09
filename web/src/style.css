@@ -10,6 +10,43 @@
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+.site-motion-reveal {
+    opacity: 0;
+    transform: translateY(12px);
+}
+
+.site-motion-reveal.is-site-motion-visible {
+    animation: site-motion-reveal 240ms var(--ease-out) both;
+    animation-delay: var(--site-motion-delay, 0ms);
+}
+
+@keyframes site-motion-reveal {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes site-motion-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+:where(.btn, .date-card, .grid-btn, .promo-carousel-btn, .works-gallery-card):active:not(:disabled) {
+    transform: scale(.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-motion-reveal {
+        transform: none;
+    }
+
+    .site-motion-reveal.is-site-motion-visible {
+        animation: site-motion-fade 160ms ease both;
+        animation-delay: 0ms;
+    }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -492,12 +529,14 @@ nav ul li a:hover {
     font-size: 24px;
     font-weight: bold;
     color: var(--primary-color);
-    transition: all 0.2s;
+    transition: transform 200ms var(--ease-out), background 160ms ease, color 160ms ease;
 }
 
-.gallery-nav:hover {
-    background: white;
-    transform: translateY(-50%) scale(1.1);
+@media (hover: hover) and (pointer: fine) {
+    .gallery-nav:hover {
+        background: white;
+        transform: translateY(-50%) scale(1.1);
+    }
 }
 
 .gallery-nav.prev { left: -70px; }
@@ -1332,7 +1371,7 @@ th {
     padding: 15px 10px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 160ms var(--ease-out), background-color 180ms ease, border-color 180ms ease, color 180ms ease;
     border: 2px solid transparent;
 }
 
@@ -1378,11 +1417,13 @@ th {
     font-size: 14px;
     font-weight: bold;
     color: #666;
-    transition: all 0.2s;
+    transition: transform 160ms var(--ease-out), background-color 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
-.grid-btn:hover:not(:disabled) {
-    background-color: #eee;
+@media (hover: hover) and (pointer: fine) {
+    .grid-btn:hover:not(:disabled) {
+        background-color: #eee;
+    }
 }
 
 .grid-btn.active {
@@ -1822,14 +1863,24 @@ th {
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: transform 180ms var(--ease-out), background-color 180ms ease, box-shadow 180ms ease;
     box-shadow: 0 5px 15px rgba(255, 133, 161, 0.3);
     margin: 0;
 }
 
-.btn-submit:hover:not(:disabled) {
-    transform: translateY(-2px);
-    background-color: #ff6b8e;
+@media (hover: hover) and (pointer: fine) {
+    .btn-submit:hover:not(:disabled) {
+        transform: translateY(-2px);
+        background-color: #ff6b8e;
+    }
+}
+
+.mobile-booking-flow,
+.mobile-booking-summary,
+.mobile-booking-actions,
+.mobile-booking-review,
+.mobile-booking-footer-actions {
+    display: none;
 }
 
 @media (max-width: 900px) {
@@ -1850,10 +1901,11 @@ th {
     .booking-app {
         display: block;
         max-width: 500px;
+        scroll-margin-top: 84px;
     }
 
     .booking-header {
-        padding: 25px;
+        padding: 22px 20px 18px;
     }
 
     .booking-body {
@@ -1891,6 +1943,284 @@ th {
 
     .date-card {
         flex: 0 0 70px;
+    }
+
+    .mobile-booking-flow {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 16px 18px 14px;
+        background: #fff;
+        border-bottom: 1px solid #f5e7eb;
+    }
+
+    .mobile-booking-flow::before {
+        position: absolute;
+        top: 33px;
+        right: calc(16.66% + 22px);
+        left: calc(16.66% + 22px);
+        height: 2px;
+        background: #f2dfe4;
+        content: '';
+    }
+
+    .mobile-booking-flow button {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        min-width: 0;
+        min-height: 58px;
+        place-items: center;
+        align-content: start;
+        gap: 6px;
+        padding: 0 2px;
+        border: 0;
+        background: transparent;
+        color: #9b898f;
+        font: inherit;
+        cursor: default;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+    }
+
+    .mobile-booking-flow button.done {
+        cursor: pointer;
+    }
+
+    .mobile-booking-flow button > span {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border: 2px solid #ead9de;
+        border-radius: 50%;
+        background: #fff;
+        color: #927f85;
+        font-size: 13px;
+        font-weight: 900;
+        transition:
+            transform 180ms var(--ease-out),
+            border-color 180ms ease,
+            background-color 180ms ease,
+            color 180ms ease,
+            box-shadow 180ms ease;
+    }
+
+    .mobile-booking-flow button.active > span,
+    .mobile-booking-flow button.done > span {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: #fff;
+        box-shadow: 0 5px 14px rgba(255, 107, 142, .22);
+    }
+
+    .mobile-booking-flow button.active > span {
+        transform: scale(1.06);
+    }
+
+    .mobile-booking-flow button.done > span {
+        animation: booking-step-check 180ms var(--ease-out) both;
+    }
+
+    .mobile-booking-flow button small {
+        color: inherit;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .mobile-booking-flow button.active small,
+    .mobile-booking-flow button.done small {
+        color: #d8476b;
+    }
+
+    .mobile-booking-summary {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 13px 18px;
+        background: linear-gradient(135deg, #fff8fa, #fff2f6);
+        border-bottom: 1px solid #f4dce3;
+    }
+
+    .mobile-booking-summary > div {
+        display: flex;
+        min-width: 0;
+        flex-wrap: wrap;
+        gap: 5px 10px;
+        color: #66575c;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.4;
+    }
+
+    .mobile-booking-summary > div span:not(:last-child)::after {
+        margin-left: 10px;
+        color: #d7bdc5;
+        content: '·';
+    }
+
+    .mobile-booking-summary button {
+        min-width: 54px;
+        min-height: 40px;
+        flex: 0 0 auto;
+        padding: 8px 10px;
+        border: 1px solid #f3bdca;
+        border-radius: 999px;
+        background: #fff;
+        color: #cf3e61;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-booking-actions {
+        display: grid;
+        gap: 10px;
+        padding: 24px 0 20px;
+    }
+
+    .mobile-booking-actions .btn-submit {
+        width: 100%;
+        min-height: 50px;
+    }
+
+    .booking-app.mobile-step-1 .booking-details,
+    .booking-app.mobile-step-1 .booking-footer,
+    .booking-app.mobile-step-1 .mobile-booking-review,
+    .booking-app.mobile-step-2 .booking-schedule,
+    .booking-app.mobile-step-2 .mobile-booking-review,
+    .booking-app.mobile-step-3 .booking-schedule,
+    .booking-app.mobile-step-3 .booking-details,
+    .booking-app.mobile-step-3 .booking-footer {
+        display: none;
+    }
+
+    .booking-app.mobile-step-3 .mobile-booking-review {
+        display: block;
+    }
+
+    .booking-app.mobile-step-forward.mobile-step-1 .booking-schedule,
+    .booking-app.mobile-step-forward.mobile-step-2 .booking-details,
+    .booking-app.mobile-step-forward.mobile-step-2 .booking-footer,
+    .booking-app.mobile-step-forward.mobile-step-3 .mobile-booking-review {
+        animation: booking-step-enter-forward 220ms var(--ease-out) both;
+    }
+
+    .booking-app.mobile-step-back.mobile-step-1 .booking-schedule,
+    .booking-app.mobile-step-back.mobile-step-2 .booking-details,
+    .booking-app.mobile-step-back.mobile-step-2 .booking-footer {
+        animation: booking-step-enter-back 220ms var(--ease-out) both;
+    }
+
+    .mobile-booking-review {
+        padding: 24px 20px 22px;
+        background: #fff;
+    }
+
+    .mobile-booking-review h3 {
+        margin: 0;
+        color: #56464b;
+        font-size: 24px;
+    }
+
+    .mobile-booking-review .booking-validation-error {
+        margin-top: 14px;
+    }
+
+    .booking-app.mobile-step-2 .booking-footer {
+        display: block;
+    }
+
+    .mobile-booking-footer-actions {
+        display: grid;
+        width: 100%;
+        grid-template-columns: minmax(0, .8fr) minmax(0, 1.35fr);
+        gap: 10px;
+    }
+
+    .mobile-booking-footer-actions .btn {
+        width: 100%;
+        min-height: 50px;
+        margin: 0;
+        padding: 12px 10px;
+        font-size: 13px;
+    }
+
+    .desktop-booking-review {
+        display: none;
+    }
+
+    .mobile-booking-flow button.done:active,
+    .mobile-booking-summary button:active,
+    .mobile-booking-footer-actions .btn:active,
+    .mobile-booking-actions .btn:active {
+        transform: scale(.98);
+    }
+}
+
+@keyframes booking-step-enter-forward {
+    from {
+        opacity: 0;
+        transform: translateX(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes booking-step-enter-back {
+    from {
+        opacity: 0;
+        transform: translateX(-18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes booking-step-check {
+    from { transform: scale(.92); }
+    to { transform: scale(1); }
+}
+
+@keyframes booking-step-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 900px) and (pointer: coarse) {
+    .personal-info-form input,
+    .personal-info-form select,
+    .personal-info-form textarea {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+    .booking-app.mobile-step-forward.mobile-step-1 .booking-schedule,
+    .booking-app.mobile-step-forward.mobile-step-2 .booking-details,
+    .booking-app.mobile-step-forward.mobile-step-2 .booking-footer,
+    .booking-app.mobile-step-forward.mobile-step-3 .mobile-booking-review,
+    .booking-app.mobile-step-back.mobile-step-1 .booking-schedule,
+    .booking-app.mobile-step-back.mobile-step-2 .booking-details,
+    .booking-app.mobile-step-back.mobile-step-2 .booking-footer {
+        animation: booking-step-fade 160ms ease both;
+    }
+
+    .mobile-booking-flow button.done > span {
+        animation: none;
     }
 }
 
@@ -2101,13 +2431,15 @@ footer {
     display: flex;
     align-items: center;
     gap: 20px;
-    transition: all 0.25s ease;
+    transition: transform 220ms var(--ease-out), box-shadow 220ms ease, border-color 180ms ease;
     border: 1px solid #ffe8f0;
 }
 
-.membership-item:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(255,133,161,0.12);
+@media (hover: hover) and (pointer: fine) {
+    .membership-item:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(255,133,161,0.12);
+    }
 }
 
 .membership-item:last-child:nth-child(odd) {
@@ -2597,13 +2929,15 @@ footer {
 
     z-index: 99998;
 
-    transition: all 0.25s ease;
+    transition: transform 220ms var(--ease-out), box-shadow 220ms ease, opacity 180ms ease;
 
     animation: floatSummerBtn 2.5s ease-in-out infinite;
 }
 
-.floating-summer-btn:hover {
-    transform: scale(1.08);
+@media (hover: hover) and (pointer: fine) {
+    .floating-summer-btn:hover {
+        transform: scale(1.08);
+    }
 }
 
 .floating-summer-btn img {

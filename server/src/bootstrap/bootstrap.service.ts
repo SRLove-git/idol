@@ -214,7 +214,8 @@ export class BootstrapService implements OnApplicationBootstrap {
         allDayMemberPrice: 39.9,
         allDayGroupPrice: 45,
         weekendSurchargePercent: 10,
-        businessHours: '10:00-21:00',
+        businessHours: '10:00-20:00',
+        weekendBusinessHours: '10:00-21:00',
         phone: '',
         rating: 5,
         images: [],
@@ -230,7 +231,8 @@ export class BootstrapService implements OnApplicationBootstrap {
         allDayMemberPrice: 39.9,
         allDayGroupPrice: 45,
         weekendSurchargePercent: 10,
-        businessHours: '10:00-21:00',
+        businessHours: '10:00-20:00',
+        weekendBusinessHours: '10:00-21:00',
       });
     }
 

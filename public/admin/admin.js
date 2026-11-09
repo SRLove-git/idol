@@ -550,7 +550,7 @@ async function renderPricing() {
   $('#page-content').innerHTML = `
     <section class="panel"><div class="panel-head"><div><h2>门店基础资料</h2><p>官网地址、营业时间与 App 门店资料统一在此管理</p></div></div>
       <form id="store-form" class="form-grid" data-id="${store.id}">
-        ${field('门店名称', 'name', store.name)}${field('营业时间（HH:mm-HH:mm）', 'businessHours', store.businessHours)}${field('联系电话', 'phone', store.phone || '')}
+        ${field('门店名称', 'name', store.name)}${field('周一至周五（HH:mm-HH:mm）', 'businessHours', store.businessHours)}${field('周六至周日（HH:mm-HH:mm）', 'weekendBusinessHours', store.weekendBusinessHours || store.businessHours)}${field('联系电话', 'phone', store.phone || '')}
         <label class="field field-wide"><span>门店地址</span><input name="address" value="${esc(store.address)}"></label>
         ${field('纬度', 'lat', store.lat ?? '', 'number', '0.0000001')}${field('经度', 'lng', store.lng ?? '', 'number', '0.0000001')}${field('门店评分（0-5）', 'rating', store.rating ?? 5, 'number', '0.1')}
         <label class="field field-wide"><span>门店图片（每行一个 URL）</span><textarea name="images">${esc((store.images || []).join('\n'))}</textarea></label>
